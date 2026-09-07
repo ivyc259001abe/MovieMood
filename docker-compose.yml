@@ -1,0 +1,51 @@
+services:
+  laravel.test:
+    build: .
+    container_name: moviemood-app
+    ports:
+      - "8080:80"
+      - "5173:5173" # 👈 Vite用のポートを追加しました！
+    volumes:
+      - .:/var/www/html
+    working_dir: /var/www/html
+    depends_on:
+      - mysql
+    networks:
+      - sail
+
+  mysql:
+    image: mysql:8.0
+    container_name: moviemood-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: moviemood
+      MYSQL_USER: moviemood
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - sail
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: moviemood-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: root
+    depends_on:
+      - mysql
+    networks:
+      - sail
+
+volumes:
+  mysql-data:
+
+networks:
+  sail:
+    driver: bridge
