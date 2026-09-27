@@ -2,18 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Like extends Model
 {
-    public function user(): BelongsTo
+    use HasFactory;
+
+    protected $fillable = ['user_id', 'review_id'];
+
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function review(): BelongsTo
+    public function review()
     {
-        return $this->belongsTo(Review::class);
+        // レビュー側の主キーが review_id の場合は第二引数に 'review_id' を指定
+        return $this->belongsTo(Review::class, 'review_id', 'review_id');
     }
 }

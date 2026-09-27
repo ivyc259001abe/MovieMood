@@ -11,15 +11,17 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('reviews', function (Blueprint $table) {
-            $table->id('review_id');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('movie_id')->references('movie_id')->on('movies')->onDelete('cascade');
-            $table->decimal('rating', 2, 1);
+            $table->id('review_id'); // ここを review_id に戻します
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('movie_id');
+            $table->string('movie_title');
+            $table->string('poster_path')->nullable();
+            $table->integer('rating');
+            $table->string('moods');
             $table->text('comment');
             $table->timestamps();
         });
     }
-
     /**
      * Reverse the migrations.
      */

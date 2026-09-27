@@ -1,71 +1,92 @@
-<form method="post" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-6">
-    @csrf
-    @method('patch')
+<section>
+    <header>
+        <h2 class="text-lg font-medium text-white">
+            プロフィール情報
+        </h2>
 
-    <div class="flex flex-col items-center space-y-3 mb-6">
-        <span class="text-xs text-yellow-500/80 font-semibold">アイコン ※任意項目 (写真など)</span>
+        <p class="mt-1 text-sm text-gray-400">
+            アカウントのプロフィール情報、メールアドレス、アイコン画像を更新できます。
+        </p>
+    </header>
 
-        <div
-            class="relative w-28 h-28 rounded-full border-2 border-dashed border-gray-700 bg-gray-900 flex items-center justify-center overflow-hidden shadow-inner">
-            @if(Auth::user()->avatar && Storage::disk('public')->exists(Auth::user()->avatar))
-                <img src="{{ asset('storage/' . Auth::user()->avatar) }}" class="w-full h-full object-cover">
-            @else
-                <div class="flex flex-col items-center justify-center text-gray-500 text-center">
-                    <span class="text-xs font-bold bg-white text-black px-2 py-1 rounded mb-1">アイコン</span>
-                    <span class="text-[10px] text-gray-400">(写真など)</span>
+    <form method="post" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="mt-6 space-y-6">
+        @csrf
+        @method('put')
+
+        <!-- 万が一エラーが発生した場合に赤枠で原因を表示 -->
+        @if ($errors->any())
+            <div class="bg-red-500/20 border border-red-500 text-red-300 p-4 rounded-xl text-xs space-y-1">
+                <p class="font-bold text-red-400">更新できませんでした：</p>
+                <ul class="list-disc list-inside space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <!-- 現在のアイコン画像プレビュー & 画像アップロード -->
+        <div>
+            <x-input-label for="avatar" value="アイコン画像" class="text-gray-300" />
+
+            <div class="mt-2 flex items-center space-x-4">
+                <!-- 現在設定されている画像の表示 -->
+                <div
+                    class="w-16 h-16 rounded-full bg-gray-800 text-white flex items-center justify-center overflow-hidden font-bold border border-gray-700 shrink-0">
+                    @php
+                        $avatarPath = $user->avatar ?? $user->icon ?? $user->icon_path ?? session('user_icon');
+                    @endphp
+
+                    @if($avatarPath && file_exists(public_path($avatarPath)))
+                        <img src="{{ asset($avatarPath) }}?t={{ time() }}" class="w-full h-full object-cover">
+                    @elseif($avatarPath && file_exists(public_path('storage/' . $avatarPath)))
+                        <img src="{{ asset('storage/' . $avatarPath) }}?t={{ time() }}" class="w-full h-full object-cover">
+                    @elseif($avatarPath)
+                        <img src="{{ asset($avatarPath) }}?t={{ time() }}" class="w-full h-full object-cover">
+                    @else
+                        <span class="text-xs text-gray-500">画像なし</span>
+                    @endif
                 </div>
-            @endif
+
+                <!-- ファイル選択インプット -->
+                <div class="space-y-1">
+                    <input id="avatar" name="avatar" type="file" accept="image/*"
+                        class="text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-yellow-500 file:text-black hover:file:bg-yellow-400 cursor-pointer" />
+                    <p class="text-[10px] text-gray-400">※ 2MB以下の画像（JPG, PNG, GIF, WebP）を選択してください。</p>
+                </div>
+            </div>
+            <x-input-error class="mt-2" :messages="$errors->get('avatar')" />
         </div>
 
-        <input type="file" name="avatar" class="hidden" id="avatarInput" accept="image/*">
-        <button type="button" onclick="document.getElementById('avatarInput').click()"
-            class="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-full text-xs transition border border-gray-700">
-            アイコン変更
-        </button>
-        <x-input-error class="mt-2" :messages="$errors->get('avatar')" />
-    </div>
+        <!-- ニックネーム（名前） -->
+        <div>
+            <x-input-label for="name" value="ニックネーム" class="text-gray-300" />
+            <x-text-input id="name" name="name" type="text"
+                class="mt-1 block w-full bg-gray-900 border-gray-800 text-white focus:border-yellow-500 focus:ring-yellow-500 rounded-xl"
+                :value="old('name', $user->name)" required autofocus autocomplete="name" />
+            <x-input-error class="mt-2" :messages="$errors->get('name')" />
+        </div>
 
-    <div>
-        <label for="name" class="block text-xs font-bold text-gray-300 mb-1">氏名</label>
-        <input id="name" name="name" type="text"
-            class="w-full bg-white text-black rounded-full py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
-            value="{{ old('name', $user->name) }}" required autofocus>
-        <x-input-error class="mt-2" :messages="$errors->get('name')" />
-    </div>
+        <!-- メールアドレス -->
+        <div>
+            <x-input-label for="email" value="メールアドレス" class="text-gray-300" />
+            <x-text-input id="email" name="email" type="email"
+                class="mt-1 block w-full bg-gray-900 border-gray-800 text-white focus:border-yellow-500 focus:ring-yellow-500 rounded-xl"
+                :value="old('email', $user->email)" required autocomplete="username" />
+            <x-input-error class="mt-2" :messages="$errors->get('email')" />
+        </div>
 
-    <div>
-        <label for="nickname" class="block text-xs font-bold text-gray-300 mb-1">ニックネーム</label>
-        <input id="nickname" name="nickname" type="text"
-            class="w-full bg-white text-black rounded-full py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
-            value="{{ old('nickname', $user->nickname) }}" placeholder="ニックネーム">
-        <x-input-error class="mt-2" :messages="$errors->get('nickname')" />
-    </div>
+        <!-- 保存ボタン & 通知メッセージ -->
+        <div class="flex items-center gap-4 pt-2">
+            <x-primary-button
+                class="bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-full px-6 py-2 border-none">
+                変更を保存
+            </x-primary-button>
 
-    <div>
-        <label for="email" class="block text-xs font-bold text-gray-300 mb-1">メールアドレス</label>
-        <input id="email" name="email" type="email"
-            class="w-full bg-white text-black rounded-full py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
-            value="{{ old('email', $user->email) }}" required>
-        <x-input-error class="mt-2" :messages="$errors->get('email')" />
-    </div>
-
-    <div class="pt-2 space-y-3">
-        <label class="block text-xs font-bold text-yellow-500">新しいパスワード (※変更する場合のみ)</label>
-        <input id="password" name="password" type="password"
-            class="w-full bg-white text-black rounded-full py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
-            placeholder="パスワード">
-        <x-input-error class="mt-2" :messages="$errors->get('password')" />
-
-        <input id="password_confirmation" name="password_confirmation" type="password"
-            class="w-full bg-white text-black rounded-full py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
-            placeholder="パスワード(確認用)">
-        <x-input-error class="mt-2" :messages="$errors->get('password_confirmation')" />
-    </div>
-
-    <div class="flex justify-center pt-6">
-        <button type="submit"
-            class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-6 rounded-full text-sm transition tracking-wider">
-            変更を保存する
-        </button>
-    </div>
-</form>
+            @if (session('status') === 'profile-updated')
+                <p x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 2000)"
+                    class="text-sm text-green-400">プロフィールを更新しました！</p>
+            @endif
+        </div>
+    </form>
+</section>

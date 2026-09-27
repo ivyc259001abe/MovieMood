@@ -29,10 +29,9 @@ class AuthController extends Controller
         return view('register', compact('popularMovies'));
     }
 
-    // 新規登録処理（登録完了後に自動ログインしてTopへ）
+    // 新規登録処理（パターンA：登録完了後そのままログインしてホームへ）
     public function register(Request $request)
     {
-        // 入力チェック
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255',
@@ -46,19 +45,18 @@ class AuthController extends Controller
             $file = $request->file('icon');
             $filename = 'icon_' . time() . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('uploads'), $filename);
-
-            // 先頭の「/」を削除して「uploads/ファイル名」の形式に変更
             $iconPath = 'uploads/' . $filename;
         }
 
-        // セッションに入力された情報をセット
+        // セッションに登録情報をセットして自動ログイン状態にする
         session([
             'user_name' => $request->name,
             'user_email' => $request->email,
             'user_icon' => $iconPath,
         ]);
 
-        return redirect('/');
+        // フラッシュメッセージを渡してホームへ遷移
+        return redirect('/')->with('success', '🎉 会員登録が完了しました！MovieMoodへようこそ！');
     }
 
     // ログイン画面の表示
@@ -76,16 +74,9 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        // セッション内に既存の名前・アイコンがあればそれを優先保持
-        $savedEmail = session('user_email');
-
-        if ($savedEmail === $request->email) {
-            $userName = session('user_name');
-            $userIcon = session('user_icon');
-        } else {
-            $userName = explode('@', $request->email)[0];
-            $userIcon = null;
-        }
+        // 過去に設定された名前・アイコンがあればそれを優先保持する
+        $userName = session('user_name') ?? explode('@', $request->email)[0];
+        $userIcon = session('user_icon') ?? null;
 
         session([
             'user_name' => $userName,
@@ -99,7 +90,7 @@ class AuthController extends Controller
     // ログアウト処理
     public function logout(Request $request)
     {
-        session()->forget(['user_name', 'user_email', 'user_icon']);
+        session()->forget('user_email');
         return redirect('/login');
     }
 }

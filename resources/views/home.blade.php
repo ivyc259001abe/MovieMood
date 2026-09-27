@@ -1,90 +1,128 @@
-<!DOCTYPE html>
-<html lang="ja">
+<x-app-layout :popularMovies="$popularMovies ?? []">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MovieMood - ホーム</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
 
-<body class="bg-black text-white min-h-screen flex flex-col items-center justify-center p-4">
+            <!-- 左側 (7カラム) -->
+            <div class="lg:col-span-7 flex flex-col gap-4">
 
-    <!-- メインカード -->
-    <div class="w-full max-w-md bg-gray-900 border-2 border-white rounded-3xl p-6 shadow-2xl text-center space-y-6">
+                <!-- WELCOME -->
+                <div class="bg-[#121927] border border-gray-800/80 rounded-2xl p-4 shadow-xl flex items-center gap-4">
+                    <div
+                        class="w-12 h-12 rounded-full bg-white text-pink-500 font-black flex items-center justify-center text-xl shadow shrink-0 border-2 border-amber-400 overflow-hidden">
+                        @if(Auth::user()->profile_photo_url ?? false)
+                            <img src="{{ Auth::user()->profile_photo_url }}" alt="" class="w-full h-full object-cover">
+                        @else
+                            <span class="text-pink-500 font-black leading-none text-2xl">∞</span>
+                        @endif
+                    </div>
+                    <div>
+                        <span class="text-xs text-amber-500 font-extrabold tracking-wide flex items-center gap-1">
+                            ✨ Welcome!
+                        </span>
+                        <h1 class="text-base sm:text-xl font-black text-white mt-0.5">
+                            {{ Str::limit(Auth::user()->name ?? 'ゲスト', 15, '') }} さん、こんにちは！
+                        </h1>
+                    </div>
+                </div>
 
-        <!-- タイトル -->
-        <h1 class="text-3xl font-bold text-amber-500 tracking-wider">MovieMood</h1>
+                <!-- 検索 -->
+                <div class="bg-[#121927] border border-gray-800/80 rounded-2xl p-4 shadow-xl space-y-3">
+                    <p class="text-xs font-bold text-amber-500 flex items-center gap-1.5">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>キーワード検索</span>
+                    </p>
 
-        <!-- 歓迎メッセージ -->
-        <p class="text-lg font-semibold text-amber-400">
-            Welcome {{ session('user_name', 'ゲスト') }} さん！
-        </p>
+                    <form action="{{ route('result') }}" method="GET">
+                        <div class="flex items-center gap-3">
+                            <input type="text" name="query" placeholder="キーワード検索（映画タイトル、キャストなど）"
+                                class="w-full bg-[#0a0d14] border border-gray-800 focus:border-amber-500 rounded-xl px-4 py-3 text-xs text-white placeholder-gray-500 focus:outline-none transition shadow-inner"
+                                required>
+                            <button type="submit"
+                                class="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs rounded-xl transition shadow shrink-0">
+                                検索
+                            </button>
+                        </div>
+                    </form>
+                </div>
 
-        <!-- ユーザーアイコン & ニックネーム -->
-        <div
-            class="flex items-center justify-center space-x-3 bg-gray-800/80 rounded-full py-2 px-4 border border-gray-700">
-            @if(session('user_icon'))
-                <img src="{{ session('user_icon') }}" class="w-10 h-10 rounded-full object-cover border border-amber-400">
-            @else
-                <div class="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-xl">👤</div>
-            @endif
-            <span class="font-medium text-gray-200">{{ session('user_name', 'ゲスト') }}</span>
-        </div>
+                <!-- 気分タグ -->
+                <div
+                    class="bg-[#121927] border border-gray-800/80 rounded-2xl p-4 shadow-xl space-y-3 flex-grow flex flex-col justify-center">
+                    <p class="text-xs font-bold text-amber-500 text-center">
+                        ▼ 今のあなたの「気分」は？
+                    </p>
 
-        <!-- 検索バー -->
-        <form action="/result" method="GET" class="relative">
-            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400">🔍</span>
-            <input type="text" name="keyword" placeholder="キーワード検索"
-                class="w-full py-2.5 pl-10 pr-4 bg-white text-gray-900 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-400 font-medium placeholder-gray-400">
-        </form>
+                    <div class="grid grid-cols-2 gap-3">
+                        <a href="{{ route('result', ['mood' => '号泣']) }}"
+                            class="flex items-center justify-center gap-2 bg-[#0b0e15] hover:bg-gray-800 border border-gray-800 hover:border-amber-500/60 rounded-xl py-3 px-3 transition shadow group">
+                            <span class="text-base">😭</span>
+                            <span class="text-xs font-bold text-gray-200 group-hover:text-amber-400">#号泣</span>
+                        </a>
 
-        <!-- 気分選択エリア -->
-        <div class="space-y-3">
-            <p class="text-sm font-bold text-gray-300 flex items-center justify-center gap-1">
-                <span>▼</span> 今のあなたの「気分」は？
-            </p>
+                        <a href="{{ route('result', ['mood' => 'スカッと']) }}"
+                            class="flex items-center justify-center gap-2 bg-[#0b0e15] hover:bg-gray-800 border border-gray-800 hover:border-amber-500/60 rounded-xl py-3 px-3 transition shadow group">
+                            <span class="text-base">😆</span>
+                            <span class="text-xs font-bold text-gray-200 group-hover:text-amber-400">#スカッと</span>
+                        </a>
 
-            <div class="grid grid-cols-2 gap-3">
-                <a href="/result?mood=cry"
-                    class="bg-white text-gray-900 font-bold py-2.5 px-4 rounded-full hover:bg-amber-400 transition text-sm">
-                    😭 #号泣
-                </a>
-                <a href="/result?mood=action"
-                    class="bg-white text-gray-900 font-bold py-2.5 px-4 rounded-full hover:bg-amber-400 transition text-sm">
-                    😆 #スカッと
-                </a>
-                <a href="/result?mood=thrill"
-                    class="bg-white text-gray-900 font-bold py-2.5 px-4 rounded-full hover:bg-amber-400 transition text-sm">
-                    😱 #ハラハラ
-                </a>
-                <a href="/result?mood=love"
-                    class="bg-white text-gray-900 font-bold py-2.5 px-4 rounded-full hover:bg-amber-400 transition text-sm">
-                    ❤️ #キュン
-                </a>
+                        <a href="{{ route('result', ['mood' => 'ハラハラ']) }}"
+                            class="flex items-center justify-center gap-2 bg-[#0b0e15] hover:bg-gray-800 border border-gray-800 hover:border-amber-500/60 rounded-xl py-3 px-3 transition shadow group">
+                            <span class="text-base">😱</span>
+                            <span class="text-xs font-bold text-gray-200 group-hover:text-amber-400">#ハラハラ</span>
+                        </a>
+
+                        <a href="{{ route('result', ['mood' => 'キュン']) }}"
+                            class="flex items-center justify-center gap-2 bg-[#0b0e15] hover:bg-gray-800 border border-gray-800 hover:border-amber-500/60 rounded-xl py-3 px-3 transition shadow group">
+                            <span class="text-base">💖</span>
+                            <span class="text-xs font-bold text-gray-200 group-hover:text-amber-400">#キュン</span>
+                        </a>
+                    </div>
+                </div>
+
             </div>
-        </div>
 
-        <!-- 本日のピックアップ -->
-        <div class="bg-pink-100 text-gray-800 p-3 rounded-2xl text-xs font-bold space-y-1">
-            <p class="text-gray-500">本日のピックアップムード</p>
-            <p class="text-amber-600 font-extrabold text-sm">「月曜から夜ふかし…」おすすめが出る</p>
-        </div>
+            <!-- 右側 (5カラム) -->
+            <div
+                class="lg:col-span-5 bg-[#121927] border border-gray-800/80 rounded-2xl p-5 shadow-xl flex flex-col items-center justify-between text-center space-y-4">
 
-        <!-- 下部ボタン（マイページ & ログアウト） -->
-        <div class="flex items-center justify-between pt-2">
-            <a href="/profile"
-                class="flex items-center gap-2 text-sm font-bold text-gray-300 hover:text-white transition">
-                <span class="bg-gray-700 p-2 rounded-full">👤</span> マイページへ
-            </a>
-            <a href="/logout"
-                class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-5 rounded-full transition shadow-md">
-                ログアウト
-            </a>
+                <div class="space-y-1">
+                    <span
+                        class="text-[10px] text-amber-500 font-extrabold tracking-widest uppercase bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 inline-block">
+                        🌙 TODAY'S PICKUP
+                    </span>
+                    <h2 class="text-xs sm:text-sm font-bold text-white pt-1">
+                        本日のピックアップ<br>
+                        <span class="text-xs text-amber-400 font-normal">「スカッとしたい？」</span>
+                    </h2>
+                </div>
+
+                @if(!empty($popularMovies[0]))
+                    <div class="w-full max-w-[140px] sm:max-w-[160px] mx-auto space-y-2">
+                        <div
+                            class="aspect-[2/3] rounded-xl overflow-hidden bg-black border border-gray-800 shadow-xl relative">
+                            @if(!empty($popularMovies[0]['poster_path']))
+                                <img src="https://image.tmdb.org/t/p/w500{{ $popularMovies[0]['poster_path'] }}"
+                                    alt="{{ $popularMovies[0]['title'] ?? '' }}" class="w-full h-full object-cover">
+                            @endif
+                        </div>
+                        <h3 class="text-xs font-bold text-white truncate">{{ $popularMovies[0]['title'] ?? '' }}</h3>
+                        <p class="text-[11px] text-amber-400 font-extrabold flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-star text-[10px]"></i>
+                            <span>{{ number_format((float) ($popularMovies[0]['vote_average'] ?? 0), 1) }}</span>
+                        </p>
+                    </div>
+
+                    <a href="{{ route('movies.show', $popularMovies[0]['id'] ?? 0) }}"
+                        class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs rounded-xl transition shadow flex items-center justify-center gap-1">
+                        <span>詳細をチェックする</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
+                @endif
+
+            </div>
+
         </div>
 
     </div>
-
-</body>
-
-</html>
+</x-app-layout>

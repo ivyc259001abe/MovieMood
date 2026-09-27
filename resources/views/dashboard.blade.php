@@ -1,13 +1,16 @@
 <x-app-layout>
     <div class="py-12 pt-28 bg-black min-h-screen flex flex-col items-center text-white">
 
+        <!-- メインカードコンテナ -->
         <div
             class="w-full max-w-md px-6 py-8 bg-gray-900 shadow-md rounded-[2.5rem] border border-gray-700 flex flex-col items-center">
 
+            <!-- ヘッダー -->
             <header class="text-center mb-4">
                 <h1 class="text-3xl font-bold text-yellow-500 tracking-wider">MovieMood</h1>
             </header>
 
+            <!-- ユーザー情報 -->
             <div class="w-full flex flex-col items-center mb-6">
                 <p class="text-yellow-500 font-semibold text-lg mb-3">
                     Welcome {{ Auth::user()->nickname ?? Auth::user()->name }} さん！
@@ -29,6 +32,7 @@
                 </div>
             </div>
 
+            <!-- キーワード検索 -->
             <div class="w-full px-2 mb-6">
                 <form method="GET" action="#" class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-4">
@@ -42,6 +46,54 @@
                 </form>
             </div>
 
+            <!-- 人気作品エリア（★ 星評価統一） -->
+            @if(!empty($popularMovies) && count($popularMovies) > 0)
+                <div class="w-full px-2 mb-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-gray-300">🔥 人気作品</span>
+                        <span class="text-[10px] text-gray-500">横スクロール可</span>
+                    </div>
+
+                    <div class="flex space-x-3 overflow-x-auto pb-2 scrollbar-thin">
+                        @foreach($popularMovies as $movie)
+                            <div
+                                class="flex-none w-28 bg-gray-800 rounded-xl overflow-hidden border border-gray-700 relative shadow-sm">
+                                <!-- ポスター画像 ＆ 星評価バッジ -->
+                                <div class="w-full h-36 relative bg-gray-900">
+                                    @if(!empty($movie['poster_path']))
+                                        <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}"
+                                            alt="{{ $movie['title'] ?? '' }}" class="w-full h-full object-cover">
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center text-gray-500 text-[10px]">
+                                            NO IMAGE
+                                        </div>
+                                    @endif
+
+                                    <!-- 星評価バッジ -->
+                                    @if(!empty($movie['vote_average']))
+                                        <div
+                                            class="absolute top-1.5 right-1.5 bg-black/85 border border-amber-500/60 text-amber-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow">
+                                            ★ {{ number_format($movie['vote_average'], 1) }}
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <!-- 作品タイトル -->
+                                <div class="p-2 bg-gray-800">
+                                    <h3 class="text-[11px] font-bold text-white truncate" title="{{ $movie['title'] ?? '' }}">
+                                        {{ $movie['title'] ?? 'タイトル不明' }}
+                                    </h3>
+                                    <p class="text-[9px] text-gray-400 mt-0.5">
+                                        {{ isset($movie['release_date']) ? substr($movie['release_date'], 0, 4) : '' }}
+                                    </p>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            <!-- 気分タグ選択 -->
             <div class="w-full mb-6">
                 <div class="flex items-center justify-center space-x-1 mb-4 text-gray-300">
                     <span class="text-lg">▼</span>
@@ -68,6 +120,7 @@
                 </div>
             </div>
 
+            <!-- 本日のピックアップ -->
             <div class="w-full px-2 mb-2">
                 <div
                     class="bg-gray-800 border border-gray-700 rounded-[1.5rem] p-4 text-center relative overflow-hidden shadow-inner">
@@ -81,8 +134,8 @@
 
         </div>
 
+        <!-- 下部アクションボタン -->
         <div class="w-full max-w-md flex items-center justify-between px-6 mt-6">
-
             <a href="{{ route('profile.edit') }}"
                 class="flex items-center space-x-1.5 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-full text-xs shadow-md transition">
                 <span>編集⚙️</span>

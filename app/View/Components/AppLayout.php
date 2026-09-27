@@ -7,6 +7,16 @@ use Illuminate\View\View;
 
 class AppLayout extends Component
 {
+    public $popularMovies;
+
+    /**
+     * Create a new component instance.
+     */
+    public function __construct($popularMovies = [])
+    {
+        $this->popularMovies = $popularMovies;
+    }
+
     /**
      * Get the view / contents that represents the component.
      */

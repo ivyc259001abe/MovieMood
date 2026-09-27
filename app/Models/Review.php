@@ -14,19 +14,30 @@ class Review extends Model
     protected $fillable = [
         'user_id',
         'movie_id',
+        'movie_title',
+        'poster_path',
         'rating',
+        'moods',
         'comment',
     ];
 
-    // レビューは1つの映画に属する
-    public function movie()
-    {
-        return $this->belongsTo(Movie::class, 'movie_id', 'movie_id');
-    }
-
-    // レビューは1人のユーザーに属する
+    // ユーザーとのリレーション（これが消えていたためエラーになっていました）
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(User::class);
+    }
+
+    // いいねとのリレーション
+    public function likes()
+    {
+        return $this->hasMany(Like::class, 'review_id');
+    }
+
+    // ユーザーがすでにいいねしているか判定
+    public function isLikedBy($user)
+    {
+        if (!$user)
+            return false;
+        return $this->likes->contains('user_id', $user->id);
     }
 }

@@ -1,3 +1,148 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@props(['popularMovies' => []])
+
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>{{ config('app.name', 'MovieMood') }}</title>
+
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Vite経由でCSS/JSをインポート -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- フッターのアニメーション用スタイル -->
+    <style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        @keyframes scrollLeft {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* 🌟 60sのゆったり移動スピード */
+        .animate-infinite-scroll {
+            display: flex !important;
+            width: max-content !important;
+            animation: scrollLeft 60s linear infinite !important;
+        }
+
+        .animate-infinite-scroll:hover {
+            animation-play-state: paused !important;
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased bg-black text-gray-100 min-h-screen flex flex-col selection:bg-amber-500 selection:text-black">
+
+    <!-- ヘッダー -->
+    <header class="sticky top-0 z-50 bg-black/90 backdrop-blur-md border-b border-gray-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <a href="{{ route('home') }}" class="flex items-center gap-2 group">
+                <span class="text-2xl font-black tracking-wider text-amber-500 group-hover:text-amber-400 transition">
+                    MovieMood
+                </span>
+            </a>
+
+            <nav class="flex items-center gap-5 text-sm font-medium">
+                <a href="{{ route('community.index') }}"
+                    class="text-gray-300 hover:text-amber-500 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-users text-amber-500"></i>
+                    <span class="hidden sm:inline">コミュニティ</span>
+                </a>
+                @auth
+                    <a href="{{ route('mypage') }}"
+                        class="text-gray-300 hover:text-amber-500 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-user text-amber-500"></i>
+                        <span class="hidden sm:inline">マイページ</span>
+                    </a>
+                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                        @csrf
+                        <button type="submit" class="text-gray-400 hover:text-red-400 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span class="hidden sm:inline">ログアウト</span>
+                        </button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}"
+                        class="bg-amber-500 hover:bg-amber-400 text-black font-bold px-4 py-2 rounded-full transition">
+                        ログイン
+                    </a>
+                @endauth
+            </nav>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {{ $slot }}
+    </main>
+
+    {{-- 変数の安全なフォールバック定義 --}}
+    @php
+        $displayMovies = $popularMovies ?? [];
+    @endphp
+
+    <!-- 自動ループフッター（人気映画ラインナップ） -->
+    <footer class="bg-black border-t border-gray-900 pt-6 pb-8 mt-12 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 mb-3 text-center">
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                POPULAR MOVIES（タップで詳細へ）
+            </h4>
+        </div>
+
+        <div class="w-full overflow-hidden no-scrollbar py-2">
+            @if(count($displayMovies) > 0)
+                <div class="animate-infinite-scroll gap-3">
+                    <!-- 1周目 -->
+                    @foreach($displayMovies as $movie)
+                        <a href="/movies/{{ $movie['id'] }}"
+                            class="flex-none w-24 sm:w-32 group cursor-pointer transition transform hover:-translate-y-1">
+                            <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}" alt="{{ $movie['title'] }}"
+                                class="w-full h-36 sm:h-48 object-cover rounded-lg shadow border border-gray-800 group-hover:border-amber-500 transition">
+                            <p
+                                class="text-[10px] mt-1 text-gray-400 font-medium truncate group-hover:text-amber-500 text-center">
+                                {{ $movie['title'] }}
+                            </p>
+                        </a>
+                    @endforeach
+                    <!-- 2周目（無限ループ用） -->
+                    @foreach($displayMovies as $movie)
+                        <a href="/movies/{{ $movie['id'] }}"
+                            class="flex-none w-24 sm:w-32 group cursor-pointer transition transform hover:-translate-y-1">
+                            <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}" alt="{{ $movie['title'] }}"
+                                class="w-full h-36 sm:h-48 object-cover rounded-lg shadow border border-gray-800 group-hover:border-amber-500 transition">
+                            <p
+                                class="text-[10px] mt-1 text-gray-400 font-medium truncate group-hover:text-amber-500 text-center">
+                                {{ $movie['title'] }}
+                            </p>
+                        </a>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-xs text-gray-600 italic text-center py-4">映画データを読み込み中...</p>
+            @endif
+        </div>
+    </footer>
+
+</body>
+
+</html>

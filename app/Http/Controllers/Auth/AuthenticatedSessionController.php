@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,7 +29,17 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // 🌟 ログインしたユーザーの DB アバター情報をセッションに復元
+        if (Auth::user()->avatar) {
+            session(['user_icon' => Auth::user()->avatar]);
+        }
+
+        // RouteServiceProvider::HOME が存在すればそこへ、なければトップページへリダイレクト
+        if (class_exists(RouteServiceProvider::class) && defined('App\Providers\RouteServiceProvider::HOME')) {
+            return redirect()->intended(RouteServiceProvider::HOME);
+        }
+
+        return redirect()->intended('/');
     }
 
     /**
