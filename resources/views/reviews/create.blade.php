@@ -84,7 +84,7 @@
                         </div>
                     </div>
 
-                    <!-- あらすじエリア（日本語訳が無い場合はその旨を表示） -->
+                    <!-- あらすじエリア -->
                     <div class="bg-black/60 backdrop-blur-md border border-gray-800 p-3 rounded-xl space-y-1">
                         <span class="text-xs font-extrabold text-amber-500 flex items-center gap-1">
                             <i class="fa-solid fa-align-left"></i>
@@ -102,7 +102,7 @@
                     </div>
                 </div>
 
-                <!-- 🖼️ 下部：ポスター画像が「チラ見え（見切り）」するビジュアルエリア -->
+                <!-- 🖼️ 下部：ポスタービジュアルエリア -->
                 <div
                     class="relative w-full h-40 sm:h-48 overflow-hidden border-t border-gray-800/80 bg-black/60 shrink-0">
                     @if($posterUrl)
@@ -135,9 +135,9 @@
                             <h2 class="text-base font-extrabold text-white">あなたのレビュー・気分を投稿</h2>
                         </div>
 
-                        <!-- ★ 評価スライダー -->
+                        <!-- ★ 評価スライダー (0.1刻み対応) -->
                         <div class="space-y-1.5 bg-black/40 border border-gray-800 p-3 rounded-xl"
-                            x-data="{ rating: 7.0 }">
+                            x-data="{ rating: 7.5 }">
                             <div class="flex items-center justify-between">
                                 <label for="rating_number_input"
                                     class="text-xs font-bold text-gray-200 flex items-center gap-1.5 cursor-pointer">
@@ -146,26 +146,26 @@
                                 </label>
 
                                 <span class="text-xs font-bold text-amber-400" x-text="
-                                        rating >= 9.5 ? '🏆 最高傑作' :
-                                        rating >= 9.0 ? '🌟 超大作' :
-                                        rating >= 8.0 ? '👏 素晴らしい' :
-                                        rating >= 7.0 ? '👍 かなりおすすめ' :
-                                        rating >= 6.0 ? '🙂 面白い' :
-                                        rating >= 5.0 ? '😐 普通' :
-                                        rating >= 3.0 ? '🤔 イマイチ' : '👎 時間の無駄'
+                                        Number(rating) >= 9.5 ? '🏆 最高傑作' :
+                                        Number(rating) >= 9.0 ? '🌟 超大作' :
+                                        Number(rating) >= 8.0 ? '👏 素晴らしい' :
+                                        Number(rating) >= 7.0 ? '👍 かなりおすすめ' :
+                                        Number(rating) >= 6.0 ? '🙂 面白い' :
+                                        Number(rating) >= 5.0 ? '😐 普通' :
+                                        Number(rating) >= 3.0 ? '🤔 イマイチ' : '👎 時間の無駄'
                                       ">
                                 </span>
                             </div>
 
                             <div class="flex items-center space-x-3 pt-0.5">
                                 <input type="range" id="rating_range_input" aria-label="評価スライダー" min="1.0" max="10.0"
-                                    step="0.1" x-model="rating"
+                                    step="0.1" x-model.number="rating"
                                     class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-500 focus:outline-none">
 
                                 <div class="relative flex items-center shrink-0 w-20">
                                     <span class="absolute left-2 text-amber-400 font-black text-xs">★</span>
                                     <input type="number" id="rating_number_input" name="rating" min="1.0" max="10.0"
-                                        step="0.1" x-model="rating"
+                                        step="0.1" x-model.number="rating"
                                         class="w-full pl-5 pr-1 py-1 bg-black/80 text-amber-400 font-black text-xs border border-amber-500/40 rounded-lg focus:outline-none focus:border-amber-400 text-center shadow-inner">
                                 </div>
                             </div>

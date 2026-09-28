@@ -2,7 +2,7 @@
     <div style="background-color: #000000; color: #ffffff; min-height: 100vh; padding: 24px 16px; box-sizing: border-box;">
         <div style="max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
 
-            <!-- 1. ヘッダーバナー -->
+            <!-- ヘッダー -->
             <div style="background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px;">
                 <div style="background-color: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 12px; font-size: 24px;">
                     💬
@@ -50,7 +50,7 @@
                                 <div id="movie_suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background-color: #111827; border: 1px solid #374151; border-radius: 8px; margin-top: 4px; max-height: 200px; overflow-y: auto; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.8);"></div>
                             </div>
 
-                            <!-- 2枚目の画像に合わせたスライダー評価UI -->
+                            <!-- スライダー評価UI -->
                             <div style="background-color: #000000; border: 1px solid #1f2937; border-radius: 8px; padding: 14px 16px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                     <label style="font-size: 11px; font-weight: bold; color: #e5e7eb; display: flex; align-items: center; gap: 4px;">
@@ -63,32 +63,33 @@
                                         </div>
                                     </div>
                                 </div>
-                                <input type="range" id="rating_range" min="1" max="10" step="1" value="{{ old('rating', 7) }}"
-                                    style="width: 100%; accent-color: #f59e0b; cursor: pointer; height: 6px; background-color: #374151; border-radius: 9999px; outline: none;">
+                                <input type="range" id="rating_range" min="1" max="10" step="0.1" value="{{ old('rating', 7.0) }}"
+    style="width: 100%; accent-color: #f59e0b; cursor: pointer; height: 6px; background-color: #374151; border-radius: 9999px; outline: none;">
                                 <input type="hidden" name="rating" id="rating_input" value="{{ old('rating', 7) }}">
                             </div>
 
-                            <!-- 今のあなたの気分は？ (複数選択可能ボタン) -->
+                            <!-- 今のあなたの気分は？ -->
                             <div>
                                 <label style="display: block; font-size: 11px; font-weight: bold; color: #e5e7eb; margin-bottom: 8px;">
                                     現在の「気分」は？ <span style="font-size: 10px; color: #9ca3af; font-weight: normal;">(複数選択可)</span>
                                 </label>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                    @php
-                                        $moodOptions = [
-                                            ['label' => '#号泣', 'emoji' => '😭'],
-                                            ['label' => '#スカッと', 'emoji' => '😆'],
-                                            ['label' => '#ハラハラ', 'emoji' => '😱'],
-                                            ['label' => '#キュン', 'emoji' => '💖'],
-                                        ];
-                                    @endphp
-                                    @foreach($moodOptions as$opt)
-                                        <label class="mood-checkbox-label" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #000000; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #e5e7eb; cursor: pointer; transition: all 0.2s; user-select: none;">
-                                            <input type="checkbox" name="moods[]" value="{{ $opt['label'] }}" style="display: none;" onchange="toggleMoodStyle(this)">
-                                            <span>{{ $opt['emoji'] }}</span>
-                                            <span>{{ $opt['label'] }}</span>
-                                        </label>
-                                    @endforeach
+                                    <label class="mood-checkbox-label" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #000000; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #e5e7eb; cursor: pointer; transition: all 0.2s; user-select: none;">
+                                        <input type="checkbox" name="moods[]" value="#号泣" style="display: none;" onchange="toggleMoodStyle(this)">
+                                        <span>😭</span> <span>#号泣</span>
+                                    </label>
+                                    <label class="mood-checkbox-label" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #000000; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #e5e7eb; cursor: pointer; transition: all 0.2s; user-select: none;">
+                                        <input type="checkbox" name="moods[]" value="#スカッと" style="display: none;" onchange="toggleMoodStyle(this)">
+                                        <span>😆</span> <span>#スカッと</span>
+                                    </label>
+                                    <label class="mood-checkbox-label" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #000000; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #e5e7eb; cursor: pointer; transition: all 0.2s; user-select: none;">
+                                        <input type="checkbox" name="moods[]" value="#ハラハラ" style="display: none;" onchange="toggleMoodStyle(this)">
+                                        <span>😱</span> <span>#ハラハラ</span>
+                                    </label>
+                                    <label class="mood-checkbox-label" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #000000; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #e5e7eb; cursor: pointer; transition: all 0.2s; user-select: none;">
+                                        <input type="checkbox" name="moods[]" value="#キュン" style="display: none;" onchange="toggleMoodStyle(this)">
+                                        <span>💖</span> <span>#キュン</span>
+                                    </label>
                                 </div>
                             </div>
 
@@ -115,18 +116,17 @@
                             <span style="font-size: 12px; font-weight: bold; color: #9ca3af;">気分で絞り込み:</span>
                             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                                 <a href="{{ route('community.index') }}" style="font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-decoration: none; background-color: #f59e0b; color: #000000;">すべて</a>
-                                @foreach(['#号泣' => '😭', '#スカッと' => '😆', '#ハラハラ' => '😱', '#キュン' => '💖'] as $mood =>$emoji)
-                                    <a href="{{ route('community.index', ['mood' => $mood]) }}" style="font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-decoration: none; background-color: #111827; border: 1px solid #374151; color: #d1d5db;">
-                                        {{ $emoji }} {{$mood }}
-                                    </a>
-                                @endforeach
+                                <a href="{{ route('community.index', ['mood' => '#号泣']) }}" style="font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-decoration: none; background-color: #111827; border: 1px solid #374151; color: #d1d5db;">😭 #号泣</a>
+                                <a href="{{ route('community.index', ['mood' => '#スカッと']) }}" style="font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-decoration: none; background-color: #111827; border: 1px solid #374151; color: #d1d5db;">😆 #スカッと</a>
+                                <a href="{{ route('community.index', ['mood' => '#ハラハラ']) }}" style="font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-decoration: none; background-color: #111827; border: 1px solid #374151; color: #d1d5db;">😱 #ハラハラ</a>
+                                <a href="{{ route('community.index', ['mood' => '#キュン']) }}" style="font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-decoration: none; background-color: #111827; border: 1px solid #374151; color: #d1d5db;">💖 #キュン</a>
                             </div>
                         </div>
 
                         <!-- タイムライン一覧 -->
-                        @if(!empty($reviews) && count($reviews) > 0)
+                        @if(isset($reviews) && count($reviews) > 0)
                             <div style="display: flex; flex-direction: column; gap: 12px;">
-                                @foreach($reviews as$review)
+                                @foreach($reviews as $review)
                                     <div style="background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; box-sizing: border-box;">
                                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
                                             <div>
@@ -142,11 +142,9 @@
 
                                         @if(!empty($review->mood))
                                             <div style="margin-bottom: 8px; display: flex; gap: 4px; flex-wrap: wrap;">
-                                                @foreach(explode(',', $review->mood) as$m)
-                                                    <span style="font-size: 9px; background-color: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b; padding: 1px 6px; border-radius: 4px;">
-                                                        {{ trim($m) }}
-                                                    </span>
-                                                @endforeach
+                                                <span style="font-size: 9px; background-color: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b; padding: 1px 6px; border-radius: 4px;">
+                                                    {{ $review->mood }}
+                                                </span>
                                             </div>
                                         @endif
 
@@ -195,9 +193,8 @@
         </div>
     </div>
 
-    <!-- JavaScript (スライダーと気分ボタンのインタラクション) -->
+    <!-- JavaScript -->
     <script>
-        // スライダー連動の文字＆数値表示
         const ratingRange = document.getElementById('rating_range');
         const ratingValue = document.getElementById('rating_value');
         const ratingLabel = document.getElementById('rating_label');
@@ -217,7 +214,6 @@
             });
         }
 
-        // 気分ボタン切り替えスタイル
         function toggleMoodStyle(checkbox) {
             const label = checkbox.parentElement;
             if (checkbox.checked) {
@@ -231,7 +227,6 @@
             }
         }
 
-        // 映画タイトル補完処理
         const movieInput = document.getElementById('movie_title');
         const suggestionsBox = document.getElementById('movie_suggestions');
 
