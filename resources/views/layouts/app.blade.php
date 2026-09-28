@@ -7,6 +7,14 @@
 
     <title>{{ $title ?? 'MovieMood' }}</title>
 
+    <!-- Tailwind CSS 警告抑制スクリプト -->
+    <script>
+      const originalWarn = console.warn;
+      console.warn = (...args) => {
+        if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+        originalWarn(...args);
+      };
+    </script>
     <!-- Tailwind CSS & FontAwesome -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -17,62 +25,67 @@
     <style>
         [x-cloak] { display: none !important; }
 
-        /* スクロールバー非表示 */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
+        @keyframes loop-scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
         }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+        .animate-loop-scroll {
+            animation: loop-scroll 100s linear infinite;
+        }
+        .animate-loop-scroll:hover {
+            animation-play-state: paused;
         }
     </style>
 </head>
-<body class="bg-black text-white min-h-screen flex flex-col font-sans antialiased w-full selection:bg-amber-500 selection:text-black">
+<body class="bg-black text-white min-h-screen flex flex-col font-sans antialiased w-full selection:bg-amber-500 selection:text-black overflow-x-hidden">
 
     <!-- 🌟 ヘッダーナビゲーション -->
-    <header class="bg-[#0b0e14] border-b border-gray-800/80 sticky top-0 z-50 w-full">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
-            
-            <!-- 左：MovieMoodロゴ -->
-            <a href="{{ route('home') }}" class="text-xl sm:text-2xl font-extrabold text-amber-500 hover:text-amber-400 transition tracking-wide">
-                MovieMood
-            </a>
+    <header class="bg-[#0b0e14] border-b border-gray-800/80 sticky top-0 z-50 w-full py-2">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between">
 
-            <!-- 右：①マイページ（白背景＋ピンク∞アイコン） ➔ ②コミュニティ ➔ ③ログアウト（赤色） -->
-            <div class="flex items-center gap-4 sm:gap-5 text-xs font-bold">
+            <!-- 左：MovieMoodロゴ ＆ キャッチコピー -->
+            <div class="flex flex-col items-start justify-center">
+                <a href="{{ Auth::check() ? route('home') : '#' }}" 
+                   title="HOME画面へ戻る" 
+                   class="group text-lg sm:text-2xl font-extrabold text-amber-500 hover:text-amber-400 transition-all duration-200 tracking-wide shrink-0 no-underline inline-flex items-center gap-1.5">
+                    <span class="group-hover:scale-105 transition-transform duration-200">MovieMood</span>
+                </a>
+                <p class="text-[10px] sm:text-xs text-gray-300 font-bold m-0 mt-0.5 pl-0.5 pointer-events-none">
+                    〜 あなたの「今の気分」が、次に観る映画を決める。 〜
+                </p>
+            </div>
+
+            <!-- 右：ナビゲーション -->
+            <div class="flex items-center gap-2 sm:gap-4 text-xs font-bold">
                 @auth
-                    <!-- ① マイページ -->
-                    <a href="{{ route('mypage') }}" class="flex items-center gap-2 bg-[#161f2c] hover:bg-gray-800 border border-amber-500/50 rounded-full py-1 px-3 transition shadow-sm group">
-                        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white text-pink-500 font-extrabold flex items-center justify-center text-[10px] sm:text-[12px] shrink-0 overflow-hidden ring-1 ring-amber-400">
-                            @if(Auth::user()->profile_photo_url ?? false)
-                                <img src="{{ Auth::user()->profile_photo_url }}" alt="" class="w-full h-full object-cover">
+                    <!-- マイページ -->
+                    <a href="{{ route('mypage') }}" class="flex items-center gap-1.5 sm:gap-2 bg-[#161f2c] hover:bg-gray-800 border border-amber-500/50 rounded-full py-1 px-2.5 sm:px-3.5 transition shadow-sm group shrink-0 no-underline">
+                        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-900 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-amber-400">
+                            @if(Auth::check() && Auth::user()->avatar)
+                                <img src="{{ asset(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="w-full h-full object-cover">
                             @else
-                                <span class="text-pink-500 font-black leading-none">∞</span>
+                                <i class="fa-solid fa-user text-gray-400 text-[9px] sm:text-[10px]"></i>
                             @endif
                         </div>
-                        <span class="text-xs text-gray-200 group-hover:text-amber-400 transition max-w-[120px] sm:max-w-[130px] truncate">
+                        <span class="text-[11px] sm:text-xs text-gray-200 group-hover:text-amber-400 transition max-w-[70px] sm:max-w-[130px] truncate">
                             {{ Str::limit(Auth::user()->name ?? 'マイページ', 15, '') }}
                         </span>
                     </a>
 
-                    <!-- ② コミュニティ -->
-                    <a href="{{ route('community.index') }}" class="text-gray-300 hover:text-amber-400 transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-users text-amber-500"></i>
-                        <span>コミュニティ</span>
+                    <!-- コミュニティ -->
+                    <a href="{{ route('community.index') }}" class="text-gray-300 hover:text-amber-400 transition flex items-center gap-1 px-1 py-1 shrink-0 no-underline" title="コミュニティ">
+                        <i class="fa-solid fa-users text-amber-500 text-sm sm:text-xs"></i>
+                        <span class="hidden sm:inline">コミュニティ</span>
                     </a>
 
-                    <!-- ③ ログアウト（赤色） -->
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                    <!-- ログアウト -->
+                    <form method="POST" action="{{ route('logout') }}" class="inline shrink-0">
                         @csrf
-                        <button type="submit" class="text-red-500 hover:text-red-400 transition flex items-center gap-1.5 px-1 py-1 font-bold">
-                            <i class="fa-solid fa-right-from-bracket text-red-500"></i>
-                            <span>ログアウト</span>
+                        <button type="submit" class="text-red-500 hover:text-red-400 transition flex items-center gap-1 px-1 py-1 font-bold cursor-pointer" title="ログアウト">
+                            <i class="fa-solid fa-right-from-bracket text-red-500 text-sm sm:text-xs"></i>
+                            <span class="hidden sm:inline">ログアウト</span>
                         </button>
                     </form>
-                @else
-                    <a href="{{ route('login') }}" class="px-4 py-2 bg-amber-500 text-black font-bold rounded-xl hover:bg-amber-400 transition text-xs">
-                        ログイン
-                    </a>
                 @endauth
             </div>
 
@@ -84,32 +97,53 @@
         {{ $slot }}
     </main>
 
-    <!-- 🔻 フッター ＆ POPULAR MOVIES カルーセル（100%表示時にチラ見えするように上部マージンを詰める） -->
-    <footer class="bg-[#0b0e14] border-t border-gray-900 mt-4 sm:mt-6 text-gray-400 text-xs w-full">
-        
+    <!-- 🔻 フッター ＆ POPULAR MOVIES カルーセル -->
+    @php
+        if (empty($popularMovies)) {
+            try {
+                $apiKey = config('services.tmdb.api_key', env('TMDB_API_KEY'));
+                if ($apiKey) {
+                    $response = \Illuminate\Support\Facades\Http::get("https://api.themoviedb.org/3/movie/popular", [
+                        'api_key' => $apiKey,
+                        'language' => 'ja-JP',
+                        'page' => 1,
+                    ]);
+                    $popularMovies = $response->successful() ? ($response->json()['results'] ?? []) : [];
+                }
+            } catch (\Exception $e) {
+                $popularMovies = [];
+            }
+        }
+        $loopMovies = array_merge($popularMovies, $popularMovies);
+    @endphp
+
+    <footer class="bg-black border-t border-gray-900 mt-6 text-gray-400 text-xs w-full shrink-0">
+
+        <!-- 人気映画カルーセル (ログイン画面と同一仕様) -->
         @if(!empty($popularMovies))
-            <div class="border-b border-gray-900 py-2.5 bg-black w-full overflow-hidden">
+            <div class="border-b border-gray-900 py-2 bg-black w-full overflow-hidden">
                 <div class="w-full text-center mb-1.5 px-4">
-                    <span class="text-[10px] sm:text-[11px] font-extrabold text-gray-400 tracking-wider uppercase">
-                        POPULAR MOVIES <span class="text-gray-500 font-normal">（タップで詳細へ）</span>
+                    <span class="text-[10px] font-extrabold text-gray-400 tracking-wider uppercase">
+                        POPULAR MOVIES @auth <span class="text-gray-500 font-normal">（タップで詳細へ）</span> @endauth
                     </span>
                 </div>
-                
-                <!-- 横スクロール移動エリア -->
-                <div class="w-full overflow-x-auto no-scrollbar py-1" id="carouselContainer">
-                    <div class="flex gap-2.5 px-4 w-max" id="carouselContent">
-                        @foreach(array_merge($popularMovies, $popularMovies) as $movie)
-                            <a href="{{ route('movies.show', $movie['id'] ?? 0) }}" class="shrink-0 w-20 sm:w-24 group">
-                                <div class="aspect-[2/3] rounded-lg overflow-hidden bg-gray-900 border border-gray-800 group-hover:border-amber-500 transition relative shadow-md">
-                                    @if(!empty($movie['poster_path']))
-                                        <img src="https://image.tmdb.org/t/p/w200{{ $movie['poster_path'] }}" alt="{{ $movie['title'] ?? '' }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                                    @else
-                                        <div class="w-full h-full flex items-center justify-center text-gray-600 text-[10px]">No Image</div>
-                                    @endif
-                                    <div class="absolute top-1 right-1 bg-black/80 text-amber-400 text-[8px] sm:text-[9px] font-bold px-1 rounded backdrop-blur-sm">
-                                        ★ {{ number_format((float)($movie['vote_average'] ?? 0), 1) }}
+
+                <!-- 横スクロールCSSアニメーションエリア -->
+                <div class="w-full overflow-hidden whitespace-nowrap flex">
+                    <div class="flex gap-2 animate-loop-scroll will-change-transform">
+                        @foreach($loopMovies as $movie)
+                            <a href="{{ route('movies.show', $movie['id'] ?? 0) }}" 
+                               class="flex-none w-[110px] h-[150px] bg-gray-900 rounded-md overflow-hidden border border-gray-800 relative shadow-md group">
+                                @if(!empty($movie['poster_path']))
+                                    <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}" alt="{{ $movie['title'] ?? '' }}" class="w-[110px] h-[150px] object-cover group-hover:scale-105 transition duration-300">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center text-gray-600 text-[10px]">No Image</div>
+                                @endif
+                                @if(isset($movie['vote_average']) && $movie['vote_average'] > 0)
+                                    <div class="absolute top-1 right-1 bg-black/85 border border-amber-500/80 text-amber-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full backdrop-blur-sm">
+                                        ★ {{ number_format((float) $movie['vote_average'], 1) }}
                                     </div>
-                                </div>
+                                @endif
                             </a>
                         @endforeach
                     </div>
@@ -117,34 +151,11 @@
             </div>
         @endif
 
-        <!-- 最下部：シンプルなコピーライト -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 text-center text-xs text-gray-500">
-            <p>&copy; MovieMood</p>
+        <!-- 最下部：統一されたコピーライト表記 -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 text-center text-[10px] text-gray-500 font-medium">
+            <p class="m-0">&copy; 2026 MovieMood. All rights reserved.</p>
         </div>
     </footer>
-
-    <!-- 🤖 横スクロール動作制御（JavaScript） -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const container = document.getElementById('carouselContainer');
-            if (!container) return;
-
-            let isHovered = false;
-            container.addEventListener('mouseenter', () => isHovered = true);
-            container.addEventListener('mouseleave', () => isHovered = false);
-
-            function autoScroll() {
-                if (!isHovered) {
-                    container.scrollLeft += 1;
-                    if (container.scrollLeft >= (container.scrollWidth - container.clientWidth) / 2) {
-                        container.scrollLeft = 0;
-                    }
-                }
-            }
-
-            setInterval(autoScroll, 20);
-        });
-    </script>
 
 </body>
 </html>

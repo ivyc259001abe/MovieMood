@@ -1,45 +1,49 @@
 <x-guest-layout>
-    <!-- 全体コンテナ -->
+    <!-- 全体コンテナ（ヘッダーの高さを考慮して縦幅を自動調整） -->
     <div
-        style="position: relative; width: 100vw; height: calc(100vh - 65px); min-height: 600px; overflow: hidden; background-color: #000000; color: #ffffff; margin-left: calc(-50vw + 50%); display: flex; flex-direction: column; justify-content: flex-start; align-items: center;">
+        style="position: relative; width: 100vw; min-height: calc(100vh - 90px); background-color: #000000; color: #ffffff; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 12px 0 0 0; box-sizing: border-box; overflow-x: hidden;">
 
         <!-- 1. 中央：WELCOME ＆ ログインカードエリア -->
         <div
-            style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px; z-index: 10;">
+            style="width: 100%; max-width: 360px; margin: auto; display: flex; flex-direction: column; align-items: center; z-index: 10;">
 
             <!-- WELCOME タイトル -->
             <h1
-                style="font-size: 22px; font-weight: 900; color: #f59e0b; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 12px 0; text-align: center;">
+                style="font-size: 18px; font-weight: 900; color: #f59e0b; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 10px 0; text-align: center;">
                 WELCOME
             </h1>
 
             <!-- ログインカード -->
             <div
-                style="width: 380px; background-color: #0d1117; border: 1px solid #1f2937; border-radius: 16px; padding: 24px 24px; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.8);">
+                style="width: 100%; background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.8);">
 
                 <div style="text-align: center; margin-bottom: 16px;">
-                    <h2 style="font-size: 16px; font-weight: 800; color: #ffffff; margin: 0;">ログイン</h2>
+                    <h2 style="font-size: 15px; font-weight: 800; color: #ffffff; margin: 0;">ログイン</h2>
                 </div>
 
                 <!-- セッションステータス -->
                 <x-auth-session-status class="mb-4" :status="session('status')" />
 
-                <form method="POST" action="/" style="display: flex; flex-direction: column; gap: 12px; margin: 0;">
+                <form method="POST" action="{{ route('login') }}"
+                    style="display: flex; flex-direction: column; gap: 12px; margin: 0;">
                     @csrf
 
                     <!-- メールアドレス -->
+                    <!-- メールアドレス入力欄 -->
                     <div>
                         <label for="email"
-                            style="display: block; font-size: 11px; font-weight: bold; color: #e5e7eb; margin-bottom: 4px;">
+                            style="display: block; font-size: 10px; font-weight: bold; color: #e5e7eb; margin-bottom: 3px;">
                             メールアドレス (ID)
                         </label>
                         <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
-                            placeholder="メールアドレス (ID)"
-                            style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 9px 14px; font-size: 12px; outline: none; box-sizing: border-box;"
+                            placeholder="メールアドレス"
+                            style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 7px 12px; font-size: 11px; outline: none; box-sizing: border-box;"
                             onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#374151'">
-                        <x-input-error :messages="$errors->get('email')" class="mt-1" />
-                    </div>
 
+                        <!-- ★ ここを修正：フォントサイズを 10px に縮小し、余白を調整 -->
+                        <x-input-error :messages="$errors->get('email')" class="mt-1"
+                            style="font-size: 10px; color: #ef4444; line-height: 1.2; margin-top: 3px;" />
+                    </div>
                     <!-- パスワード -->
                     <div>
                         <div
@@ -56,7 +60,7 @@
                             @endif
                         </div>
                         <input id="password" type="password" name="password" required placeholder="パスワード"
-                            style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 9px 14px; font-size: 12px; outline: none; box-sizing: border-box;"
+                            style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 8px 14px; font-size: 12px; outline: none; box-sizing: border-box;"
                             onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#374151'">
                         <x-input-error :messages="$errors->get('password')" class="mt-1" />
                     </div>
@@ -72,7 +76,7 @@
 
                     <!-- ログインボタン -->
                     <button type="submit"
-                        style="width: 100%; background-color: #f59e0b; color: #000000; font-weight: 800; padding: 10px; border-radius: 9999px; font-size: 13px; border: none; cursor: pointer; transition: background-color 0.2s; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);"
+                        style="width: 100%; background-color: #f59e0b; color: #000000; font-weight: 800; padding: 9px; border-radius: 9999px; font-size: 13px; border: none; cursor: pointer; transition: background-color 0.2s; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);"
                         onmouseover="this.style.backgroundColor='#fbbf24'"
                         onmouseout="this.style.backgroundColor='#f59e0b'">
                         ログイン
@@ -91,111 +95,75 @@
             </div>
         </div>
 
-        <!-- 2. 下部：POPULAR MOVIES （スピードをゆっくりに調整） -->
-        @if(!empty($popularMovies) && count($popularMovies) > 0)
-            <div
-                style="position: absolute; bottom: -110px; left: 0; width: 100vw; background-color: #000000; z-index: 5; text-align: center;">
+        <!-- 2. 下部：POPULAR MOVIES （コンパクトサイズで画面内に収まるように調整） -->
+        <div style="width: 100vw; background-color: #000000; flex-shrink: 0; margin-top: 8px;">
 
-                <!-- 見出しテキスト -->
-                <div style="margin-bottom: 8px;">
-                    <span
-                        style="font-size: 11px; font-weight: 700; color: #9ca3af; letter-spacing: 0.1em; text-transform: uppercase;">
-                        POPULAR MOVIES 
-                    </span>
-                </div>
+            @if(!empty($popularMovies) && count($popularMovies) > 0)
+                <div style="padding-top: 8px; padding-bottom: 4px; text-align: center; border-top: 1px solid #111827;">
+                    <!-- 見出し -->
+                    <div style="margin-bottom: 6px;">
+                        <span
+                            style="font-size: 10px; font-weight: 800; color: #9ca3af; letter-spacing: 0.1em; text-transform: uppercase;">
+                            POPULAR MOVIES
+                        </span>
+                    </div>
 
-                <!-- 無限スライドトラック -->
-                <div style="overflow: hidden; width: 100vw; white-space: nowrap; display: flex;">
+                    <!-- 無限スライドトラック -->
+                    <div
+                        style="overflow: hidden; width: 100vw; white-space: nowrap; display: flex; pointer-events: none; user-select: none;">
+                        <div class="infinite-scroll-track"
+                            style="display: flex; gap: 8px; animation: loop-scroll 120s linear infinite; will-change: transform;">
 
-                    <!-- animation時間を 35s から 70s に変更して、流れるスピードを約半分（ゆっくり）に修正 -->
-                    <div class="infinite-scroll-track"
-                        style="display: flex; gap: 12px; animation: loop-scroll 70s linear infinite; will-change: transform;">
+                            <!-- 1周目 ＆ 2周目 -->
+                            @php
+                                $loopMovies = array_merge($popularMovies ?? [], $popularMovies ?? []);
+                            @endphp
 
-                        <!-- 1周目 -->
-                        @foreach($popularMovies as $movie)
-                            <div
-                                style="flex: 0 0 140px; width: 140px; background-color: #111827; border-radius: 10px; overflow: hidden; border: 1px solid #1f2937; display: inline-block; vertical-align: top;">
+                            @foreach($loopMovies as $movie)
                                 <div
-                                    style="width: 100%; height: 190px; background-color: #1f2937; position: relative; overflow: hidden;">
+                                    style="flex: 0 0 110px; width: 110px; height: 150px; background-color: #111827; border-radius: 6px; overflow: hidden; border: 1px solid #1f2937; position: relative; box-sizing: border-box;">
                                     @if(!empty($movie['poster_path']))
                                         <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}"
                                             alt="{{ $movie['title'] ?? 'Movie' }}"
-                                            style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                            style="width: 110px; height: 150px; object-fit: cover; display: block;">
                                     @endif
 
-                                    @if(!empty($movie['vote_average']))
+                                    <!-- ★スコアバッジ -->
+                                    @if(isset($movie['vote_average']) && $movie['vote_average'] > 0)
                                         <div
-                                            style="position: absolute; top: 6px; right: 6px; background-color: rgba(0,0,0,0.85); border: 1px solid rgba(245,158,11,0.6); color: #fbbf24; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 9999px;">
-                                            ★ {{ number_format($movie['vote_average'], 1) }}
+                                            style="position: absolute; top: 4px; right: 4px; z-index: 50; background-color: rgba(0,0,0,0.85); border: 1px solid rgba(245,158,11,0.8); color: #fbbf24; font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 9999px; line-height: 1; display: flex; align-items: center; gap: 2px;">
+                                            ★ {{ number_format((float) $movie['vote_average'], 1) }}
                                         </div>
                                     @endif
                                 </div>
+                            @endforeach
 
-                                <div style="padding: 6px 8px; text-align: left; background-color: #111827;">
-                                    <h3 style="font-size: 11px; font-weight: 700; color: #ffffff; margin: 0 0 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
-                                        title="{{ $movie['title'] ?? '' }}">
-                                        {{ $movie['title'] ?? 'タイトル不明' }}
-                                    </h3>
-                                    <p style="font-size: 9px; color: #9ca3af; margin: 0;">
-                                        {{ isset($movie['release_date']) ? substr($movie['release_date'], 0, 4) : '' }}
-                                    </p>
-                                </div>
-                            </div>
-                        @endforeach
-
-                        <!-- 2周目（繋ぎ目用） -->
-                        @foreach($popularMovies as $movie)
-                            <div
-                                style="flex: 0 0 140px; width: 140px; background-color: #111827; border-radius: 10px; overflow: hidden; border: 1px solid #1f2937; display: inline-block; vertical-align: top;">
-                                <div
-                                    style="width: 100%; height: 190px; background-color: #1f2937; position: relative; overflow: hidden;">
-                                    @if(!empty($movie['poster_path']))
-                                        <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}"
-                                            alt="{{ $movie['title'] ?? 'Movie' }}"
-                                            style="width: 100%; height: 100%; object-fit: cover; display: block;">
-                                    @endif
-
-                                    @if(!empty($movie['vote_average']))
-                                        <div
-                                            style="position: absolute; top: 6px; right: 6px; background-color: rgba(0,0,0,0.85); border: 1px solid rgba(245,158,11,0.6); color: #fbbf24; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 9999px;">
-                                            ★ {{ number_format($movie['vote_average'], 1) }}
-                                        </div>
-                                    @endif
-                                </div>
-
-                                <div style="padding: 6px 8px; text-align: left; background-color: #111827;">
-                                    <h3 style="font-size: 11px; font-weight: 700; color: #ffffff; margin: 0 0 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
-                                        title="{{ $movie['title'] ?? '' }}">
-                                        {{ $movie['title'] ?? 'タイトル不明' }}
-                                    </h3>
-                                    <p style="font-size: 9px; color: #9ca3af; margin: 0;">
-                                        {{ isset($movie['release_date']) ? substr($movie['release_date'], 0, 4) : '' }}
-                                    </p>
-                                </div>
-                            </div>
-                        @endforeach
-
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- アニメーション定義 -->
-            <style>
-                @keyframes loop-scroll {
-                    0% {
-                        transform: translateX(0);
+                <!-- アニメーション定義 -->
+                <style>
+                    @keyframes loop-scroll {
+                        0% {
+                            transform: translateX(0);
+                        }
+
+                        100% {
+                            transform: translateX(-50%);
+                        }
                     }
+                </style>
+            @endif
 
-                    100% {
-                        transform: translateX(-50%);
-                    }
-                }
-
-                .infinite-scroll-track:hover {
-                    animation-play-state: paused;
-                }
-            </style>
-        @endif
+            <!-- コピーライト -->
+            <footer
+                style="width: 100%; text-align: center; padding: 8px 0; background-color: #000000; border-top: 1px solid #111827;">
+                <p style="font-size: 10px; color: #6b7280; margin: 0; font-family: sans-serif;">
+                    &copy; {{ date('Y') }} MovieMood. All rights reserved.
+                </p>
+            </footer>
+        </div>
 
     </div>
 </x-guest-layout>

@@ -54,9 +54,41 @@ class MovieController extends Controller
                     'poster_path' => $item['poster_path'] ?? null,
                     'date' => isset($item['release_date']) ? substr($item['release_date'], 0, 7) : '公開年不明',
                     'overview' => $overview,
-                    'vote_average' => $item['vote_average'] ?? 0, // 👈 評価点数を追加
+                    'vote_average' => $item['vote_average'] ?? 0,
                 ];
             }, $sliced);
+        }
+
+        return [];
+    }
+
+    // 🔍 キーワード検索処理ヘルパー
+    private function searchMoviesByQuery($query)
+    {
+        $apiKey = config('services.tmdb.api_key', env('TMDB_API_KEY'));
+
+        $response = Http::get("https://api.themoviedb.org/3/search/movie", [
+            'api_key' => $apiKey,
+            'language' => 'ja-JP',
+            'query' => $query,
+            'page' => 1,
+        ]);
+
+        if ($response->successful()) {
+            $results = $response->json()['results'] ?? [];
+
+            return array_map(function ($item) {
+                $overview = !empty($item['overview']) ? $item['overview'] : '※日本語あらすじ情報は準備中です。';
+
+                return [
+                    'id' => $item['id'],
+                    'title' => $item['title'] ?? 'タイトル不明',
+                    'poster_path' => $item['poster_path'] ?? null,
+                    'date' => isset($item['release_date']) ? substr($item['release_date'], 0, 7) : '公開年不明',
+                    'overview' => $overview,
+                    'vote_average' => $item['vote_average'] ?? 0,
+                ];
+            }, $results);
         }
 
         return [];
@@ -113,6 +145,21 @@ class MovieController extends Controller
     public function search(Request $request)
     {
         $popularMovies = $this->getPopularMovies();
+        $query = $request->query('query'); // 検索フォームからの入力文字
+
+        // 1. キーワード検索（`query`パラメータがある場合）
+        if ($query) {
+            $movies = $this->searchMoviesByQuery($query);
+
+            return view('result', [
+                'moodName' => '検索結果: ' . $query,
+                'query' => $query,
+                'movies' => $movies,
+                'popularMovies' => $popularMovies,
+            ]);
+        }
+
+        // 2. 気分（ムード）検索（`mood`パラメータがある場合）
         $mood = $request->query('mood', '号泣');
 
         $map = [
@@ -127,6 +174,7 @@ class MovieController extends Controller
 
         return view('result', [
             'moodName' => $targetMood,
+            'query' => null,
             'movies' => $movies,
             'popularMovies' => $popularMovies,
         ]);

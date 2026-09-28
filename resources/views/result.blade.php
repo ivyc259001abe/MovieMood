@@ -2,68 +2,41 @@
     <!-- 幅を1280pxまで拡張し、レスポンシブな余白を設定 -->
     <div style="max-width: 1280px; margin: 0 auto; padding: 24px 20px;">
 
-        <!-- 1. ページ上部：ヘッダー ＆ 検索バー -->
-        <div style="margin-bottom: 24px; display: flex; flex-direction: column; gap: 16px;">
-
-            <div
-                style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-                <a href="{{ route('home') }}"
-                    style="display: inline-flex; align-items: center; gap: 6px; color: #9ca3af; text-decoration: none; font-size: 13px; font-weight: bold; transition: color 0.2s;"
-                    onmouseover="this.style.color='#f59e0b'" onmouseout="this.style.color='#9ca3af'">
-                    &larr; ホームへ戻る
-                </a>
-
-                <!-- 検索バー -->
-                <form action="{{ route('movies.search') }}" method="GET"
-                    style="flex: 1; max-width: 480px; display: flex; gap: 8px; margin: 0;">
-                    <input type="text" name="query" value="{{ request('query') }}" placeholder="キーワードで再検索..." required
-                        style="flex: 1; min-width: 0; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 10px 18px; font-size: 13px; outline: none;">
-                    <button type="submit"
-                        style="background-color: #f59e0b; color: #000000; font-weight: bold; padding: 10px 22px; border-radius: 9999px; font-size: 13px; border: none; cursor: pointer; flex-shrink: 0;">
-                        検索
-                    </button>
-                </form>
-            </div>
-
-            <!-- 2. タイトルヘッダーカード -->
-            <div class="bg-gray-900/90 rounded-2xl border border-gray-800 shadow-xl" style="padding: 20px 24px;">
-                <div
-                    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                    <div>
-                        <span
-                            style="font-size: 11px; color: #fbbf24; font-weight: 800; display: block; letter-spacing: 0.08em; text-transform: uppercase;">
-                            SEARCH RESULT
-                        </span>
-                        <h1 style="font-size: 20px; font-weight: 800; color: #ffffff; margin: 4px 0 0 0;">
-                            @if(request('query'))
-                                🔍 「{{ request('query') }}」の検索結果
-                            @else
-                                🎬 気分に合わせたおすすめ映画
-                            @endif
-                        </h1>
-                    </div>
-
-                    <!-- クイックタグ -->
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <a href="/result?mood=cry"
-                            style="background-color: #000; border: 1px solid #374151; color: #d1d5db; border-radius: 9999px; padding: 6px 14px; font-size: 11px; font-weight: bold; text-decoration: none;">😭
-                            #号泣</a>
-                        <a href="/result?mood=refresh"
-                            style="background-color: #000; border: 1px solid #374151; color: #d1d5db; border-radius: 9999px; padding: 6px 14px; font-size: 11px; font-weight: bold; text-decoration: none;">😆
-                            #スカッと</a>
-                        <a href="/result?mood=thrill"
-                            style="background-color: #000; border: 1px solid #374151; color: #d1d5db; border-radius: 9999px; padding: 6px 14px; font-size: 11px; font-weight: bold; text-decoration: none;">😱
-                            #ハラハラ</a>
-                        <a href="/result?mood=heartbeat"
-                            style="background-color: #000; border: 1px solid #374151; color: #d1d5db; border-radius: 9999px; padding: 6px 14px; font-size: 11px; font-weight: bold; text-decoration: none;">💖
-                            #キュン</a>
-                    </div>
-                </div>
-            </div>
-
+        <!-- 1. ページ上部：検索バー -->
+        <div style="margin-bottom: 24px; display: flex; justify-content: flex-end;">
+            <!-- 検索バー -->
+            <form action="{{ route('movies.search') }}" method="GET"
+                style="width: 100%; max-width: 480px; display: flex; gap: 8px; margin: 0;">
+                <input type="text" name="query" value="{{ request('query') }}" placeholder="キーワードで再検索..." required
+                    style="flex: 1; min-width: 0; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 10px 18px; font-size: 13px; outline: none;">
+                <button type="submit"
+                    style="background-color: #f59e0b; color: #000000; font-weight: bold; padding: 10px 22px; border-radius: 9999px; font-size: 13px; border: none; cursor: pointer; flex-shrink: 0;">
+                    検索
+                </button>
+            </form>
         </div>
 
-        <!-- 3. 映画一覧グリッド（画面幅に応じて自動で均等に広がる設定） -->
+        <!-- 2. タイトルヘッダーカード -->
+        <div class="bg-gray-900/90 rounded-2xl border border-gray-800 shadow-xl"
+            style="padding: 20px 24px; margin-bottom: 24px;">
+            <div>
+                <span
+                    style="font-size: 11px; color: #fbbf24; font-weight: 800; display: block; letter-spacing: 0.08em; text-transform: uppercase;">
+                    SEARCH RESULT
+                </span>
+                <h1 style="font-size: 20px; font-weight: 800; color: #ffffff; margin: 4px 0 0 0;">
+                    @if(request('query'))
+                        🔍 「{{ request('query') }}」の検索結果
+                    @elseif(isset($moodName))
+                        🔍 「{{ $moodName }}」の検索結果
+                    @else
+                        🎬 検索結果
+                    @endif
+                </h1>
+            </div>
+        </div>
+
+        <!-- 3. 映画一覧グリッド -->
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 20px;">
             @forelse($movies ?? [] as $movie)
                 <a href="{{ route('movies.show', $movie['id']) }}"
@@ -82,7 +55,7 @@
                         </h3>
                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
                             <span
-                                style="color: #9ca3af;">{{ !empty($movie['release_date']) ? substr($movie['release_date'], 0, 4) . '年' : '' }}</span>
+                                style="color: #9ca3af;">{{ !empty($movie['release_date']) ? substr($movie['release_date'], 0, 4) . '年' : (!empty($movie['date']) ? substr($movie['date'], 0, 4) . '年' : '') }}</span>
                             @if(!empty($movie['vote_average']))
                                 <span style="color: #fbbf24; font-weight: bold;">⭐
                                     {{ number_format($movie['vote_average'], 1) }}</span>

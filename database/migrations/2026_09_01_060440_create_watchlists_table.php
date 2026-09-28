@@ -8,10 +8,14 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('watchlists', function (Blueprint $table) {
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('movie_id')->references('movie_id')->on('movies')->onDelete('cascade');
-            $table->primary(['user_id', 'movie_id']);
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('movie_id');
+            $table->string('title')->nullable();
+            $table->string('poster_path')->nullable();
             $table->timestamps();
+
+            $table->unique(['user_id', 'movie_id']);
         });
     }
 

@@ -1,320 +1,255 @@
-<!DOCTYPE html>
-<html lang="ja">
+<x-app-layout>
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MovieMood - {{ $movie['title'] ?? '映画詳細' }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- FontAwesome Font Icon -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        [x-cloak] {
-            display: none !important;
-        }
-
-        @keyframes scroll {
-            0% {
-                transform: translateX(0);
-            }
-
-            100% {
-                transform: translateX(-50%);
-            }
-        }
-
-        .animate-scroll {
-            display: flex;
-            width: 200%;
-            animation: scroll 35s linear infinite;
-        }
-
-        .animate-scroll:hover {
-            animation-play-state: paused;
-        }
-
-        /* カスタムスクロールバーのスタイル */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(245, 158, 11, 0.4);
-            border-radius: 3px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(245, 158, 11, 0.7);
-        }
-    </style>
-</head>
-
-<body
-    class="bg-black text-white min-h-screen flex flex-col justify-between items-center selection:bg-amber-500 selection:text-black">
-
-    <!-- 🎬 ヘッダーナビゲーション（他の画面と統一） -->
-    <header class="w-full sticky top-0 z-50 bg-black/90 backdrop-blur-md border-b border-gray-800 shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <!-- 左側：ロゴ -->
-            <a href="{{ route('home') }}" class="flex items-center gap-2 group">
-                <span class="text-2xl font-black tracking-wider text-amber-500 group-hover:text-amber-400 transition">
-                    MovieMood
-                </span>
+        <!-- ← 一つ前に戻る リンク -->
+        <div class="mb-2.5">
+            <a href="{{ url()->previous() != url()->current() ? url()->previous() : route('movies.index') }}"
+                class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>一つ前に戻る</span>
             </a>
+        </div>
 
-            <!-- 右側：ナビゲーションメニュー -->
-            <nav class="flex items-center gap-3 sm:gap-6 text-sm font-medium">
-                @auth
-                    <!-- マイページ -->
-                    <a href="{{ route('mypage') }}"
-                        class="flex items-center gap-2 bg-amber-500/15 hover:bg-amber-500/25 border-2 border-amber-500 hover:border-amber-400 rounded-full px-3 py-1 shadow-lg shadow-amber-500/10 transition group shrink-0"
-                        title="{{ Auth::user()->name }}">
-                        <div class="relative rounded-full bg-amber-500 text-black font-black flex items-center justify-center text-xs shadow shrink-0 overflow-hidden"
-                            style="width: 28px; height: 28px;">
-                            @if(!empty(Auth::user()->profile_photo_path))
-                                <img src="{{ asset('storage/' . Auth::user()->profile_photo_path) }}"
-                                    alt="{{ Auth::user()->name }}" class="rounded-full object-cover"
-                                    style="width: 28px; height: 28px;">
-                            @elseif(!empty(Auth::user()->avatar))
-                                <img src="{{ asset(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}"
-                                    class="rounded-full object-cover" style="width: 28px; height: 28px;">
+        @php
+            $movieId = $movie['id'] ?? $movie->id ?? 0;
+            $movieTitle = $movie['title'] ?? $movie->title ?? '映画タイトル';
+            $posterPath = $movie['poster_path'] ?? $movie->poster_path ?? null;
+            $posterUrl = $posterPath
+                ? (str_starts_with($posterPath, 'http') ? $posterPath : 'https://image.tmdb.org/t/p/w500' . $posterPath)
+                : null;
+            $voteAverage = $movie['vote_average'] ?? $movie->vote_average ?? null;
+            $releaseDate = $movie['release_date'] ?? $movie->release_date ?? null;
+            $runtime = $movie['runtime'] ?? $movie->runtime ?? null;
+            $director = $movie['director'] ?? $movie->director ?? null;
+            $overview = $movie['overview'] ?? $movie->overview ?? null;
+        @endphp
+
+        <!-- 🎬 左右完全等幅（5:5 = grid-cols-2） ＆ 高さ完全一致（items-stretch） -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+
+            <!-- 【左側】映画情報カード -->
+            <div
+                class="bg-gray-900/90 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden relative flex flex-col justify-between">
+
+                <!-- 上部コンテンツ（タイトル・ポスターサムネイル・あらすじ） -->
+                <div class="p-4 sm:p-5 space-y-3.5 relative z-10 flex-1">
+                    <!-- 上部：小ポスター ＆ タイトル情報 -->
+                    <div class="flex gap-3.5 items-start">
+                        <!-- サムネイルポスター -->
+                        <div
+                            class="w-24 sm:w-28 shrink-0 aspect-[2/3] rounded-xl overflow-hidden border border-gray-700/80 shadow-md bg-black/50">
+                            @if($posterUrl)
+                                <img src="{{ $posterUrl }}" alt="{{ $movieTitle }}" class="w-full h-full object-cover">
                             @else
-                                <span>{{ mb_substr(Auth::user()->name ?? 'U', 0, 1) }}</span>
+                                <div class="w-full h-full flex flex-col items-center justify-center text-gray-500 gap-1">
+                                    <i class="fa-solid fa-film text-xl"></i>
+                                    <span class="text-[10px]">No Image</span>
+                                </div>
                             @endif
                         </div>
-                        <span
-                            class="text-amber-400 font-extrabold text-xs sm:text-sm max-w-[90px] sm:max-w-[110px] truncate group-hover:text-amber-300">
-                            {{ Auth::user()->name }}
+
+                        <!-- タイトル ＆ 詳細情報 -->
+                        <div class="space-y-1.5 flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                                <h1 class="text-lg sm:text-xl font-black text-white leading-tight">
+                                    {{ $movieTitle }}
+                                </h1>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2.5 text-xs font-bold text-gray-300">
+                                @if($voteAverage)
+                                    <div class="flex items-center gap-1 text-amber-400">
+                                        <i class="fa-solid fa-star"></i>
+                                        <span>{{ number_format((float) $voteAverage, 1) }}</span>
+                                    </div>
+                                @endif
+
+                                @if($releaseDate)
+                                    <div class="flex items-center gap-1 text-gray-300">
+                                        <i class="fa-regular fa-calendar-days text-amber-500"></i>
+                                        <span>{{ date('Y年n月', strtotime($releaseDate)) }}</span>
+                                    </div>
+                                @endif
+
+                                @if($runtime)
+                                    <div class="flex items-center gap-1 text-gray-300">
+                                        <i class="fa-regular fa-clock text-amber-500"></i>
+                                        <span>{{ $runtime }}分</span>
+                                    </div>
+                                @endif
+                            </div>
+
+                            @if($director)
+                                <div class="text-xs text-gray-400">
+                                    監督: <span class="text-gray-200 font-medium">{{ $director }}</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- あらすじエリア -->
+                    <div class="bg-black/60 backdrop-blur-md border border-gray-800 p-3 rounded-xl space-y-1">
+                        <span class="text-xs font-extrabold text-amber-500 flex items-center gap-1">
+                            <i class="fa-solid fa-align-left"></i>
+                            あらすじ
                         </span>
-                    </a>
-
-                    <!-- コミュニティ -->
-                    <a href="{{ route('community.index') }}"
-                        class="text-gray-300 hover:text-amber-500 transition flex items-center gap-1.5 font-bold text-sm shrink-0">
-                        <i class="fa-solid fa-users text-amber-500"></i>
-                        <span class="hidden sm:inline">コミュニティ</span>
-                    </a>
-
-                    <!-- ログアウト -->
-                    <form method="POST" action="{{ route('logout') }}" class="inline shrink-0">
-                        @csrf
-                        <button type="submit"
-                            class="text-gray-400 hover:text-red-400 transition flex items-center gap-1.5 ml-1 text-xs sm:text-sm">
-                            <i class="fa-solid fa-right-from-bracket"></i>
-                            <span class="hidden sm:inline">ログアウト</span>
-                        </button>
-                    </form>
-                @else
-                    <a href="{{ route('login') }}"
-                        class="bg-amber-500 hover:bg-amber-400 text-black font-bold px-4 py-2 rounded-full transition text-xs sm:text-sm">
-                        ログイン
-                    </a>
-                @endauth
-            </nav>
-        </div>
-    </header>
-
-    <!-- 🎬 メインコンテンツカード（幅広レスポンシブデザイン） -->
-    <main class="w-full max-w-5xl px-4 py-6 sm:py-8 my-auto flex-1 flex flex-col justify-center">
-
-        <!-- フラッシュメッセージ -->
-        @if (session('success'))
-            <div
-                class="mb-4 bg-amber-500/20 border border-amber-500 text-amber-400 text-sm p-3 rounded-xl text-center font-bold shadow-lg">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        <!-- メインフレーム -->
-        <div class="w-full bg-[#121824] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-md">
-
-            <!-- サブヘッダー (戻る & みたい！登録) -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800 bg-black/40"
-                x-data="{ watchlisted: false }">
-                <!-- 👈 前の画面（またはホーム）に戻るボタン -->
-                <a href="{{ url()->previous() != url()->current() ? url()->previous() : route('home') }}"
-                    class="text-xs sm:text-sm text-gray-400 hover:text-amber-400 font-bold flex items-center space-x-1.5 transition">
-                    <i class="fa-solid fa-arrow-left"></i>
-                    <span>戻る</span>
-                </a>
-
-                <!-- みたい！切り替えボタン -->
-                <button @click="watchlisted = !watchlisted"
-                    :class="watchlisted ? 'bg-amber-500 text-black border-amber-500 shadow-amber-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/40 hover:bg-amber-500 hover:text-black'"
-                    class="text-xs sm:text-sm border px-4 py-1.5 rounded-full font-extrabold transition-all flex items-center space-x-1.5 shadow-md">
-                    <span x-text="watchlisted ? '✓ 見たいリスト追加済' : '+ みたい！'"></span>
-                </button>
-            </div>
-
-            <!-- 映画詳細（PC: 2カラム / スマホ: 1カラム） -->
-            <div
-                class="p-6 sm:p-8 grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
-
-                <!-- 左側：ポスター表示エリア (md:4) -->
-                <div class="md:col-span-4 flex flex-col items-center">
-                    <div
-                        class="w-full max-w-[240px] md:max-w-none bg-black/60 rounded-xl overflow-hidden shadow-2xl border border-gray-800/80 aspect-[2/3] flex items-center justify-center relative group">
-                        @if(!empty($movie['poster_path']))
-                            <img src="https://image.tmdb.org/t/p/w400{{ $movie['poster_path'] }}"
-                                alt="{{ $movie['title'] }}"
-                                class="w-full h-full object-cover rounded-xl transition duration-300 group-hover:scale-105">
+                        @if(!empty($overview))
+                            <p class="text-xs text-gray-300 leading-relaxed line-clamp-3">
+                                {{ $overview }}
+                            </p>
                         @else
-                            <div class="text-center p-4">
-                                <i class="fa-solid fa-film text-3xl text-gray-600 mb-2"></i>
-                                <p class="text-xs text-gray-500">ポスター画像はありません</p>
+                            <p class="text-xs text-gray-400 leading-relaxed italic">
+                                ※日本語あらすじ情報は準備中です。
+                            </p>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- 🖼️ 下部：ポスター画像ビジュアルエリア -->
+                <div
+                    class="relative w-full h-40 sm:h-48 overflow-hidden border-t border-gray-800/80 bg-black/60 shrink-0">
+                    @if($posterUrl)
+                        <img src="{{ $posterUrl }}" alt="Movie Visual"
+                            class="w-full h-full object-cover object-top opacity-60 hover:opacity-80 transition duration-500">
+                        <div
+                            class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-gray-900/80 pointer-events-none">
+                        </div>
+                    @else
+                        <div class="w-full h-full flex items-center justify-center text-gray-600 text-xs font-bold">Movie
+                            Mood Visual</div>
+                    @endif
+                </div>
+
+            </div>
+
+            <!-- 【右側】みんなのレビュー・アクションエリア -->
+            <div
+                class="bg-gray-900/90 border border-gray-800 rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-col justify-between">
+
+                <div class="space-y-3.5">
+                    <!-- 上部ヘッダー：アクションボタン -->
+                    <div class="flex items-center justify-between border-b border-gray-800 pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-comments text-amber-500 text-base"></i>
+                            <h2 class="text-base font-extrabold text-white">みんなのレビュー</h2>
+                            @if(isset($reviews))
+                                <span
+                                    class="text-xs text-gray-400">（新着{{ is_array($reviews) || $reviews instanceof \Countable ? count($reviews) : 0 }}件）</span>
+                            @endif
+                        </div>
+
+                        <!-- レビューを書くボタン -->
+                        <div class="flex items-center gap-2">
+                            <a href="{{ route('reviews.create', $movieId) }}"
+                                class="text-xs font-bold text-black bg-amber-500 hover:bg-amber-400 px-3 py-1.5 rounded-lg transition shadow-md flex items-center gap-1">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                                <span>レビューを書く</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 🔖 Watchlist Toggle Button (Alpine.js) -->
+                    <div x-data="{ 
+                        inWatchlist: {{ Auth::user()->watchlists()->where('movie_id', $movieId)->exists() ? 'true' : 'false' }},
+                        loading: false,
+                        async toggleWatchlist() {
+                            if (this.loading) return;
+                            this.loading = true;
+                            
+                            try {
+                                const response = await fetch('{{ route('watchlist.toggle') }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'Accept': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        movie_id: '{{ $movieId }}',
+                                        title: '{{ addslashes($movieTitle) }}',
+                                        poster_path: '{{ $posterPath ?? '' }}'
+                                    })
+                                });
+                                const data = await response.json();
+                                if (data.status === 'added') {
+                                    this.inWatchlist = true;
+                                } else if (data.status === 'removed') {
+                                    this.inWatchlist = false;
+                                }
+                            } catch (error) {
+                                console.error('Error toggling watchlist:', error);
+                            } finally {
+                                this.loading = false;
+                            }
+                        }
+                    }">
+                        <button @click="toggleWatchlist()" :disabled="loading"
+                            :class="inWatchlist ? 'bg-amber-500 text-black hover:bg-amber-400' : 'bg-gray-800 text-white hover:bg-gray-700 border border-gray-700'"
+                            class="w-full flex items-center justify-center space-x-2 px-4 py-2 rounded-xl font-bold text-xs transition duration-200 shadow-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
+                                :fill="inWatchlist ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                            </svg>
+                            <span x-text="inWatchlist ? 'ウォッチリストから外す' : 'ウォッチリストに追加'"></span>
+                        </button>
+                    </div>
+
+                    <!-- レビューリスト（高さ固定・スクロール可能） -->
+                    <div class="space-y-2.5 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+                        @if(isset($reviews) && (is_array($reviews) || $reviews instanceof \Countable) && count($reviews) > 0)
+                            @foreach($reviews as $review)
+                                @php
+                                    $revUserName = is_array($review) ? ($review['user_name'] ?? $review['user']['name'] ?? 'ユーザー') : ($review->user_name ?? $review->user->name ?? 'ユーザー');
+                                    $revRating = is_array($review) ? ($review['rating'] ?? 0) : ($review->rating ?? 0);
+                                    $revComment = is_array($review) ? ($review['comment'] ?? '') : ($review->comment ?? '');
+                                    $revMoods = is_array($review) ? ($review['moods'] ?? []) : ($review->moods ?? []);
+                                    if (is_string($revMoods)) {
+                                        $revMoods = json_decode($revMoods, true) ?? [$revMoods];
+                                    }
+                                @endphp
+                                <div class="bg-black/40 border border-gray-800 p-3 rounded-xl space-y-1.5">
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="font-bold text-gray-200">{{ $revUserName }}</span>
+                                        <div class="flex items-center gap-1 text-amber-400 font-bold">
+                                            <i class="fa-solid fa-star text-[10px]"></i>
+                                            <span>{{ number_format((float) $revRating, 1) }}</span>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-300 leading-relaxed">
+                                        {{ $revComment }}
+                                    </p>
+                                    @if(!empty($revMoods))
+                                        <div class="flex flex-wrap gap-1 pt-0.5">
+                                            @foreach((array) $revMoods as $mood)
+                                                <span
+                                                    class="text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-semibold">
+                                                    {{ $mood }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="text-center py-8 text-gray-500 text-xs">
+                                まだレビューがありません。最初のレビューを投稿してみよう！
                             </div>
                         @endif
                     </div>
                 </div>
 
-                <!-- 右側：作品情報＆レビュー (md:8) -->
-                <div class="md:col-span-8 flex flex-col justify-between space-y-6">
-
-                    <div class="space-y-4">
-                        <!-- タイトル -->
-                        <h2 class="text-2xl sm:text-3xl font-black text-white leading-tight tracking-wide">
-                            {{ $movie['title'] ?? 'タイトル不明' }}
-                        </h2>
-
-                        <!-- メタ情報 -->
-                        <div class="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-300">
-                            <span
-                                class="bg-amber-500/10 border border-amber-500/30 text-amber-400 font-black px-2.5 py-1 rounded-md flex items-center gap-1">
-                                ★ {{ number_format($movie['vote_average'] ?? 0, 1) }}
-                            </span>
-                            <span class="text-gray-400"><i
-                                    class="fa-regular fa-calendar mr-1"></i>{{ $movie['release_date'] ?? '不明' }}</span>
-                            <span class="text-gray-400"><i
-                                    class="fa-regular fa-clock mr-1"></i>{{ $movie['runtime'] ?? 0 }}分</span>
-                        </div>
-
-                        <!-- 監督 -->
-                        <p class="text-xs sm:text-sm text-gray-400">
-                            <span class="text-gray-500">監督:</span> {{ $movie['director'] ?? '不明' }}
-                        </p>
-
-                        <!-- あらすじ -->
-                        <div class="bg-[#1a2332] p-4 rounded-xl border border-gray-800 space-y-2 shadow-inner">
-                            <p class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                                <i class="fa-solid fa-align-left"></i> あらすじ
-                            </p>
-                            <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
-                                {{ !empty($movie['overview']) ? $movie['overview'] : 'あらすじ情報が登録されていません。' }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- みんなのレビュー (新着3件) -->
-                    <div class="space-y-3 pt-4 border-t border-gray-800">
-                        <div class="flex items-center justify-between">
-                            <p class="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                                <i class="fa-solid fa-comments text-amber-500"></i>
-                                みんなのレビュー <span class="text-gray-400 text-xs font-normal">(新着3件)</span>
-                            </p>
-                            <a href="{{ url('/movies/' . ($movie['id'] ?? 0) . '/reviews') }}"
-                                class="text-xs text-amber-400 hover:text-amber-300 hover:underline transition">
-                                すべてのレビューを見る →
-                            </a>
-                        </div>
-
-                        <div class="space-y-2.5">
-                            @forelse($reviews ?? [] as $rev)
-                                <div class="bg-[#1a2332] border border-gray-800/80 rounded-xl p-3 space-y-2 text-xs">
-                                    <!-- ユーザー情報 & 気分タグ -->
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-2">
-                                            <div
-                                                class="w-5 h-5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-[10px] font-bold">
-                                                👤
-                                            </div>
-                                            <span class="font-bold text-gray-200 text-xs">
-                                                {{ $rev->user->nickname ?? $rev->user->name ?? $rev['user_name'] ?? '匿名' }}
-                                            </span>
-                                            <span class="text-amber-400 text-xs font-bold">
-                                                ★ {{ $rev['rating'] ?? $rev->rating }}
-                                            </span>
-                                        </div>
-                                        @if(!empty($rev['moods']) || !empty($rev['mood']))
-                                            <span
-                                                class="text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold">
-                                                {{ $rev['moods'] ?? $rev['mood'] }}
-                                            </span>
-                                        @endif
-                                    </div>
-
-                                    <!-- コメント内容 -->
-                                    <p class="text-gray-300 text-xs pl-7 leading-relaxed">
-                                        {{ $rev['comment'] ?? $rev->comment }}
-                                    </p>
-
-                                    <!-- いいねボタンエリア -->
-                                    <div
-                                        class="flex items-center justify-between pt-1.5 border-t border-gray-800/60 text-[10px] pl-7">
-                                        <span class="text-gray-400">
-                                            {{ isset($rev->created_at) ? $rev->created_at->format('Y/m/d') : '' }}
-                                        </span>
-
-                                        @auth
-                                            <form action="{{ route('reviews.like', $rev->id ?? $rev['id']) }}" method="POST"
-                                                class="inline">
-                                                @csrf
-                                                <button type="submit"
-                                                    class="flex items-center space-x-1 px-2.5 py-0.5 rounded-full border transition {{ (isset($rev->likes) && $rev->likes->contains('user_id', Auth::id())) ? 'bg-red-500/20 text-red-400 border-red-500/40' : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-red-400' }}">
-                                                    <span>❤️</span>
-                                                    <span
-                                                        class="font-bold">{{ isset($rev->likes) ? $rev->likes->count() : ($rev['likes_count'] ?? 0) }}</span>
-                                                </button>
-                                            </form>
-                                        @else
-                                            <div class="flex items-center space-x-1 text-gray-400">
-                                                <span>❤️</span>
-                                                <span
-                                                    class="font-bold">{{ isset($rev->likes) ? $rev->likes->count() : ($rev['likes_count'] ?? 0) }}</span>
-                                            </div>
-                                        @endauth
-                                    </div>
-                                </div>
-                            @empty
-                                <p
-                                    class="text-center text-xs text-gray-500 py-4 bg-[#1a2332]/50 rounded-xl border border-gray-800/50">
-                                    まだレビューがありません。最初のレビューを書いてみよう！
-                                </p>
-                            @endforelse
-                        </div>
-                    </div>
-
-                    <!-- この映画のレビューを書くボタン -->
-                    <div class="pt-2">
-                        @auth
-                            <a href="{{ route('reviews.create', $movie['id'] ?? 0) }}"
-                                class="block text-center w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs sm:text-sm rounded-xl shadow-lg transition transform hover:-translate-y-0.5">
-                                ✏️ この映画のレビューを書く
-                            </a>
-                        @else
-                            <a href="{{ route('login') }}"
-                                class="block text-center w-full py-2.5 bg-gray-800 hover:bg-gray-700 text-amber-400 font-bold text-xs sm:text-sm rounded-xl shadow transition border border-amber-500/30">
-                                🔒 ログインしてレビューを書く
-                            </a>
-                        @endauth
-                    </div>
-
+                <!-- フッター：すべてのレビューを見る リンク -->
+                <div class="pt-2.5 border-t border-gray-800/80 flex items-center justify-end mt-3">
+                    <a href="#"
+                        class="text-xs font-bold text-gray-400 hover:text-amber-400 transition flex items-center gap-1">
+                        <span>すべてのレビューを見る</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
                 </div>
+
             </div>
 
         </div>
-
-    </main>
-
-    <!-- 🎬 流れる共通カルーセル（下部） -->
-    <div class="w-full mt-4">
-        @include('components.carousel', ['popularMovies' => $popularMovies ?? []])
     </div>
-
-</body>
-
-</html>
+</x-app-layout>

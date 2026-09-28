@@ -15,39 +15,45 @@ class RegisteredUserController extends Controller
 {
     public function create()
     {
-        // ViewComposerが自動でポスターデータを渡すため、シンプルな返却だけでOK
-        return view('auth.register');
+        return view(view()->exists('register') ? 'register' : 'auth.register');
     }
 
     public function store(Request $request): RedirectResponse
     {
-        // 1. バリデーション
+        // 1. バリデーション（name, profile_photo で統一）
         $request->validate([
-            'nickname' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'icon' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:10240'],
+            'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:10240'],
         ], [
+            'name.required' => 'ニックネームを入力してください。',
             'email.unique' => 'このメールアドレスは既に登録されています。',
-            'icon.image' => 'アップロードできるのは画像ファイルのみです。',
-            'icon.max' => '画像サイズは10MB以下にしてください。',
+            'profile_photo.image' => 'アップロードできるのは画像ファイルのみです。',
+            'profile_photo.max' => '画像サイズは10MB以下にしてください。',
         ]);
 
-        // 2. アイコン画像の保存処理
+        // 2. アバター画像の保存処理（任意）
         $iconPath = null;
 
-        if ($request->hasFile('icon') && $request->file('icon')->isValid()) {
-            $file = $request->file('icon');
+        if ($request->hasFile('profile_photo') && $request->file('profile_photo')->isValid()) {
+            $file = $request->file('profile_photo');
             $filename = 'icon_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            // uploads ディレクトリが存在しない場合は自動作成
+            if (!file_exists(public_path('uploads'))) {
+                mkdir(public_path('uploads'), 0755, true);
+            }
+
             $file->move(public_path('uploads'), $filename);
 
             $iconPath = 'uploads/' . $filename;
             session(['user_icon' => $iconPath]);
         }
 
-        // 3. ユーザー作成
+        // 3. ユーザー作成（name にニックネームを保存）
         $user = User::create([
-            'name' => $request->nickname,
+            'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'avatar' => $iconPath,

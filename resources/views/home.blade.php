@@ -6,22 +6,27 @@
             <!-- 左側 (7カラム) -->
             <div class="lg:col-span-7 flex flex-col gap-4">
 
-                <!-- WELCOME -->
-                <div class="bg-[#121927] border border-gray-800/80 rounded-2xl p-4 shadow-xl flex items-center gap-4">
+                <!-- 🌟 WELCOME (おすすめ配色：ニックネームゴールド強調版) -->
+                <div
+                    class="bg-[#121927] border border-gray-800/80 rounded-2xl p-4 sm:p-5 shadow-xl flex items-center gap-4">
+                    <!-- アバター表示部分 -->
                     <div
-                        class="w-12 h-12 rounded-full bg-white text-pink-500 font-black flex items-center justify-center text-xl shadow shrink-0 border-2 border-amber-400 overflow-hidden">
-                        @if(Auth::user()->profile_photo_url ?? false)
-                            <img src="{{ Auth::user()->profile_photo_url }}" alt="" class="w-full h-full object-cover">
+                        class="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-gray-900 border-2 border-amber-500 flex items-center justify-center shrink-0">
+                        @if(Auth::check() && Auth::user()->avatar)
+                            <img src="{{ asset(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}"
+                                class="w-full h-full object-cover">
                         @else
-                            <span class="text-pink-500 font-black leading-none text-2xl">∞</span>
+                            <i class="fa-solid fa-user text-gray-400 text-lg"></i>
                         @endif
                     </div>
+                    <!-- あいさつテキスト -->
                     <div>
-                        <span class="text-xs text-amber-500 font-extrabold tracking-wide flex items-center gap-1">
-                            ✨ Welcome!
+                        <span class="text-xs text-gray-400 font-bold tracking-wide flex items-center gap-1">
+                            Welcome!
                         </span>
-                        <h1 class="text-base sm:text-xl font-black text-white mt-0.5">
-                            {{ Str::limit(Auth::user()->name ?? 'ゲスト', 15, '') }} さん、こんにちは！
+                        <h1 class="text-base sm:text-xl font-black mt-0.5">
+                            <span class="text-amber-400">{{ Str::limit(Auth::user()->name ?? 'ゲスト', 15, '') }}</span>
+                            <span class="text-white"> さん、こんにちは！</span>
                         </h1>
                     </div>
                 </div>
@@ -33,16 +38,17 @@
                         <span>キーワード検索</span>
                     </p>
 
-                    <form action="{{ route('result') }}" method="GET">
-                        <div class="flex items-center gap-3">
-                            <input type="text" name="query" placeholder="キーワード検索（映画タイトル、キャストなど）"
-                                class="w-full bg-[#0a0d14] border border-gray-800 focus:border-amber-500 rounded-xl px-4 py-3 text-xs text-white placeholder-gray-500 focus:outline-none transition shadow-inner"
-                                required>
-                            <button type="submit"
-                                class="px-5 py-3 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs rounded-xl transition shadow shrink-0">
-                                検索
-                            </button>
+                    <!-- 🔍 キーワード検索フォーム -->
+                    <form action="{{ route('movies.search') }}" method="GET" class="flex gap-2 w-full">
+                        <div class="relative flex-grow">
+                            <input type="text" name="query" value="{{ request('query') }}"
+                                placeholder="キーワード検索（映画タイトル、キャストなど）" required
+                                class="w-full bg-[#05080e] border border-gray-800 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition">
                         </div>
+                        <button type="submit"
+                            class="bg-amber-500 hover:bg-amber-400 text-black font-extrabold px-6 py-3 rounded-xl text-sm transition shrink-0 cursor-pointer">
+                            検索
+                        </button>
                     </form>
                 </div>
 

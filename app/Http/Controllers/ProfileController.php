@@ -17,32 +17,37 @@ class ProfileController extends Controller
     /**
      * マイページの表示
      */
-    public function show()
+    public function show(): View
     {
         $user = Auth::user();
 
-        // 自分の投稿レビュー
-        $myReviews = $user->reviews;
+        $myReviews = method_exists($user, 'reviews')
+            ? $user->reviews()->latest()->get()
+            : ($user->reviews ?? []);
 
-        // いいねしたレビュー
-        $likedReviews = $user->likedReviews;
+        $likedMovies = method_exists($user, 'likes')
+            ? $user->likes()->latest()->get()
+            : ($user->likedReviews ?? []);
 
-        // 🎬 ウォッチリスト（観たい映画）の取得
-        $watchlist = $user->watchlist ?? [];
+        $watchlist = method_exists($user, 'watchlists')
+            ? $user->watchlists()->latest()->get()
+            : ($user->watchlist ?? []);
 
-        // 🎬 web.php で定義された getPopularMovies() を呼び出して人気映画を取得
         $popularMovies = function_exists('getPopularMovies') ? getPopularMovies() : [];
 
-        return view('mypage', compact('myReviews', 'likedReviews', 'watchlist', 'popularMovies'));
+        return view('mypage', compact('myReviews', 'likedMovies', 'watchlist', 'popularMovies'));
     }
 
     /**
-     * Display the user's profile form.
+     * プロフィール編集画面表示
      */
     public function edit(Request $request): View
     {
+        $popularMovies = function_exists('getPopularMovies') ? getPopularMovies() : [];
+
         return view('profile.edit', [
             'user' => $request->user(),
+            'popularMovies' => $popularMovies,
         ]);
     }
 
@@ -51,34 +56,29 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        // 🌟 更新時に名前の文字数を15文字以内に直接チェック
         $request->validate([
             'name' => ['required', 'string', 'max:15'],
         ]);
 
         $user = $request->user();
 
-        // name と email のみを取り出して fill（password が空で上書きされるのを防止）
         $user->fill($request->safe()->only(['name', 'email']));
 
-        // メールアドレスが変更された場合、確認ステータスをリセット
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
         }
 
-        // 🌟 画像送信チェックとエラー判定の明確化
+        // アバター画像の保存処理
         if ($request->hasFile('avatar') || $request->hasFile('icon')) {
             $file = $request->file('avatar') ?? $request->file('icon');
 
             if ($file && $file->isValid()) {
                 $filename = 'icon_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
 
-                // public/uploads フォルダに移動
                 $file->move(public_path('uploads'), $filename);
 
                 $avatarPath = 'uploads/' . $filename;
 
-                // 古い画像があれば物理ファイルを削除
                 if ($user->avatar && file_exists(public_path($user->avatar))) {
                     @unlink(public_path($user->avatar));
                 }
@@ -86,7 +86,6 @@ class ProfileController extends Controller
                     @unlink(public_path($user->icon_path));
                 }
 
-                // すべてのカラムに直接参照可能なパスをセット
                 $user->avatar = $avatarPath;
 
                 if (Schema::hasColumn('users', 'icon')) {
@@ -98,15 +97,18 @@ class ProfileController extends Controller
 
                 session(['user_icon' => $avatarPath]);
             } else {
-                // 🌟 PHPの容量制限等でファイルが正常に受け取れなかった場合
                 return back()->withErrors([
                     'avatar' => '画像ファイルが大きすぎる（2MB超え）か、選択されたファイルが壊れています。小さめの画像でお試しください。'
                 ])->withInput();
             }
         }
 
-        // 新しいパスワードが入力されている場合のみ、ハッシュ化して保存
+        // パスワード変更（入力がある場合のみ新しいパスワードの検証＆更新）
         if ($request->filled('password')) {
+            $request->validate([
+                'password' => ['required', 'string', 'min:8', 'confirmed'],
+            ]);
+
             $user->password = Hash::make($request->password);
         }
 
@@ -120,11 +122,6 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        // 🌟 退会時はパスワード確認のみ行う（名前のチェックは削除）
-        $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
-        ]);
-
         $user = $request->user();
 
         Auth::logout();

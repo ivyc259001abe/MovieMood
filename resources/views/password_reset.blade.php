@@ -1,75 +1,151 @@
-<!DOCTYPE html>
-<html lang="ja">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MovieMood - パスワード再設定</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-
-<body class="bg-black text-white min-h-screen flex flex-col justify-center items-center p-4 space-y-4">
-
-    <!-- 🎬 ヘッダータイトル（MovieMoodロゴ：クリックでログイン画面/ホームへ遷移） -->
-    <div class="text-center">
-        <a href="{{ route('login') }}" class="inline-block group">
-            <h1
-                class="text-2xl sm:text-3xl font-extrabold text-amber-500 group-hover:text-amber-400 transition tracking-wide">
-                MovieMood
-            </h1>
-        </a>
-    </div>
-
-    <!-- メインカード -->
+<x-guest-layout>
+    <!-- 全体コンテナ（画面高さにフィット） -->
     <div
-        class="w-full max-w-xs sm:max-w-sm bg-[#121824] border border-gray-700/80 rounded-2xl p-6 shadow-2xl space-y-4">
+        style="position: relative; width: 100%; min-height: calc(100vh - 60px); background-color: #000000; color: #ffffff; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 12px 0 0 0; box-sizing: border-box; overflow: hidden;">
 
-        <h2 class="text-lg font-bold text-center text-amber-400">パスワード再設定</h2>
-        <p class="text-xs text-gray-300 text-center leading-relaxed">
-            登録メールアドレスと<br>新しいパスワードを入力してください。
-        </p>
+        <!-- 1. 中央：パスワード再設定カードエリア -->
+        <div
+            style="width: 100%; max-width: 360px; margin: auto; display: flex; flex-direction: column; align-items: center; z-index: 10;">
 
-        @if ($errors->any())
-            <div class="p-3 bg-red-900/50 border border-red-500 rounded-xl text-center text-xs text-red-200">
-                @foreach ($errors->all() as $error)
-                    <p>{{ $error }}</p>
-                @endforeach
+            <!-- カード本文 -->
+            <div
+                style="width: 100%; background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.8);">
+
+                <div style="text-align: center; margin-bottom: 14px;">
+                    <h1 style="font-size: 16px; font-weight: 800; color: #f59e0b; margin: 0 0 6px 0;">パスワード再設定</h1>
+                    <p style="font-size: 10px; color: #9ca3af; margin: 0; line-height: 1.4;">
+                        登録メールアドレスと<br>新しいパスワードを入力してください。
+                    </p>
+                </div>
+
+                <!-- ステータスメッセージ -->
+                @if (session('status'))
+                    <div style="font-size: 11px; color: #10b981; text-align: center; margin-bottom: 10px;">
+                        {{ session('status') }}
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('password.reset.update') }}"
+                    style="display: flex; flex-direction: column; gap: 10px; margin: 0;">
+                    @csrf
+
+                    <!-- メールアドレス -->
+                    <div>
+                        <label for="email"
+                            style="display: block; font-size: 10px; font-weight: bold; color: #e5e7eb; margin-bottom: 3px;">
+                            メールアドレス
+                        </label>
+                        <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
+                            placeholder="メールアドレス" autocomplete="username"
+                            style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 7px 12px; font-size: 11px; outline: none; box-sizing: border-box;"
+                            onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#374151'">
+                        <x-input-error :messages="$errors->get('email')" class="mt-0" />
+                    </div>
+
+                    <!-- 新しいパスワード -->
+                    <div>
+                        <label for="password"
+                            style="display: block; font-size: 10px; font-weight: bold; color: #e5e7eb; margin-bottom: 3px;">
+                            新しいパスワード
+                        </label>
+                        <input id="password" type="password" name="password" required placeholder="新しいパスワード"
+                            autocomplete="new-password"
+                            style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 7px 12px; font-size: 11px; outline: none; box-sizing: border-box;"
+                            onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#374151'">
+                        <x-input-error :messages="$errors->get('password')" class="mt-0" />
+                    </div>
+
+                    <!-- 新しいパスワード (確認) -->
+                    <div>
+                        <label for="password_confirmation"
+                            style="display: block; font-size: 10px; font-weight: bold; color: #e5e7eb; margin-bottom: 3px;">
+                            新しいパスワード (確認)
+                        </label>
+                        <input id="password_confirmation" type="password" name="password_confirmation" required
+                            placeholder="もう一度入力" autocomplete="new-password"
+                            style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 7px 12px; font-size: 11px; outline: none; box-sizing: border-box;"
+                            onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#374151'">
+                        <x-input-error :messages="$errors->get('password_confirmation')" class="mt-0" />
+                    </div>
+
+                    <!-- パスワード変更ボタン -->
+                    <button type="submit"
+                        style="width: 100%; background-color: #f59e0b; color: #000000; font-weight: 800; padding: 9px; border-radius: 9999px; font-size: 12px; border: none; cursor: pointer; transition: background-color 0.2s; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25); margin-top: 6px;"
+                        onmouseover="this.style.backgroundColor='#fbbf24'"
+                        onmouseout="this.style.backgroundColor='#f59e0b'">
+                        パスワードを変更する
+                    </button>
+                </form>
+
+                <!-- ログイン画面に戻るリンク -->
+                <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #1f2937; text-align: center;">
+                    <a href="{{ route('login') }}"
+                        style="display: inline-block; color: #f59e0b; font-weight: bold; font-size: 11px; text-decoration: none;"
+                        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1.0'">
+                        ログイン画面に戻る
+                    </a>
+                </div>
+
             </div>
+        </div>
+
+        <!-- 2. 下部：POPULAR MOVIES -->
+        @if(!empty($popularMovies) && count($popularMovies) > 0)
+            <div
+                style="width: 100vw; padding-top: 10px; padding-bottom: 6px; text-align: center; border-top: 1px solid #111827; background-color: #000000; flex-shrink: 0; margin-top: 10px;">
+                <div style="margin-bottom: 6px;">
+                    <span
+                        style="font-size: 10px; font-weight: 800; color: #9ca3af; letter-spacing: 0.1em; text-transform: uppercase;">
+                        POPULAR MOVIES
+                    </span>
+                </div>
+                <div
+                    style="overflow: hidden; width: 100vw; white-space: nowrap; display: flex; pointer-events: none; user-select: none;">
+                    <div class="infinite-scroll-track"
+                        style="display: flex; gap: 8px; animation: loop-scroll 120s linear infinite; will-change: transform;">
+                        @php
+                            $loopMovies = array_merge($popularMovies, $popularMovies);
+                        @endphp
+                        @foreach($loopMovies as $movie)
+                            <div
+                                style="flex: 0 0 110px; width: 110px; height: 150px; background-color: #111827; border-radius: 6px; overflow: hidden; border: 1px solid #1f2937; position: relative; box-sizing: border-box;">
+                                @if(!empty($movie['poster_path']))
+                                    <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}"
+                                        alt="{{ $movie['title'] ?? 'Movie' }}"
+                                        style="width: 110px; height: 150px; object-fit: cover; display: block;">
+                                @endif
+                                @if(isset($movie['vote_average']) && $movie['vote_average'] > 0)
+                                    <div
+                                        style="position: absolute; top: 4px; right: 4px; z-index: 50; background-color: rgba(0,0,0,0.85); border: 1px solid rgba(245,158,11,0.8); color: #fbbf24; font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 9999px; line-height: 1; display: flex; align-items: center; gap: 2px;">
+                                        ★ {{ number_format((float) $movie['vote_average'], 1) }}
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            <!-- コピーライト表示 -->
+            <footer
+                style="width: 100%; text-align: center; padding: 6px 0 2px 0; background-color: #000000; flex-shrink: 0;">
+                <p style="font-size: 10px; color: #6b7280; margin: 0; font-family: sans-serif;">
+                    &copy; {{ date('Y') }} MovieMood. All rights reserved.
+                </p>
+            </footer>
+
+            <style>
+                @keyframes loop-scroll {
+                    0% {
+                        transform: translateX(0);
+                    }
+
+                    100% {
+                        transform: translateX(-50%);
+                    }
+                }
+            </style>
         @endif
 
-        <form action="{{ route('password.reset.update') }}" method="POST" class="space-y-3">
-            @csrf
-            <div>
-                <label class="block text-xs font-semibold text-gray-300 mb-1">メールアドレス</label>
-                <input type="email" name="email" required placeholder="メールアドレス"
-                    class="w-full py-2.5 px-4 bg-gray-100 text-black rounded-full text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-gray-300 mb-1">新しいパスワード</label>
-                <input type="password" name="password" required placeholder="新しいパスワード"
-                    class="w-full py-2.5 px-4 bg-gray-100 text-black rounded-full text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-gray-300 mb-1">新しいパスワード（確認）</label>
-                <input type="password" name="password_confirmation" required placeholder="もう一度入力"
-                    class="w-full py-2.5 px-4 bg-gray-100 text-black rounded-full text-xs focus:outline-none focus:ring-2 focus:ring-amber-500">
-            </div>
-
-            <button type="submit"
-                class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-full transition text-xs mt-2 shadow">
-                パスワードを変更する
-            </button>
-        </form>
-
-        <div class="text-center pt-2 border-t border-gray-800">
-            <a href="{{ route('login') }}" class="text-xs text-gray-400 hover:text-amber-400 transition underline">
-                ログイン画面に戻る
-            </a>
-        </div>
     </div>
-
-</body>
-
-</html>
+</x-guest-layout>

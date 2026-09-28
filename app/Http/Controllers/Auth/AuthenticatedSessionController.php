@@ -8,6 +8,7 @@ use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http; // ★ TMDB API通信用に追加
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
@@ -17,7 +18,36 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
-        return view('auth.login');
+        $popularMovies = [];
+
+        try {
+            // TMDB APIから人気の映画データを取得
+            $apiKey = config('services.tmdb.api_key', env('TMDB_API_KEY'));
+            $token = config('services.tmdb.token', env('TMDB_TOKEN'));
+
+            if ($token) {
+                $response = Http::withToken($token)->get('https://api.themoviedb.org/3/movie/popular', [
+                    'language' => 'ja-JP',
+                    'page' => 1,
+                ]);
+            } else {
+                $response = Http::get('https://api.themoviedb.org/3/movie/popular', [
+                    'api_key' => $apiKey,
+                    'language' => 'ja-JP',
+                    'page' => 1,
+                ]);
+            }
+
+            if ($response->successful()) {
+                $popularMovies = $response->json()['results'] ?? [];
+            }
+        } catch (\Exception $e) {
+            // エラー時は空配列のまま処理を続行
+            $popularMovies = [];
+        }
+
+        // ビューに $popularMovies を渡す
+        return view('auth.login', compact('popularMovies'));
     }
 
     /**

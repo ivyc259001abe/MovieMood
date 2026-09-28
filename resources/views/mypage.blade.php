@@ -11,23 +11,15 @@
                     class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-amber-500 overflow-hidden bg-gray-800 flex items-center justify-center shadow-md flex-shrink-0">
                     @php
                         $user = auth()->user();
-                        $avatarPath = $user->avatar ?? $user->icon ?? $user->avatar_url ?? null;
-                        $hasAvatar = false;
-                        if ($avatarPath) {
-                            if (str_starts_with($avatarPath, 'http')) {
-                                $userIcon = $avatarPath;
-                                $hasAvatar = true;
-                            } elseif (file_exists(public_path($avatarPath))) {
-                                $userIcon = asset($avatarPath);
-                                $hasAvatar = true;
-                            }
-                        }
+                        $avatarPath = $user->avatar ?? $user->icon ?? $user->icon_path ?? null;
                     @endphp
 
-                    @if($hasAvatar)
-                        <img src="{{ $userIcon }}" alt="プロフィール画像" class="w-full h-full object-cover">
+                    @if($avatarPath)
+                        <img src="{{ str_starts_with($avatarPath, 'http') ? $avatarPath : asset('storage/' . $avatarPath) }}"
+                            class="w-full h-full object-cover"
+                            onError="this.onerror=null; this.src='{{ asset($avatarPath) }}';">
                     @else
-                        <svg class="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                             <path
                                 d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                         </svg>
@@ -96,16 +88,22 @@
             <div x-show="tab === 'watchlist'" class="p-6">
                 @if(!empty($watchlist) && count($watchlist) > 0)
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                        @foreach($watchlist as $movie)
-                            <a href="{{ route('movies.show', $movie['id'] ?? $movie->id) }}" class="group block space-y-2">
+                        @foreach($watchlist as $item)
+                            @php
+                                // 配列・オブジェクトの両方に対応させる処理
+                                $movieId = is_array($item) ? ($item['movie_id'] ?? $item['id'] ?? '') : ($item->movie_id ?? $item->id ?? '');
+                                $title = is_array($item) ? ($item['title'] ?? '') : ($item->title ?? '');
+                                $posterPath = is_array($item) ? ($item['poster_path'] ?? '') : ($item->poster_path ?? '');
+                            @endphp
+                            <a href="{{ route('movies.show', $movieId) }}" class="group block space-y-2">
                                 <div
                                     class="relative overflow-hidden rounded-xl border border-gray-800 shadow-md group-hover:border-amber-500 transition">
-                                    <img src="{{ !empty($movie['poster_path']) ? 'https://image.tmdb.org/t/p/w300' . $movie['poster_path'] : 'https://via.placeholder.com/300x450' }}"
-                                        alt="{{ $movie['title'] ?? '映画' }}"
+                                    <img src="{{ !empty($posterPath) ? (str_starts_with($posterPath, 'http') ? $posterPath : 'https://image.tmdb.org/t/p/w300' . $posterPath) : 'https://via.placeholder.com/300x450' }}"
+                                        alt="{{ $title }}"
                                         class="w-full h-44 object-cover group-hover:scale-105 transition duration-300">
                                 </div>
                                 <p class="text-xs font-bold text-gray-300 group-hover:text-amber-500 truncate text-center">
-                                    {{ $movie['title'] ?? '無題' }}
+                                    {{ $title ?? '無題' }}
                                 </p>
                             </a>
                         @endforeach

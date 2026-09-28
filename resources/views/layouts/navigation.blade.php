@@ -26,7 +26,19 @@
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-300 bg-gray-900 hover:text-white focus:outline-none transition ease-in-out duration-150">
+                            class="inline-flex items-center gap-2 px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-300 bg-gray-900 hover:text-white focus:outline-none transition ease-in-out duration-150">
+
+                            <!-- 1. PC用 アバター表示部分 -->
+                            <div
+                                class="w-8 h-8 rounded-full overflow-hidden bg-gray-800 border border-amber-500 flex items-center justify-center shrink-0">
+                                @if(Auth::check() && Auth::user()->avatar)
+                                    <img src="{{ asset(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}"
+                                        class="w-full h-full object-cover">
+                                @else
+                                    <i class="fa-solid fa-user text-gray-400 text-xs"></i>
+                                @endif
+                            </div>
+
                             <div>{{ Auth::user()->name }}</div>
 
                             <div class="ms-1">
@@ -48,9 +60,8 @@
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-
-                            <x-dropdown-link :href="route('logout')" onclick="event.preventDefault();
-                                                this.closest('form').submit();">
+                            <x-dropdown-link :href="route('logout')"
+                                onclick="event.preventDefault(); this.closest('form').submit();">
                                 ログアウト
                             </x-dropdown-link>
                         </form>
@@ -87,9 +98,23 @@
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-800">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-200">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+            <div class="px-4 flex items-center gap-3">
+
+                <!-- 2. スマホメニュー用 アバター表示部分 -->
+                <div
+                    class="w-10 h-10 rounded-full overflow-hidden bg-gray-800 border border-amber-500 flex items-center justify-center shrink-0">
+                    @if(Auth::check() && Auth::user()->avatar)
+                        <img src="{{ asset(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}"
+                            class="w-full h-full object-cover">
+                    @else
+                        <i class="fa-solid fa-user text-gray-400 text-sm"></i>
+                    @endif
+                </div>
+
+                <div>
+                    <div class="font-medium text-base text-gray-200">{{ Auth::user()->name }}</div>
+                    <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
+                </div>
             </div>
 
             <div class="mt-3 space-y-1">
@@ -100,9 +125,8 @@
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-
-                    <x-responsive-nav-link :href="route('logout')" onclick="event.preventDefault();
-                                        this.closest('form').submit();">
+                    <x-responsive-nav-link :href="route('logout')"
+                        onclick="event.preventDefault(); this.closest('form').submit();">
                         ログアウト
                     </x-responsive-nav-link>
                 </form>

@@ -1,190 +1,208 @@
-<!DOCTYPE html>
-<html lang="ja">
+<x-guest-layout>
+    <!-- 全体コンテナ（画面高さにぴったりフィット） -->
+    <div
+        style="position: relative; width: 100%; min-height: calc(100vh - 60px); background-color: #000000; color: #ffffff; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 12px 0 0 0; box-sizing: border-box; overflow: hidden;">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MovieMood - 新規アカウント登録</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @keyframes scroll {
-            0% {
-                transform: translateX(0);
-            }
+        <!-- 1. 中央：WELCOME ＆ 新規アカウント登録カードエリア -->
+        <div
+            style="width: 100%; max-width: 360px; margin: auto; display: flex; flex-direction: column; align-items: center; z-index: 10;">
 
-            100% {
-                transform: translateX(-50%);
-            }
-        }
+            <!-- WELCOME タイトル -->
+            <h1
+                style="font-size: 18px; font-weight: 900; color: #f59e0b; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 10px 0; text-align: center;">
+                WELCOME
+            </h1>
 
-        .animate-scroll {
-            display: flex;
-            width: 200%;
-            animation: scroll 35s linear infinite;
-        }
+            <!-- 新規登録カード -->
+            <div
+                style="width: 100%; background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 16px 20px; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.8);">
 
-        .animate-scroll:hover {
-            animation-play-state: paused;
-        }
-    </style>
-</head>
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <h2 style="font-size: 15px; font-weight: 800; color: #ffffff; margin: 0;">新規アカウント登録</h2>
+                </div>
 
-<body
-    class="bg-black text-white h-screen w-screen flex flex-col justify-between items-center py-2 px-4 overflow-hidden">
+                <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data"
+                    style="display: flex; flex-direction: column; gap: 8px; margin: 0;">
+                    @csrf
 
-    <!-- 【上部】ロゴ & アカウント登録カードエリア -->
-    <div class="w-full max-w-xs sm:max-w-sm flex flex-col items-center justify-center flex-1 my-auto space-y-2">
+                    <!-- アイコン画像選択 (リアルタイムプレビュー対応) -->
+                    <div
+                        style="display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 4px;">
+                        <label for="profile_photo"
+                            style="cursor: pointer; display: flex; flex-direction: column; align-items: center;">
+                            <!-- アイコンプレビュー枠 -->
+                            <div
+                                style="width: 52px; height: 52px; border-radius: 9999px; background-color: #000000; border: 1.5px solid #f59e0b; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+                                <!-- デフォルトの人型アイコン -->
+                                <i id="icon-placeholder" class="fa-solid fa-user"
+                                    style="font-size: 20px; color: #9ca3af;"></i>
+                                <!-- 選択された画像プレビュー用 -->
+                                <img id="icon-preview" src="" alt="プレビュー"
+                                    style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                            </div>
+                            <span style="font-size: 10px; color: #f59e0b; font-weight: bold; margin-top: 4px;">
+                                アイコン画像を選択 (任意)
+                            </span>
+                        </label>
+                        <input id="profile_photo" type="file" name="profile_photo" accept="image/*"
+                            style="display: none;" onchange="previewImage(event)">
+                        <x-input-error :messages="$errors->get('profile_photo')" class="mt-0" />
+                    </div>
 
-        <!-- ヘッダータイトル -->
-        <div class="text-center">
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-amber-500 tracking-wide">MovieMood</h1>
-            <p class="text-[11px] sm:text-xs font-medium text-gray-300 leading-tight pt-1">
-                あなたの『今の気分』が、次に観る映画を決める。
-            </p>
+                    <!-- ニックネーム (Name) -->
+                    <div>
+                        <label for="name"
+                            style="display: block; font-size: 10px; font-weight: bold; color: #e5e7eb; margin-bottom: 2px;">
+                            ニックネーム
+                        </label>
+                        <input id="name" type="text" name="name" value="{{ old('name') }}" required autofocus
+                            placeholder="例: たろう" autocomplete="name"
+                            style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 6px 12px; font-size: 11px; outline: none; box-sizing: border-box;"
+                            onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#374151'">
+                        <x-input-error :messages="$errors->get('name')" class="mt-0" />
+                    </div>
+
+                    <!-- メールアドレス -->
+                    <div>
+                        <label for="email"
+                            style="display: block; font-size: 10px; font-weight: bold; color: #e5e7eb; margin-bottom: 2px;">
+                            メールアドレス
+                        </label>
+                        <input id="email" type="email" name="email" value="{{ old('email') }}" required
+                            placeholder="example@mail.com" autocomplete="username"
+                            style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 6px 12px; font-size: 11px; outline: none; box-sizing: border-box;"
+                            onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#374151'">
+                        <x-input-error :messages="$errors->get('email')" class="mt-0" />
+                    </div>
+
+                    <!-- パスワード -->
+                    <div>
+                        <label for="password"
+                            style="display: block; font-size: 10px; font-weight: bold; color: #e5e7eb; margin-bottom: 2px;">
+                            パスワード
+                        </label>
+                        <input id="password" type="password" name="password" required placeholder="8文字以上"
+                            autocomplete="new-password"
+                            style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 6px 12px; font-size: 11px; outline: none; box-sizing: border-box;"
+                            onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#374151'">
+                        <x-input-error :messages="$errors->get('password')" class="mt-0" />
+                    </div>
+
+                    <!-- パスワード (確認用) -->
+                    <div>
+                        <label for="password_confirmation"
+                            style="display: block; font-size: 10px; font-weight: bold; color: #e5e7eb; margin-bottom: 2px;">
+                            パスワード (確認用)
+                        </label>
+                        <input id="password_confirmation" type="password" name="password_confirmation" required
+                            placeholder="パスワード (確認用)" autocomplete="new-password"
+                            style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 6px 12px; font-size: 11px; outline: none; box-sizing: border-box;"
+                            onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#374151'">
+                        <x-input-error :messages="$errors->get('password_confirmation')" class="mt-0" />
+                    </div>
+
+                    <!-- アカウント作成ボタン -->
+                    <button type="submit"
+                        style="width: 100%; background-color: #f59e0b; color: #000000; font-weight: 800; padding: 8px; border-radius: 9999px; font-size: 12px; border: none; cursor: pointer; transition: background-color 0.2s; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25); margin-top: 4px;"
+                        onmouseover="this.style.backgroundColor='#fbbf24'"
+                        onmouseout="this.style.backgroundColor='#f59e0b'">
+                        アカウントを作成
+                    </button>
+                </form>
+
+                <!-- 既存ログイン案内 -->
+                <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #1f2937; text-align: center;">
+                    <a href="{{ route('login') }}"
+                        style="display: inline-block; color: #f59e0b; font-weight: bold; font-size: 10px; text-decoration: none;"
+                        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1.0'">
+                        すでにアカウントをお持ちの方はこちら (ログイン)
+                    </a>
+                </div>
+
+            </div>
         </div>
 
-        <!-- アカウント登録カード -->
-        <div class="w-full bg-[#121824] border border-gray-700/80 rounded-2xl p-4 shadow-2xl space-y-2.5">
-
-            <h2 class="text-base sm:text-lg font-bold text-center text-amber-500">新規アカウント登録</h2>
-
-            <form action="{{ route('register') }}" method="POST" enctype="multipart/form-data" class="space-y-2">
-                @csrf
-
-                <!-- 1. アイコンプレビュー ＆ アップロード -->
-                <div class="flex flex-col items-center space-y-1">
-                    <div
-                        class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-amber-500 overflow-hidden bg-gray-800 flex items-center justify-center shadow-md">
-
-                        <svg id="defaultIcon" class="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                            <path
-                                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                        </svg>
-
-                        <img id="iconPreview" class="w-full h-full object-cover hidden" alt="プレビュー">
-
-                    </div>
-                    <label class="cursor-pointer text-xs font-semibold text-amber-500 hover:text-amber-400 underline">
-                        アイコン画像を選択 (任意)
-                        <input type="file" name="icon" accept="image/*" class="hidden" onchange="previewImage(event)">
-                    </label>
+        <!-- 2. 下部：POPULAR MOVIES -->
+        @if(!empty($popularMovies) && count($popularMovies) > 0)
+            <div
+                style="width: 100vw; padding-top: 10px; padding-bottom: 6px; text-align: center; border-top: 1px solid #111827; background-color: #000000; flex-shrink: 0; margin-top: 10px;">
+                <div style="margin-bottom: 6px;">
+                    <span
+                        style="font-size: 10px; font-weight: 800; color: #9ca3af; letter-spacing: 0.1em; text-transform: uppercase;">
+                        POPULAR MOVIES
+                    </span>
                 </div>
-
-                <!-- 2. ニックネーム -->
-                <div class="space-y-0.5">
-                    <label class="block text-xs font-semibold text-gray-300 pl-1">ニックネーム</label>
-                    <input type="text" name="nickname" value="{{ old('nickname') }}" placeholder="例: たろう" required
-                        class="w-full py-1.5 px-3 bg-gray-100 text-black rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs placeholder-gray-400">
-                </div>
-
-                <!-- 3. メールアドレス -->
-                <div class="space-y-0.5">
-                    <label class="block text-xs font-semibold text-gray-300 pl-1">メールアドレス</label>
-                    <input type="email" name="email" value="{{ old('email') }}" placeholder="example@mail.com" required
-                        class="w-full py-1.5 px-3 bg-gray-100 text-black rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs placeholder-gray-400">
-                </div>
-
-                <!-- 4. パスワード -->
-                <div class="space-y-0.5">
-                    <label class="block text-xs font-semibold text-gray-300 pl-1">パスワード</label>
-                    <input type="password" name="password" placeholder="8文字以上" required autocomplete="new-password"
-                        class="w-full py-1.5 px-3 bg-gray-100 text-black rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs placeholder-gray-400">
-                </div>
-
-                <!-- 5. パスワード（確認用） -->
-                <div class="space-y-0.5">
-                    <input type="password" name="password_confirmation" placeholder="パスワード(確認用)" required
-                        autocomplete="new-password"
-                        class="w-full py-1.5 px-3 bg-gray-100 text-black rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs placeholder-gray-400">
-                </div>
-
-                <!-- エラーメッセージ表示エリア -->
-                @if ($errors->any())
-                    <div class="p-1.5 bg-red-900/50 border border-red-500 rounded-xl text-center space-y-0.5">
-                        @foreach ($errors->all() as $error)
-                            <p class="text-[10px] text-red-200 font-bold">{{ $error }}</p>
+                <div
+                    style="overflow: hidden; width: 100vw; white-space: nowrap; display: flex; pointer-events: none; user-select: none;">
+                    <div class="infinite-scroll-track"
+                        style="display: flex; gap: 8px; animation: loop-scroll 120s linear infinite; will-change: transform;">
+                        @php
+                            $loopMovies = array_merge($popularMovies, $popularMovies);
+                        @endphp
+                        @foreach($loopMovies as $movie)
+                            <!-- ⭕️ 修正箇所: 先頭に <div を追記しました -->
+                            <div
+                                style="flex: 0 0 110px; width: 110px; height: 150px; background-color: #111827; border-radius: 6px; overflow: hidden; border: 1px solid #1f2937; position: relative; box-sizing: border-box;">
+                                @if(!empty($movie['poster_path']))
+                                    <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}"
+                                        alt="{{ $movie['title'] ?? 'Movie' }}"
+                                        style="width: 110px; height: 150px; object-fit: cover; display: block;">
+                                @endif
+                                @if(isset($movie['vote_average']) && $movie['vote_average'] > 0)
+                                    <div
+                                        style="position: absolute; top: 4px; right: 4px; z-index: 50; background-color: rgba(0,0,0,0.85); border: 1px solid rgba(245,158,11,0.8); color: #fbbf24; font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 9999px; line-height: 1; display: flex; align-items: center; gap: 2px;">
+                                        ★ {{ number_format((float) $movie['vote_average'], 1) }}
+                                    </div>
+                                @endif
+                            </div>
                         @endforeach
                     </div>
-                @endif
-
-                <!-- 新規登録ボタン -->
-                <button type="submit"
-                    class="w-full py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-full transition duration-200 shadow-md text-xs mt-1">
-                    アカウントを作成する
-                </button>
-            </form>
-
-            <!-- ログイン画面への誘導 -->
-            <div class="text-center pt-2 pb-0.5">
-                <a href="{{ route('login') }}"
-                    class="text-xs font-semibold text-gray-300 hover:text-amber-500 underline transition-colors">
-                    すでにアカウントをお持ちの方はこちら (ログイン)
-                </a>
+                </div>
             </div>
 
-        </div>
+            <!-- コピーライト表示 -->
+            <footer
+                style="width: 100%; text-align: center; padding: 6px 0 2px 0; background-color: #000000; flex-shrink: 0;">
+                <p style="font-size: 10px; color: #6b7280; margin: 0; font-family: sans-serif;">
+                    &copy; {{ date('Y') }} MovieMood. All rights reserved.
+                </p>
+            </footer>
+
+            <style>
+                @keyframes loop-scroll {
+                    0% {
+                        transform: translateX(0);
+                    }
+
+                    100% {
+                        transform: translateX(-50%);
+                    }
+                }
+            </style>
+        @endif
 
     </div>
 
-    <!-- 【下部】POPULAR MOVIES カルーセル (API連携) -->
-    <div class="w-full space-y-1 flex-shrink-0 pb-1">
-        <p class="text-center text-[10px] font-bold text-gray-400 tracking-wider">
-            POPULAR MOVIES (タップで詳細へ)
-        </p>
-
-        <div class="overflow-hidden w-full">
-            <div class="animate-scroll flex gap-2 px-2">
-                @php $movies = $popularMovies ?? []; @endphp
-
-                <!-- 1周目 -->
-                @foreach($movies as $movie)
-                    @if(!empty($movie['poster_path']))
-                        <a href="{{ route('movies.show', $movie['id']) }}"
-                            class="flex-shrink-0 transition-transform duration-200 hover:scale-105">
-                            <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}" alt="{{ $movie['title'] }}"
-                                title="{{ $movie['title'] }}" loading="lazy"
-                                class="w-16 h-24 sm:w-20 sm:h-28 object-cover rounded-lg shadow-lg border border-gray-800">
-                        </a>
-                    @endif
-                @endforeach
-
-                <!-- 2周目 -->
-                @foreach($movies as $movie)
-                    @if(!empty($movie['poster_path']))
-                        <a href="{{ route('movies.show', $movie['id']) }}"
-                            class="flex-shrink-0 transition-transform duration-200 hover:scale-105">
-                            <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}" alt="{{ $movie['title'] }}"
-                                title="{{ $movie['title'] }}" loading="lazy"
-                                class="w-16 h-24 sm:w-20 sm:h-28 object-cover rounded-lg shadow-lg border border-gray-800">
-                        </a>
-                    @endif
-                @endforeach
-            </div>
-        </div>
-    </div>
-
-    <!-- JavaScript: 新規画像選択時の即時プレビュー -->
+    <!-- プレビュー表示用JavaScript -->
     <script>
         function previewImage(event) {
-            const file = event.target.files[0];
-            if (file) {
+            const input = event.target;
+            const preview = document.getElementById('icon-preview');
+            const placeholder = document.getElementById('icon-placeholder');
+
+            if (input.files && input.files[0]) {
                 const reader = new FileReader();
+
                 reader.onload = function (e) {
-                    const output = document.getElementById('iconPreview');
-                    const defaultIcon = document.getElementById('defaultIcon');
-
-                    output.src = e.target.result;
-                    output.classList.remove('hidden');
-
-                    if (defaultIcon) {
-                        defaultIcon.classList.add('hidden');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    if (placeholder) {
+                        placeholder.style.display = 'none';
                     }
-                };
-                reader.readAsDataURL(file);
+                }
+
+                reader.readAsDataURL(input.files[0]);
             }
         }
     </script>
-
-</body>
-
-</html>
+</x-guest-layout>

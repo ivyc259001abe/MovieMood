@@ -1,316 +1,274 @@
-<x-app-layout :popularMovies="$popularMovies ?? []">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="{ activeFilter: 'all' }">
+<x-app-layout>
+    <div style="background-color: #000000; color: #ffffff; min-height: 100vh; padding: 24px 16px; box-sizing: border-box;">
+        <div style="max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
 
-        <!-- 1. ページヘッダー（程よい余白でゆったり配置） -->
-        <div class="bg-gray-900/90 rounded-2xl border border-gray-800 shadow-xl p-6 mb-8">
-            <div class="flex items-center gap-4">
-                <div
-                    class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 text-2xl shadow-inner shrink-0">
-                    <i class="fa-solid fa-comments"></i>
+            <!-- 1. ヘッダーバナー -->
+            <div style="background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px;">
+                <div style="background-color: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 12px; font-size: 24px;">
+                    💬
                 </div>
                 <div>
-                    <h1 class="text-2xl font-black text-white flex items-center gap-2">
-                        みんなの<span class="text-amber-500">感情タイムライン</span>
+                    <h1 style="font-size: 20px; font-weight: 800; color: #ffffff; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
+                        みんなの <span style="color: #f59e0b;">感情タイムライン</span>
                     </h1>
-                    <p class="text-xs text-gray-400 mt-1">映画を観たあとの「生の感情」が集まる場所。今の気分にぴったりの映画を見つけよう！</p>
+                    <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                        映画を観たあとの「生の感情」が集まる場所。今の気分にぴったりの映画を見つけよう！
+                    </p>
                 </div>
             </div>
-        </div>
 
-        <!-- 2. メインコンテンツ（左8：右4 の2カラム構成） -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <!-- メインコンテンツ（左右2カラム） -->
+            <div style="display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start;">
 
-            <!-- 👈 左カラム：投稿フォーム ＆ タイムライン (8/12) -->
-            <div class="lg:col-span-8 space-y-8">
+                <!-- 左側：投稿フォーム ＆ レビュー一覧 -->
+                <div style="display: flex; flex-direction: column; gap: 24px;">
 
-                <!-- ✍️ 投稿ボックス（余白を広げて見やすく調整） -->
-                <div class="bg-gray-900/90 rounded-2xl border border-gray-800 p-6 shadow-xl space-y-6" x-data="{ 
-                         searchQuery: '', 
-                         searchResults: [], 
-                         openDropdown: false, 
-                         isLoading: false,
-                         selectedMoods: [],
-                         async searchMovies() {
-                             if (!this.searchQuery || this.searchQuery.trim().length < 1) {
-                                 this.searchResults = [];
-                                 this.openDropdown = false;
-                                 return;
-                             }
-                             this.isLoading = true;
-                             try {
-                                 const res = await fetch(`/api/movies/search?query=${encodeURIComponent(this.searchQuery.trim())}`);
-                                 if (res.ok) {
-                                     this.searchResults = await res.json();
-                                     this.openDropdown = this.searchResults.length > 0;
-                                 }
-                             } catch (e) {
-                                 console.error('検索エラー:', e);
-                             } finally {
-                                 this.isLoading = false;
-                             }
-                         },
-                         selectMovie(title) {
-                             this.searchQuery = title;
-                             this.openDropdown = false;
-                         },
-                         toggleMood(mood) {
-                             if (this.selectedMoods.includes(mood)) {
-                                 this.selectedMoods = this.selectedMoods.filter(m => m !== mood);
-                             } else {
-                                 this.selectedMoods.push(mood);
-                             }
-                         }
-                     }">
+                    <!-- 投稿カード -->
+                    <div style="background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; box-sizing: border-box;">
+                        <h2 style="font-size: 14px; font-weight: bold; color: #f59e0b; margin: 0 0 16px 0; display: flex; align-items: center; gap: 6px;">
+                            📝 観た映画の「今の感情」を投稿する
+                        </h2>
 
-                    <h2
-                        class="text-sm font-bold text-gray-300 flex items-center gap-2 uppercase tracking-wider pb-2 border-b border-gray-800">
-                        <i class="fa-solid fa-pen-to-square text-amber-500"></i>
-                        観た映画の「今の感情」を投稿する
-                    </h2>
+                        @if (session('success'))
+                            <div style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; color: #10b981; font-size: 12px; padding: 10px; border-radius: 8px; margin-bottom: 16px;">
+                                {{ session('success') }}
+                            </div>
+                        @endif
 
-                    <form action="{{ route('community.store') }}" method="POST" class="space-y-5">
-                        @csrf
+                        <form method="POST" action="{{ route('community.store') }}" style="display: flex; flex-direction: column; gap: 16px; margin: 0;">
+                            @csrf
 
-                        <!-- 🎬 映画タイトル -->
-                        <div class="relative w-full" @click.away="openDropdown = false">
-                            <label for="movie_title_input" class="block text-xs font-bold text-gray-300 mb-2">
-                                映画タイトル <span class="text-amber-500 text-[11px] font-normal">（入力すると候補が自動取得されます）</span>
-                            </label>
-
-                            <div class="relative w-full">
-                                <input type="text" id="movie_title_input" name="movie_title" x-model="searchQuery"
-                                    @input.debounce.300ms="searchMovies()" placeholder="例: アベンジャーズ、スパイダーマン..."
-                                    class="w-full bg-black/60 border border-gray-700/80 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500 focus:outline-none transition shadow-inner"
-                                    required autocomplete="off">
-
-                                <div x-show="isLoading" x-cloak class="absolute right-4 top-1/2 -translate-y-1/2">
-                                    <i class="fa-solid fa-spinner animate-spin text-amber-500 text-sm"></i>
-                                </div>
+                            <!-- 映画タイトル -->
+                            <div style="position: relative;">
+                                <label for="movie_title" style="display: block; font-size: 11px; font-weight: bold; color: #e5e7eb; margin-bottom: 6px;">
+                                    映画タイトル <span style="color: #f59e0b; font-size: 10px; font-weight: normal;">(入力すると候補が自動取得されます)</span>
+                                </label>
+                                <input id="movie_title" type="text" name="movie_title" value="{{ old('movie_title') }}" required placeholder="例: アベンジャーズ / エンドゲーム" autocomplete="off"
+                                    style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 8px; padding: 10px 12px; font-size: 12px; outline: none; box-sizing: border-box;"
+                                    onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#374151'">
+                                
+                                <div id="movie_suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background-color: #111827; border: 1px solid #374151; border-radius: 8px; margin-top: 4px; max-height: 200px; overflow-y: auto; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.8);"></div>
                             </div>
 
-                            <!-- ドロップダウン候補 -->
-                            <div x-show="openDropdown && searchResults.length > 0" x-cloak
-                                class="absolute z-50 left-0 w-full mt-2 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar">
-                                <div class="p-2">
-                                    <template x-for="movie in searchResults" :key="movie.id">
-                                        <div @click="selectMovie(movie.title)"
-                                            class="px-4 py-2.5 text-xs text-gray-200 hover:bg-amber-500/20 hover:text-amber-400 rounded-lg cursor-pointer flex items-center justify-between transition border-b border-gray-800/50 last:border-0">
-                                            <div class="flex items-center gap-2">
-                                                <span class="font-bold text-sm text-white" x-text="movie.title"></span>
-                                                <span class="text-xs text-gray-400"
-                                                    x-text="movie.release_date ? '(' + movie.release_date.substring(0, 4) + ')' : ''"></span>
-                                            </div>
-                                            <span class="text-xs text-amber-400 shrink-0 font-bold"
-                                                x-text="'★ ' + (movie.vote_average ? Number(movie.vote_average).toFixed(1) : 'NEW')"></span>
+                            <!-- 2枚目の画像に合わせたスライダー評価UI -->
+                            <div style="background-color: #000000; border: 1px solid #1f2937; border-radius: 8px; padding: 14px 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <label style="font-size: 11px; font-weight: bold; color: #e5e7eb; display: flex; align-items: center; gap: 4px;">
+                                        ⭐ 評価 <span style="font-size: 10px; color: #9ca3af; font-weight: normal;">(1〜10段階)</span>
+                                    </label>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span id="rating_label" style="font-size: 10px; color: #f59e0b; font-weight: bold;">かなりおすすめ</span>
+                                        <div style="background-color: #111827; border: 1px solid #374151; border-radius: 6px; padding: 2px 8px; font-size: 12px; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 4px;">
+                                            ★ <span id="rating_value">7</span>
                                         </div>
-                                    </template>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- 評価 ＆ 気分選択 -->
-                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-5">
-                            <!-- 評価 -->
-                            <div class="sm:col-span-5">
-                                <label for="rating_select" class="block text-xs font-bold text-gray-300 mb-2">評価</label>
-                                <select id="rating_select" name="rating"
-                                    class="w-full bg-black/60 border border-gray-700 rounded-xl px-4 py-3 text-sm text-amber-400 font-bold focus:border-amber-500 focus:outline-none">
-                                    <option value="5">★★★★★ (5.0)</option>
-                                    <option value="4">★★★★☆ (4.0)</option>
-                                    <option value="3" selected>★★★☆☆ (3.0)</option>
-                                    <option value="2">★★☆☆☆ (2.0)</option>
-                                    <option value="1">★☆☆☆☆ (1.0)</option>
-                                </select>
+                                <input type="range" id="rating_range" min="1" max="10" step="1" value="{{ old('rating', 7) }}"
+                                    style="width: 100%; accent-color: #f59e0b; cursor: pointer; height: 6px; background-color: #374151; border-radius: 9999px; outline: none;">
+                                <input type="hidden" name="rating" id="rating_input" value="{{ old('rating', 7) }}">
                             </div>
 
-                            <!-- 🎭 4つの気分ボタン -->
-                            <div class="sm:col-span-7">
-                                <span class="block text-xs font-bold text-gray-300 mb-2">今のあなたの「気分」は？（複数選択可）</span>
-
-                                <template x-for="mood in selectedMoods" :key="mood">
-                                    <input type="hidden" name="moods[]" :value="mood">
-                                </template>
-
-                                <div class="grid grid-cols-2 gap-2.5">
-                                    @foreach([
-                                            '号泣' => '😭',
-                                            'スカッと' => '😆',
-                                            'ハラハラ' => '😱',
-                                            'キュン' => '💖'
-                                        ] as $moodName => $emoji)
-                                        <button type="button" @click="toggleMood('{{ $moodName }}')"
-                                            :class="selectedMoods.includes('{{ $moodName }}') ? 'bg-amber-500/20 text-amber-400 border-amber-500 shadow-sm shadow-amber-500/30' : 'bg-black/40 text-gray-300 border-gray-700 hover:border-gray-500'"
-                                            class="flex items-center justify-center gap-2 text-xs font-bold px-3 py-2.5 rounded-xl border transition-all select-none">
-                                            <span>{{ $emoji }}</span>
-                                            <span>#{{ $moodName }}</span>
-                                        </button>
+                            <!-- 今のあなたの気分は？ (複数選択可能ボタン) -->
+                            <div>
+                                <label style="display: block; font-size: 11px; font-weight: bold; color: #e5e7eb; margin-bottom: 8px;">
+                                    現在の「気分」は？ <span style="font-size: 10px; color: #9ca3af; font-weight: normal;">(複数選択可)</span>
+                                </label>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                    @php
+                                        $moodOptions = [
+                                            ['label' => '#号泣', 'emoji' => '😭'],
+                                            ['label' => '#スカッと', 'emoji' => '😆'],
+                                            ['label' => '#ハラハラ', 'emoji' => '😱'],
+                                            ['label' => '#キュン', 'emoji' => '💖'],
+                                        ];
+                                    @endphp
+                                    @foreach($moodOptions as$opt)
+                                        <label class="mood-checkbox-label" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #000000; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #e5e7eb; cursor: pointer; transition: all 0.2s; user-select: none;">
+                                            <input type="checkbox" name="moods[]" value="{{ $opt['label'] }}" style="display: none;" onchange="toggleMoodStyle(this)">
+                                            <span>{{ $opt['emoji'] }}</span>
+                                            <span>{{ $opt['label'] }}</span>
+                                        </label>
                                     @endforeach
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- 💬 感想入力 -->
-                        <div>
-                            <label for="comment_textarea"
-                                class="block text-xs font-bold text-gray-300 mb-2">感想・レビュー</label>
-                            <textarea id="comment_textarea" name="comment" rows="3"
-                                placeholder="この作品のどこが良かったか教えてください..."
-                                class="w-full bg-black/60 border border-gray-700 rounded-xl p-4 text-sm text-white focus:border-amber-500 focus:outline-none leading-relaxed"
-                                required></textarea>
-                        </div>
+                            <!-- 感想・レビュー本文 -->
+                            <div>
+                                <label for="comment" style="display: block; font-size: 11px; font-weight: bold; color: #e5e7eb; margin-bottom: 6px;">
+                                    💬 感想・レビュー本文
+                                </label>
+                                <textarea id="comment" name="comment" rows="4" required placeholder="この作品の見どころや感じたことを自由に書いてみよう..."
+                                    style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 8px; padding: 10px 12px; font-size: 12px; outline: none; box-sizing: border-box; resize: vertical;"
+                                    onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#374151'">{{ old('comment') }}</textarea>
+                            </div>
 
-                        <!-- 🔘 送信ボタン（ゆったり右寄せ） -->
-                        <div class="flex justify-end pt-2">
-                            <button type="submit"
-                                class="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs rounded-xl transition-all shadow-lg active:scale-95 flex items-center gap-2">
-                                <i class="fa-solid fa-paper-plane"></i>
-                                <span>投稿する</span>
+                            <button type="submit" style="width: 100%; background-color: #f59e0b; color: #000000; font-weight: 800; padding: 10px; border-radius: 9999px; font-size: 12px; border: none; cursor: pointer; transition: background-color 0.2s; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25); display: flex; align-items: center; justify-content: center; gap: 6px;"
+                                onmouseover="this.style.backgroundColor='#fbbf24'" onmouseout="this.style.backgroundColor='#f59e0b'">
+                                ✈️ 投稿する
                             </button>
-                        </div>
-                    </form>
-                </div>
+                        </form>
+                    </div>
 
-                <!-- 🔍 感情フィルター（クリックでリアルタイムに絞り込み） -->
-                <div class="space-y-2">
-                    <span class="text-xs font-bold text-gray-400 px-1">絞り込み表示：</span>
-                    <div class="flex flex-wrap gap-2.5 text-xs font-bold">
-                        <button @click="activeFilter = 'all'"
-                            :class="activeFilter === 'all' ? 'bg-amber-500 text-black shadow-md' : 'bg-gray-900 border border-gray-800 text-gray-300 hover:border-amber-500/50'"
-                            class="px-4 py-2 rounded-full transition-all">
-                            すべて
-                        </button>
-                        @foreach([
-                                '号泣' => '😭',
-                                'スカッと' => '😆',
-                                'ハラハラ' => '😱',
-                                'キュン' => '💖'
-                            ] as $mName => $emoji)
-                            <button @click="activeFilter = '{{ $mName }}'"
-                                :class="activeFilter === '{{ $mName }}' ? 'bg-amber-500 text-black shadow-md' : 'bg-gray-900 border border-gray-800 text-gray-300 hover:border-amber-500/50'"
-                                class="px-4 py-2 rounded-full transition-all flex items-center gap-1.5">
-                                <span>{{ $emoji }}</span>
-                                <span>#{{ $mName }}</span>
-                            </button>
-                        @endforeach
+                    <!-- 絞り込みフィルター＆レビュータイムライン -->
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                            <span style="font-size: 12px; font-weight: bold; color: #9ca3af;">気分で絞り込み:</span>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                <a href="{{ route('community.index') }}" style="font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-decoration: none; background-color: #f59e0b; color: #000000;">すべて</a>
+                                @foreach(['#号泣' => '😭', '#スカッと' => '😆', '#ハラハラ' => '😱', '#キュン' => '💖'] as $mood =>$emoji)
+                                    <a href="{{ route('community.index', ['mood' => $mood]) }}" style="font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-decoration: none; background-color: #111827; border: 1px solid #374151; color: #d1d5db;">
+                                        {{ $emoji }} {{$mood }}
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- タイムライン一覧 -->
+                        @if(!empty($reviews) && count($reviews) > 0)
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                @foreach($reviews as$review)
+                                    <div style="background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; box-sizing: border-box;">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                            <div>
+                                                <span style="font-size: 13px; font-weight: 800; color: #ffffff;">{{ $review->movie_title }}</span>
+                                                <div style="font-size: 10px; color: #6b7280; margin-top: 2px;">
+                                                    {{ $review->user->name ?? '匿名ユーザー' }} • {{ $review->created_at ? $review->created_at->diffForHumans() : '' }}
+                                                </div>
+                                            </div>
+                                            <div style="background-color: #111827; border: 1px solid rgba(245, 158, 11, 0.5); border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 800; color: #fbbf24;">
+                                                ★ {{ number_format((float)$review->rating, 1) }}
+                                            </div>
+                                        </div>
+
+                                        @if(!empty($review->mood))
+                                            <div style="margin-bottom: 8px; display: flex; gap: 4px; flex-wrap: wrap;">
+                                                @foreach(explode(',', $review->mood) as$m)
+                                                    <span style="font-size: 9px; background-color: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b; padding: 1px 6px; border-radius: 4px;">
+                                                        {{ trim($m) }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+
+                                        <p style="font-size: 11px; color: #e5e7eb; margin: 0; line-height: 1.5; white-space: pre-wrap;">{{ $review->comment }}</p>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div style="background-color: #0d1117; border: 1px dashed #374151; border-radius: 12px; padding: 30px; text-align: center; color: #9ca3af;">
+                                <div style="font-size: 24px; margin-bottom: 6px;">💬</div>
+                                <p style="font-size: 12px; margin: 0;">最初のレビューを投稿してみましょう！</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
-                <!-- 📱 タイムライン投稿一覧（フィルター連動） -->
-                <div class="space-y-5">
-                    @forelse($reviews ?? $posts ?? [] as $post)
-                        @php
-                            $moodVal = $post->mood ?? $post->moods ?? '';
-                        @endphp
-                        <div x-show="activeFilter === 'all' || '{{ $moodVal }}'.includes(activeFilter)" x-transition
-                            class="bg-gray-900/90 rounded-2xl border border-gray-800 p-6 shadow-xl hover:border-gray-700 transition space-y-4">
+                <!-- 右側：サイドバーエリア -->
+                <div style="display: flex; flex-direction: column; gap: 16px;">
 
-                            <!-- ヘッダー（ユーザー名 ＆ 気分タグ） -->
-                            <div class="flex items-center justify-between gap-4">
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 text-black font-black flex items-center justify-center text-xs shadow">
-                                        {{ mb_substr($post->user->name ?? '名', 0, 1) }}
-                                    </div>
-                                    <div>
-                                        <span
-                                            class="font-bold text-xs text-white block">{{ $post->user->name ?? 'ゲストユーザー' }}</span>
-                                        <span
-                                            class="text-[10px] text-gray-400 block">{{ $post->created_at ? $post->created_at->diffForHumans() : 'たった今' }}</span>
-                                    </div>
-                                </div>
-
-                                <!-- 気分タグ表示 -->
-                                @if(!empty($moodVal))
-                                    <div class="flex flex-wrap gap-1.5">
-                                        @foreach(explode(',', $moodVal) as $m)
-                                            <span
-                                                class="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
-                                                #{{ trim($m) }}
-                                            </span>
-                                        @endforeach
-                                    </div>
-                                @endif
-                            </div>
-
-                            <!-- 映画タイトル ＆ 評価 -->
-                            @if(!empty($post->movie_title))
-                                <div
-                                    class="bg-black/50 border border-gray-800/80 rounded-xl p-3 flex items-center justify-between">
-                                    <span class="font-bold text-xs text-amber-400 flex items-center gap-2">
-                                        <i class="fa-solid fa-film"></i>
-                                        {{ $post->movie_title }}
-                                    </span>
-                                    <span class="text-amber-400 font-extrabold text-xs">★
-                                        {{ number_format((float) ($post->rating ?? 5.0), 1) }}</span>
-                                </div>
-                            @endif
-
-                            <!-- 感想文 -->
-                            <p class="text-xs text-gray-200 leading-relaxed px-1">{{ $post->comment ?? $post->content }}</p>
-
-                            <!-- ❤️ 共感 ＆ 💬 コメントボタン -->
-                            <div
-                                class="flex items-center justify-end gap-6 pt-3 border-t border-gray-800/60 text-xs text-gray-400">
-                                <button class="hover:text-red-400 transition flex items-center gap-1.5 active:scale-95">
-                                    <i class="fa-solid fa-heart text-red-500"></i>
-                                    <span>共感した！</span>
-                                    <span class="font-bold text-amber-400">{{ $post->likes_count ?? 0 }}</span>
-                                </button>
-                                <button class="hover:text-amber-400 transition flex items-center gap-1.5 active:scale-95">
-                                    <i class="fa-solid fa-comment text-amber-500"></i>
-                                    <span>コメント</span>
-                                    <span class="font-bold text-amber-400">{{ $post->comments_count ?? 0 }}</span>
-                                </button>
-                            </div>
+                    <!-- みんなが感じている感情 -->
+                    <div style="background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 16px;">
+                        <h3 style="font-size: 12px; font-weight: bold; color: #f59e0b; margin: 0 0 12px 0; display: flex; align-items: center; gap: 6px;">
+                            🔥 今みんなが感じている感情
+                        </h3>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <span style="font-size: 10px; background-color: #000000; border: 1px solid #374151; color: #ffffff; padding: 4px 10px; border-radius: 9999px;">😭 #号泣</span>
+                            <span style="font-size: 10px; background-color: #000000; border: 1px solid #374151; color: #ffffff; padding: 4px 10px; border-radius: 9999px;">😆 #スカッと</span>
+                            <span style="font-size: 10px; background-color: #000000; border: 1px solid #374151; color: #ffffff; padding: 4px 10px; border-radius: 9999px;">😱 #ハラハラ</span>
+                            <span style="font-size: 10px; background-color: #000000; border: 1px solid #374151; color: #ffffff; padding: 4px 10px; border-radius: 9999px;">💖 #キュン</span>
                         </div>
-                    @empty
-                        <div class="bg-gray-900/60 rounded-2xl border border-gray-800/80 p-10 text-center space-y-3">
-                            <i class="fa-solid fa-comments text-amber-500 text-3xl"></i>
-                            <p class="text-xs text-gray-400">最初のレビューを投稿してみましょう！</p>
-                        </div>
-                    @endforelse
-                </div>
-
-            </div>
-
-            <!-- 👉 右カラム：サイドバー (4/12) -->
-            <div class="lg:col-span-4 space-y-6">
-
-                <!-- 🔥 今みんなが感じている感情（クリックでフィルター連動） -->
-                <div class="bg-gray-900/90 rounded-2xl border border-gray-800 p-5 shadow-xl space-y-4">
-                    <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-fire text-amber-500"></i>
-                        今みんなが感じている感情
-                    </h3>
-                    <div class="flex flex-wrap gap-2">
-                        @foreach([
-                                '号泣' => '😭',
-                                'スカッと' => '😆',
-                                'ハラハラ' => '😱',
-                                'キュン' => '💖'
-                            ] as $mName => $emoji)
-                            <button @click="activeFilter = '{{ $mName }}'"
-                                class="bg-black hover:bg-gray-800 border border-gray-800 hover:border-amber-500/50 text-gray-300 text-xs font-bold px-3.5 py-2 rounded-full transition flex items-center gap-1.5">
-                                <span>{{ $emoji }}</span>
-                                <span>#{{ $mName }}</span>
-                            </button>
-                        @endforeach
                     </div>
-                </div>
 
-                <!-- 💡 楽しみ方ガイド -->
-                <div class="bg-gray-900/90 rounded-2xl border border-gray-800 p-5 shadow-xl space-y-3">
-                    <h3 class="text-xs font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-lightbulb text-amber-500"></i>
-                        MovieMood コミュニティの楽しみ方
-                    </h3>
-                    <p class="text-xs text-gray-400 leading-relaxed">
-                        「キュンキュンしたい」「泣いてすっきりしたい」など、その時の気分に合った映画の感想を探せます。「共感した！」やコメントで感想を共有しましょう。
-                    </p>
+                    <!-- MovieMood コミュニティの楽しみ方 -->
+                    <div style="background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 16px;">
+                        <h3 style="font-size: 12px; font-weight: bold; color: #f59e0b; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px;">
+                            💡 MovieMood コミュニティの楽しみ方
+                        </h3>
+                        <p style="font-size: 10px; color: #9ca3af; line-height: 1.5; margin: 0;">
+                            「キュンキュンしたい」「泣いてすっきりしたい」など、その時の気分に合った映画の感想を探せます。感情タグを添えて感想を共有しましょう！
+                        </p>
+                    </div>
+
                 </div>
 
             </div>
-
         </div>
     </div>
+
+    <!-- JavaScript (スライダーと気分ボタンのインタラクション) -->
+    <script>
+        // スライダー連動の文字＆数値表示
+        const ratingRange = document.getElementById('rating_range');
+        const ratingValue = document.getElementById('rating_value');
+        const ratingLabel = document.getElementById('rating_label');
+        const ratingInput = document.getElementById('rating_input');
+
+        const labels = {
+            1: '全然おすすめしない', 2: 'イマイチ', 3: '普通以下', 4: 'まあまあ', 5: '普通',
+            6: '良い', 7: 'かなりおすすめ', 8: 'とても面白い', 9: '最高！', 10: '人生の神作'
+        };
+
+        if (ratingRange) {
+            ratingRange.addEventListener('input', function() {
+                const val = this.value;
+                ratingValue.textContent = val;
+                ratingInput.value = val;
+                ratingLabel.textContent = labels[val] || '';
+            });
+        }
+
+        // 気分ボタン切り替えスタイル
+        function toggleMoodStyle(checkbox) {
+            const label = checkbox.parentElement;
+            if (checkbox.checked) {
+                label.style.backgroundColor = 'rgba(245, 158, 11, 0.15)';
+                label.style.borderColor = '#f59e0b';
+                label.style.color = '#f59e0b';
+            } else {
+                label.style.backgroundColor = '#000000';
+                label.style.borderColor = '#374151';
+                label.style.color = '#e5e7eb';
+            }
+        }
+
+        // 映画タイトル補完処理
+        const movieInput = document.getElementById('movie_title');
+        const suggestionsBox = document.getElementById('movie_suggestions');
+
+        if (movieInput) {
+            movieInput.addEventListener('input', async function() {
+                const query = this.value.trim();
+                if (query.length < 2) {
+                    suggestionsBox.style.display = 'none';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/movies/search?query=${encodeURIComponent(query)}`);
+                    const movies = await response.json();
+
+                    if (movies.length > 0) {
+                        suggestionsBox.innerHTML = '';
+                        movies.slice(0, 5).forEach(movie => {
+                            const div = document.createElement('div');
+                            div.style.cssText = 'padding: 8px 12px; font-size: 11px; color: #ffffff; cursor: pointer; border-bottom: 1px solid #1f2937;';
+                            div.textContent = movie.title;
+                            div.onmouseover = () => div.style.backgroundColor = '#1f2937';
+                            div.onmouseout = () => div.style.backgroundColor = 'transparent';
+                            div.onclick = () => {
+                                movieInput.value = movie.title;
+                                suggestionsBox.style.display = 'none';
+                            };
+                            suggestionsBox.appendChild(div);
+                        });
+                        suggestionsBox.style.display = 'block';
+                    } else {
+                        suggestionsBox.style.display = 'none';
+                    }
+                } catch (e) {
+                    suggestionsBox.style.display = 'none';
+                }
+            });
+        }
+    </script>
 </x-app-layout>

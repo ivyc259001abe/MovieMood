@@ -12,6 +12,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\LikeController;
+use App\Http\Controllers\WatchlistController;
 
 // ★ TMDb人気映画取得ヘルパー関数
 if (!function_exists('getPopularMovies')) {
@@ -44,7 +45,7 @@ Route::get('/login', function () {
     return view('login', compact('popularMovies'));
 });
 
-// ログイン処理（重複を整理）
+// ログイン処理
 Route::post('/', [AuthenticatedSessionController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 
@@ -55,23 +56,16 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name
 
 // 🔑 パスワード再設定
 Route::get('/password/reset', function () {
-    return view('password_reset');
+    $popularMovies = getPopularMovies();
+    return view('password_reset', compact('popularMovies'));
 })->name('password.request');
 
 Route::post('/password/reset', [PasswordController::class, 'resetPassword'])->name('password.reset.update');
 
-// 🌟 映画関連（MovieControllerに集約）
-Route::get('/home', [MovieController::class, 'home'])->name('home');
-Route::get('/movies/search', [MovieController::class, 'search'])->name('movies.search');
-Route::get('/result', [MovieController::class, 'search'])->name('result');
-Route::resource('movies', MovieController::class);
-
 // 🎬 コミュニティ表示ルート
 Route::get('/community', function () {
-    // TMDbから人気映画（候補用）を取得
     $popularMovies = getPopularMovies();
 
-    // レビュー一覧を取得
     $reviews = Review::with('user')
         ->latest()
         ->paginate(10);
@@ -81,18 +75,15 @@ Route::get('/community', function () {
 
 // 🌟 コミュニティ（投稿保存処理）
 Route::post('/community', function (Request $request) {
-    // 1. バリデーション
     $validated = $request->validate([
         'movie_title' => 'required|string|max:255',
-        'rating' => 'required|integer|min:1|max:5',
+        'rating' => 'required|integer|min:1|max:10', // ★ max:5 から max:10 に変更
         'comment' => 'required|string|max:1000',
-        'moods' => 'nullable|array', // 複数選択（配列）
+        'moods' => 'nullable|array',
     ]);
 
-    // 2. 気分（ムード）タグをカンマ区切り文字列に結合
     $moodsString = !empty($request->moods) ? implode(', ', $request->moods) : null;
 
-    // 3. レビューの保存（データベースへ追加）
     Review::create([
         'user_id' => auth()->id(),
         'movie_title' => $validated['movie_title'],
@@ -104,21 +95,35 @@ Route::post('/community', function (Request $request) {
     return redirect()->route('community.index')->with('success', 'レビューを投稿しました！');
 })->name('community.store')->middleware('auth');
 
-// ★ マイページ・プロフィール・レビュー関連（ログインユーザー専用）
+// 🌟 ログインユーザー専用機能グループ
 Route::middleware('auth')->group(function () {
-    Route::get('/mypage', [ProfileController::class, 'show'])->name('mypage');
+    // ホーム画面
+    Route::get('/home', [MovieController::class, 'home'])->name('home');
 
+    // 🔍 映画検索
+    Route::get('/movies/search', [MovieController::class, 'search'])->name('movies.search');
+    Route::get('/result', [MovieController::class, 'search'])->name('result');
+
+    // 🎬 映画リソースルート
+    Route::resource('movies', MovieController::class);
+
+    // 👤 マイページ＆プロフィール関連
+    Route::get('/mypage', [ProfileController::class, 'show'])->name('mypage');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile', [ProfileController::class, 'update']);
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
 
-    // レビュー・いいね関連
+    // ✏️ レビュー・いいね関連
     Route::get('/movies/{id}/reviews', [ReviewController::class, 'index'])->name('reviews.index');
     Route::get('/movies/{id}/reviews/create', [ReviewController::class, 'create'])->name('reviews.create');
     Route::post('/movies/{id}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::post('/reviews/{review}/like', [LikeController::class, 'toggle'])->name('reviews.like');
+
+    // 🔖 ウォッチリスト関連
+    Route::get('/watchlist', [WatchlistController::class, 'index'])->name('watchlist.index');
+    Route::post('/watchlist/toggle', [WatchlistController::class, 'toggle'])->name('watchlist.toggle');
 });
 
 // 🔍 映画タイトルのリアルタイム検索API（TMDb連携）
