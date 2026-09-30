@@ -15,7 +15,7 @@ return new class extends Migration {
                 $table->unsignedBigInteger('review_id')->nullable();
                 $table->timestamps();
 
-                $table->unique(['user_id', 'movie_id', 'review_id']);
+                $table->unique(['user_id', 'review_id']);
             });
         }
     }

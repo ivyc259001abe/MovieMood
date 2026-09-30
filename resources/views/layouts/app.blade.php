@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ $title ?? 'MovieMood' }}</title>
@@ -39,7 +39,9 @@
         }
 
         .animate-loop-scroll {
-            animation: loop-scroll 100s linear infinite;
+            display: flex;
+            width: max-content;
+            animation: loop-scroll 120s linear infinite;
         }
 
         .animate-loop-scroll:hover {
@@ -49,15 +51,15 @@
 </head>
 
 <body
-    class="bg-black text-white min-h-screen flex flex-col font-sans antialiased w-full selection:bg-amber-500 selection:text-black overflow-x-hidden">
+    class="bg-black text-white min-h-screen flex flex-col font-sans antialiased w-full selection:bg-amber-500 selection:text-black overflow-x-hidden relative">
 
     <!-- 🌟 ヘッダーナビゲーション -->
     <header class="bg-[#0b0e14] border-b border-gray-800/80 sticky top-0 z-50 w-full py-2">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between w-full">
 
             <!-- 左：MovieMoodロゴ ＆ キャッチコピー -->
             <div class="flex flex-col items-start justify-center">
-                <a href="{{ Auth::check() ? route('home') : '#' }}" title="HOME画面へ戻る"
+                <a href="{{ route('home') }}" title="HOME画面へ戻る"
                     class="group text-lg sm:text-2xl font-extrabold text-amber-500 hover:text-amber-400 transition-all duration-200 tracking-wide shrink-0 no-underline inline-flex items-center gap-1.5">
                     <span class="group-hover:scale-105 transition-transform duration-200">MovieMood</span>
                 </a>
@@ -69,50 +71,117 @@
             <!-- 右：ナビゲーション -->
             <div class="flex items-center gap-2 sm:gap-4 text-xs font-bold">
                 @auth
-                    <!-- マイページ -->
-                    <a href="{{ route('mypage') }}"
-                        class="flex items-center gap-1.5 sm:gap-2 bg-[#161f2c] hover:bg-gray-800 border border-amber-500/50 rounded-full py-1 px-2.5 sm:px-3.5 transition shadow-sm group shrink-0 no-underline">
-                        <div
-                            class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-900 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-amber-400">
-                            @if(Auth::check() && Auth::user()->avatar)
-                                <img src="{{ asset(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}"
-                                    class="w-full h-full object-cover">
-                            @else
-                                <i class="fa-solid fa-user text-gray-400 text-[9px] sm:text-[10px]"></i>
-                            @endif
-                        </div>
-                        <span
-                            class="text-[11px] sm:text-xs text-gray-200 group-hover:text-amber-400 transition max-w-[70px] sm:max-w-[130px] truncate">
-                            {{ Str::limit(Auth::user()->name ?? 'マイページ', 15, '') }}
-                        </span>
-                    </a>
-
-                    <!-- コミュニティ -->
-                    <a href="{{ route('community.index') }}"
-                        class="text-gray-300 hover:text-amber-400 transition flex items-center gap-1 px-1 py-1 shrink-0 no-underline"
-                        title="コミュニティ">
-                        <i class="fa-solid fa-users text-amber-500 text-sm sm:text-xs"></i>
-                        <span class="hidden sm:inline">コミュニティ</span>
-                    </a>
-
-                    <!-- ログアウト -->
-                    <form method="POST" action="{{ route('logout') }}" class="inline shrink-0">
-                        @csrf
-                        <button type="submit"
-                            class="text-red-500 hover:text-red-400 transition flex items-center gap-1 px-1 py-1 font-bold cursor-pointer"
-                            title="ログアウト">
-                            <i class="fa-solid fa-right-from-bracket text-red-500 text-sm sm:text-xs"></i>
-                            <span class="hidden sm:inline">ログアウト</span>
+                    <!-- 🔔 通知アイコン（既読化連動ドロップダウン） -->
+                    <div x-data="{ open: false, unreadCount: {{ Auth::user()->unreadNotifications->count() }} }"
+                        class="relative">
+                        <button @click="
+                                    open = !open;
+                                    if (open && unreadCount > 0) {
+                                        fetch('{{ route('notifications.readAll') }}', {
+                                            method: 'POST',
+                                            headers: {
+                                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                'Content-Type': 'application/json'
+                                            }
+                                        }).then(() => unreadCount = 0);
+                                    }
+                                "
+                            class="relative text-gray-300 hover:text-amber-400 p-1.5 focus:outline-none transition cursor-pointer"
+                            title="お知らせ">
+                            <i class="fa-solid fa-bell text-base"></i>
+                            <!-- 未読バッチ（未読通知がある場合に赤丸を表示） -->
+                            <span x-show="unreadCount > 0" x-cloak
+                                class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#0b0e14]"></span>
                         </button>
-                    </form>
-                @endauth
-            </div>
 
-        </div>
+                        <!-- 通知ドロップダウンメニュー -->
+                        <div x-show="open" @click.away="open = false" x-cloak
+                            class="absolute right-0 mt-2 w-72 sm:w-80 bg-gray-900 border border-gray-800 rounded-2xl shadow-xl py-2 z-50 text-left">
+                            <div class="px-4 py-2 border-b border-gray-800 flex justify-between items-center">
+                                <span class="font-bold text-gray-200 text-xs">お知らせ</span>
+                                <span class="text-[10px] text-amber-500" x-text="unreadCount + '件の未読'"></span>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto divide-y divide-gray-800/50">
+                                @forelse(Auth::user()->notifications->take(5) as $notification)
+                                    @php
+                                        // 通知データからパラメータ・URLを取得
+                                        $movieId = $notification->data['movie_id'] ?? $notification->data['tmdb_id'] ?? null;
+                                        $reviewId = $notification->data['review_id'] ?? null;
+
+                                        $targetUrl = '#';
+                                        if (!empty($notification->data['url']) && $notification->data['url'] !== '#') {
+                                            $targetUrl = $notification->data['url'];
+                                        } elseif ($movieId) {
+                                            if (\Illuminate\Support\Facades\Route::has('reviews.index')) {
+                                                $targetUrl = route('reviews.index', $movieId);
+                                            } else {
+                                                $targetUrl = url('/movies/' . $movieId);
+                                            }
+                                            if ($reviewId) {
+                                                $targetUrl .= '#review-' . $reviewId;
+                                            }
+                                        }
+                                    @endphp
+
+                                    <a href="{{ $targetUrl }}"
+                                        @click="if ('{{ $targetUrl }}' !== '#') { window.location.href = '{{ $targetUrl }}'; }"
+                                        class="block px-4 py-2.5 hover:bg-gray-800/80 transition text-xs text-gray-300 no-underline cursor-pointer">
+                                        <p class="m-0 leading-snug">
+                                            {{ $notification->data['message'] ?? '新しいお知らせがあります' }}
+                                        </p>
+                                        <div class="text-[9px] text-gray-500 mt-1">
+                                            {{ $notification->created_at->diffForHumans() }}
+                                        </div>
+                                    </a>
+                                @empty
+                                    <p class="text-center text-xs text-gray-500 py-4 m-0">新着のお知らせはありません</p>
+                                @endforelse
+                            </div>
+                        </div>
+                        <!-- マイページ -->
+                        <a href="{{ route('mypage') }}"
+                            class="flex items-center gap-1.5 sm:gap-2 bg-[#161f2c] hover:bg-gray-800 border border-amber-500/50 rounded-full py-1 px-2.5 sm:px-3.5 transition shadow-sm group shrink-0 no-underline">
+                            <div
+                                class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-900 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-amber-400">
+                                @if(Auth::check() && Auth::user()->avatar)
+                                    <img src="{{ asset(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}"
+                                        class="w-full h-full object-cover">
+                                @else
+                                    <i class="fa-solid fa-user text-gray-400 text-[9px] sm:text-[10px]"></i>
+                                @endif
+                            </div>
+                            <span
+                                class="text-[11px] sm:text-xs text-gray-200 group-hover:text-amber-400 transition max-w-[70px] sm:max-w-[130px] truncate">
+                                {{ Str::limit(Auth::user()->name ?? 'マイページ', 15, '') }}
+                            </span>
+                        </a>
+
+                        <!-- コミュニティ -->
+                        <a href="{{ route('community.index') }}"
+                            class="text-gray-300 hover:text-amber-400 transition flex items-center gap-1 px-1 py-1 shrink-0 no-underline"
+                            title="コミュニティ">
+                            <i class="fa-solid fa-users text-amber-500 text-sm sm:text-xs"></i>
+                            <span class="hidden sm:inline">コミュニティ</span>
+                        </a>
+
+                        <!-- ログアウト -->
+                        <form method="POST" action="{{ route('logout') }}" class="inline shrink-0">
+                            @csrf
+                            <button type="submit"
+                                class="text-red-500 hover:text-red-400 transition flex items-center gap-1 px-1 py-1 font-bold cursor-pointer"
+                                title="ログアウト">
+                                <i class="fa-solid fa-right-from-bracket text-red-500 text-sm sm:text-xs"></i>
+                                <span class="hidden sm:inline">ログアウト</span>
+                            </button>
+                        </form>
+                @endauth
+                </div>
+
+            </div>
     </header>
 
     <!-- 📱 メインコンテンツエリア -->
-    <main class="flex-grow w-full">
+    <main class="flex-grow w-full max-w-full overflow-x-hidden">
         {{ $slot }}
     </main>
 
@@ -136,9 +205,10 @@
         $loopMovies = array_merge($popularMovies, $popularMovies);
     @endphp
 
-    <footer class="bg-black border-t border-gray-900 mt-6 text-gray-400 text-xs w-full shrink-0">
+    <footer
+        class="bg-black border-t border-gray-900 mt-6 text-gray-400 text-xs w-full shrink-0 max-w-full overflow-hidden">
 
-        <!-- 人気映画カルーセル (ログイン画面と同一仕様) -->
+        <!-- 人気映画カルーセル -->
         @if(!empty($popularMovies))
             <div class="border-b border-gray-900 py-2 bg-black w-full overflow-hidden">
                 <div class="w-full text-center mb-1.5 px-4">
@@ -147,9 +217,9 @@
                     </span>
                 </div>
 
-                <!-- 横スクロールCSSアニメーションエリア -->
-                <div class="w-full overflow-hidden whitespace-nowrap flex">
-                    <div class="flex gap-2 animate-loop-scroll will-change-transform">
+                <!-- 横スクロールアニメーションエリア -->
+                <div class="w-full overflow-hidden relative">
+                    <div class="animate-loop-scroll gap-2 will-change-transform">
                         @foreach($loopMovies as $movie)
                             <a href="{{ route('movies.show', $movie['id'] ?? 0) }}"
                                 class="flex-none w-[110px] h-[150px] bg-gray-900 rounded-md overflow-hidden border border-gray-800 relative shadow-md group">
@@ -174,7 +244,7 @@
             </div>
         @endif
 
-        <!-- 最下部：統一されたコピーライト表記 -->
+        <!-- 最下部：コピーライト -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 text-center text-[10px] text-gray-500 font-medium">
             <p class="m-0">&copy; 2026 MovieMood. All rights reserved.</p>
         </div>

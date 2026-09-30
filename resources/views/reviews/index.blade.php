@@ -6,6 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MovieMood - {{ $movie['title'] ?? '映画' }}のレビュー一覧</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* ジャンプした時にレビュー枠を少しふわっとハイライト表示するアニメーション */
+        :target {
+            animation: highlight 2s ease-in-out;
+        }
+
+        @keyframes highlight {
+            0% {
+                background-color: rgba(245, 158, 11, 0.25);
+                border-color: rgba(245, 158, 11, 0.8);
+            }
+
+            100% {
+                background-color: #1a2332;
+            }
+        }
+    </style>
 </head>
 
 <body
@@ -49,7 +66,9 @@
             <!-- レビュー一覧 -->
             <div class="space-y-2.5">
                 @forelse($reviews as $rev)
-                    <div class="bg-[#1a2332] border border-gray-800 rounded-lg p-3 space-y-1.5 text-xs">
+                    {{-- 💡 id="review-{{ $rev->id }}" を付与して直接ジャンプを可能に！ --}}
+                    <div id="review-{{ $rev->id }}"
+                        class="bg-[#1a2332] border border-gray-800 rounded-lg p-3 space-y-1.5 text-xs scroll-mt-4 transition-all duration-300">
                         <!-- ユーザー情報 & 気分タグ -->
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-1.5">

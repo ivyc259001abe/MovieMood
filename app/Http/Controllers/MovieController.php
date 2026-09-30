@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -104,10 +105,8 @@ class MovieController extends Controller
             $pickupIndex = $dayOfYear % count($popularMovies);
             $selected = $popularMovies[$pickupIndex];
 
-            // 映画のジャンルから気分と「問いかけ」を設定
             $genreIds = $selected['genre_ids'] ?? [];
 
-            // デフォルト値
             $mood = '#ハラハラ';
             $phrase = 'ドキドキしたい？';
 
@@ -145,9 +144,8 @@ class MovieController extends Controller
     public function search(Request $request)
     {
         $popularMovies = $this->getPopularMovies();
-        $query = $request->query('query'); // 検索フォームからの入力文字
+        $query = $request->query('query');
 
-        // 1. キーワード検索（`query`パラメータがある場合）
         if ($query) {
             $movies = $this->searchMoviesByQuery($query);
 
@@ -159,7 +157,6 @@ class MovieController extends Controller
             ]);
         }
 
-        // 2. 気分（ムード）検索（`mood`パラメータがある場合）
         $mood = $request->query('mood', '号泣');
 
         $map = [
@@ -225,40 +222,52 @@ class MovieController extends Controller
             'vote_average' => $movieData['vote_average'] ?? 0,
         ];
 
-        $reviews = [
-            [
-                'id' => 1,
-                'user_name' => 'スパイダー',
-                'rating' => '★★★★★ (4.0)',
-                'mood' => '#ハラハラ',
-                'comment' => '最高でした！絶対に観るべき！',
-                'likes' => 15,
-                'comments_count' => 5,
-            ],
-            [
-                'id' => 2,
-                'user_name' => 'ワーナー',
-                'rating' => '★★★★☆',
-                'mood' => '#号泣',
-                'comment' => '涙なしには観れない…',
-                'likes' => 12,
-                'comments_count' => 0,
-            ],
-            [
-                'id' => 3,
-                'user_name' => 'TOHO',
-                'rating' => '★★★★★',
-                'mood' => '#スカッと',
-                'comment' => 'きっと続編あるよね？待ってます！',
-                'likes' => 5,
-                'comments_count' => 0,
-            ],
-        ];
+        // データベースから実際に投稿された対象映画のレビューを取得
+        $reviews = Review::with('user')
+            ->where('movie_id', $id)
+            ->latest()
+            ->get();
 
         return view('movies.show', [
             'movie' => $movie,
             'reviews' => $reviews,
             'popularMovies' => $popularMovies,
         ]);
+    }
+
+    // 🤖 JavaScriptの自動補完・オートコンプリート用API
+    public function searchApi(Request $request)
+    {
+        $query = $request->query('query');
+
+        if (!$query) {
+            return response()->json([]);
+        }
+
+        $apiKey = config('services.tmdb.api_key', env('TMDB_API_KEY'));
+
+        $response = Http::get("https://api.themoviedb.org/3/search/movie", [
+            'api_key' => $apiKey,
+            'language' => 'ja-JP',
+            'query' => $query,
+            'page' => 1,
+        ]);
+
+        if ($response->successful()) {
+            $results = $response->json()['results'] ?? [];
+
+            $formatted = array_map(function ($item) {
+                return [
+                    'id' => $item['id'],
+                    'title' => $item['title'] ?? 'タイトル不明',
+                    'poster_path' => $item['poster_path'] ?? null,
+                    'release_date' => $item['release_date'] ?? '',
+                ];
+            }, array_slice($results, 0, 5));
+
+            return response()->json($formatted);
+        }
+
+        return response()->json([]);
     }
 }

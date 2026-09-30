@@ -9,35 +9,40 @@ class Review extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'review_id';
+    protected $guarded = [];
 
-    protected $fillable = [
-        'user_id',
-        'movie_id',
-        'movie_title',
-        'poster_path',
-        'rating',
-        'moods',
-        'comment',
-    ];
-
-    // ユーザーとのリレーション（これが消えていたためエラーになっていました）
+    /**
+     * レビューを投稿したユーザー
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // いいねとのリレーション
-    public function likes()
+    /**
+     * レビューに紐づくコメント一覧
+     */
+    public function comments()
     {
-        return $this->hasMany(Like::class, 'review_id');
+        return $this->hasMany(Comment::class);
     }
 
-    // ユーザーがすでにいいねしているか判定
+    /**
+     * レビューに紐づくいいね一覧
+     */
+    public function likes()
+    {
+        return $this->hasMany(Like::class);
+    }
+
+    /**
+     * 指定ユーザーが「いいね」済みかどうかを判定
+     */
     public function isLikedBy($user)
     {
-        if (!$user)
+        if (!$user) {
             return false;
-        return $this->likes->contains('user_id', $user->id);
+        }
+        return $this->likes()->where('user_id', $user->id)->exists();
     }
 }

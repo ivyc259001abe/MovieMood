@@ -5,20 +5,25 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Like extends Model
+class Comment extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'review_id', 'movie_id'];
+    protected $guarded = [];
 
+    /**
+     * コメントを投稿したユーザー
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * 対象のレビュー
+     */
     public function review()
     {
-        // レビュー側の主キーが review_id の場合は第二引数に 'review_id' を指定
-        return $this->belongsTo(Review::class, 'review_id', 'review_id');
+        return $this->belongsTo(Review::class);
     }
 }

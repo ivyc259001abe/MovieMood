@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Review;
+use App\Models\Watchlist;
+use App\Models\Like;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,27 +17,24 @@ use Illuminate\View\View;
 class ProfileController extends Controller
 {
     /**
-     * マイページの表示
+     * マイページ表示処理
      */
-    public function show(): View
+    public function show()
     {
-        $user = Auth::user();
+        $user = auth()->user();
 
-        $myReviews = method_exists($user, 'reviews')
-            ? $user->reviews()->latest()->get()
-            : ($user->reviews ?? []);
+        // 1. ユーザーのウォッチリスト一覧を取得（Watchlistモデルから直接検索）
+        $watchlist = Watchlist::where('user_id', $user->id)->latest()->get();
 
-        $likedMovies = method_exists($user, 'likes')
-            ? $user->likes()->latest()->get()
-            : ($user->likedReviews ?? []);
+        // 2. 自分の投稿レビュー一覧を取得（Reviewモデルから直接検索）
+        $myReviews = Review::where('user_id', $user->id)->latest()->get();
 
-        $watchlist = method_exists($user, 'watchlists')
-            ? $user->watchlists()->latest()->get()
-            : ($user->watchlist ?? []);
+        // 3. いいねした投稿を取得（Likeモデルから対象のレビューIDを取得してReviewを抽出）
+        $likedReviewIds = Like::where('user_id', $user->id)->pluck('review_id');
+        $likedReviews = Review::whereIn('id', $likedReviewIds)->latest()->get();
 
-        $popularMovies = function_exists('getPopularMovies') ? getPopularMovies() : [];
-
-        return view('mypage', compact('myReviews', 'likedMovies', 'watchlist', 'popularMovies'));
+        // データをマイページのビュー（mypage）に渡す
+        return view('mypage', compact('user', 'watchlist', 'myReviews', 'likedReviews'));
     }
 
     /**

@@ -8,6 +8,7 @@
             <!-- ヘッダー -->
             <header class="text-center mb-4">
                 <h1 class="text-3xl font-bold text-yellow-500 tracking-wider">MovieMood</h1>
+                <p class="text-xs text-gray-400 mt-1">マイページ</p>
             </header>
 
             <!-- ユーザー情報 -->
@@ -32,103 +33,77 @@
                 </div>
             </div>
 
-            <!-- キーワード検索 -->
-            <div class="w-full px-2 mb-6">
-                <form method="GET" action="#" class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-4">
-                        <svg class="h-5 w-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                    </span>
-                    <input type="text" name="search" placeholder="キーワード検索"
-                        class="w-full py-2.5 pl-12 pr-4 bg-white text-black font-medium rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 border-none shadow-md placeholder-gray-400">
-                </form>
-            </div>
+            <!-- タブエリア（Alpine.jsによる切り替え） -->
+            <div x-data="{ tab: 'likes' }" class="w-full">
+                <!-- タブボタン -->
+                <div class="flex border-b border-gray-700 mb-4 justify-around">
+                    <button @click="tab = 'reviews'"
+                        :class="tab === 'reviews' ? 'text-yellow-500 border-b-2 border-yellow-500 font-bold' : 'text-gray-400'"
+                        class="pb-2 px-2 text-sm transition">
+                        投稿 ({{ count($myReviews ?? []) }})
+                    </button>
+                    <button @click="tab = 'likes'"
+                        :class="tab === 'likes' ? 'text-yellow-500 border-b-2 border-yellow-500 font-bold' : 'text-gray-400'"
+                        class="pb-2 px-2 text-sm transition">
+                        LIKES ({{ count($likedReviews ?? []) }})
+                    </button>
+                    <button @click="tab = 'watchlist'"
+                        :class="tab === 'watchlist' ? 'text-yellow-500 border-b-2 border-yellow-500 font-bold' : 'text-gray-400'"
+                        class="pb-2 px-2 text-sm transition">
+                        観たい ({{ count($watchlistMovies ?? []) }})
+                    </button>
+                </div>
 
-            <!-- 人気作品エリア（★ 星評価統一） -->
-            @if(!empty($popularMovies) && count($popularMovies) > 0)
-                <div class="w-full px-2 mb-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-bold text-gray-300">🔥 人気作品</span>
-                        <span class="text-[10px] text-gray-500">横スクロール可</span>
-                    </div>
-
-                    <div class="flex space-x-3 overflow-x-auto pb-2 scrollbar-thin">
-                        @foreach($popularMovies as $movie)
-                            <div
-                                class="flex-none w-28 bg-gray-800 rounded-xl overflow-hidden border border-gray-700 relative shadow-sm">
-                                <!-- ポスター画像 ＆ 星評価バッジ -->
-                                <div class="w-full h-36 relative bg-gray-900">
-                                    @if(!empty($movie['poster_path']))
-                                        <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}"
-                                            alt="{{ $movie['title'] ?? '' }}" class="w-full h-full object-cover">
-                                    @else
-                                        <div class="w-full h-full flex items-center justify-center text-gray-500 text-[10px]">
-                                            NO IMAGE
-                                        </div>
-                                    @endif
-
-                                    <!-- 星評価バッジ -->
-                                    @if(!empty($movie['vote_average']))
-                                        <div
-                                            class="absolute top-1.5 right-1.5 bg-black/85 border border-amber-500/60 text-amber-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow">
-                                            ★ {{ number_format($movie['vote_average'], 1) }}
-                                        </div>
-                                    @endif
-                                </div>
-
-                                <!-- 作品タイトル -->
-                                <div class="p-2 bg-gray-800">
-                                    <h3 class="text-[11px] font-bold text-white truncate" title="{{ $movie['title'] ?? '' }}">
-                                        {{ $movie['title'] ?? 'タイトル不明' }}
-                                    </h3>
-                                    <p class="text-[9px] text-gray-400 mt-0.5">
-                                        {{ isset($movie['release_date']) ? substr($movie['release_date'], 0, 4) : '' }}
-                                    </p>
-                                </div>
+                <!-- 1. 自分の投稿一覧 -->
+                <div x-show="tab === 'reviews'" class="space-y-3">
+                    @forelse($myReviews ?? [] as $review)
+                        <div class="bg-gray-800 p-3 rounded-xl border border-gray-700 text-left">
+                            <div class="flex justify-between items-center mb-1">
+                                <span
+                                    class="font-bold text-sm text-yellow-400 truncate max-w-[200px]">{{ $review->movie_title }}</span>
+                                <span class="text-xs text-amber-400 font-bold">★
+                                    {{ number_format($review->rating, 1) }}</span>
                             </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
-
-            <!-- 気分タグ選択 -->
-            <div class="w-full mb-6">
-                <div class="flex items-center justify-center space-x-1 mb-4 text-gray-300">
-                    <span class="text-lg">▼</span>
-                    <span class="font-bold text-sm">今のあなたの「気分」は？</span>
+                            <p class="text-xs text-gray-300 mt-1 line-clamp-2">{{ $review->comment }}</p>
+                        </div>
+                    @empty
+                        <p class="text-center text-xs text-gray-500 py-4">投稿したレビューはありません</p>
+                    @endforelse
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 px-2">
-                    <a href="#"
-                        class="flex items-center justify-center space-x-1 py-2 bg-white text-black font-bold rounded-full hover:bg-yellow-500 hover:text-black transition shadow-md text-sm">
-                        <span>😭</span> <span>#号泣</span>
-                    </a>
-                    <a href="#"
-                        class="flex items-center justify-center space-x-1 py-2 bg-white text-black font-bold rounded-full hover:bg-yellow-500 hover:text-black transition shadow-md text-sm">
-                        <span>🤩</span> <span>#スカッと</span>
-                    </a>
-                    <a href="#"
-                        class="flex items-center justify-center space-x-1 py-2 bg-white text-black font-bold rounded-full hover:bg-yellow-500 hover:text-black transition shadow-md text-sm">
-                        <span>😱</span> <span>#ハラハラ</span>
-                    </a>
-                    <a href="#"
-                        class="flex items-center justify-center space-x-1 py-2 bg-white text-black font-bold rounded-full hover:bg-yellow-500 hover:text-black transition shadow-md text-sm">
-                        <span>💖</span> <span>#キュン</span>
-                    </a>
+                <!-- 2. LIKES（いいねしたレビュー一覧） -->
+                <div x-show="tab === 'likes'" class="space-y-3">
+                    @forelse($likedReviews ?? [] as $review)
+                        <div class="bg-gray-800 p-3 rounded-xl border border-gray-700 text-left">
+                            <div class="flex justify-between items-center mb-1">
+                                <span
+                                    class="font-bold text-sm text-yellow-400 truncate max-w-[180px]">{{ $review->movie_title }}</span>
+                                <span class="text-xs text-amber-400 font-bold">★
+                                    {{ number_format($review->rating, 1) }}</span>
+                            </div>
+                            <p class="text-xs text-gray-300 mt-1 line-clamp-2">{{ $review->comment }}</p>
+                            <div class="mt-2 flex justify-between items-center text-[10px] text-gray-400">
+                                <span>投稿者: {{ $review->user->nickname ?? $review->user->name ?? '匿名' }}</span>
+                                <a href="{{ route('movies.show', $review->tmdb_id) }}"
+                                    class="text-yellow-500 hover:underline">映画を見る ＞</a>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-center text-xs text-gray-500 py-4">いいねしたレビューはありません</p>
+                    @endforelse
                 </div>
-            </div>
 
-            <!-- 本日のピックアップ -->
-            <div class="w-full px-2 mb-2">
-                <div
-                    class="bg-gray-800 border border-gray-700 rounded-[1.5rem] p-4 text-center relative overflow-hidden shadow-inner">
-                    <p class="text-[10px] text-gray-400">本日のピックアップムード</p>
-                    <p class="text-sm font-semibold text-white mt-1">「月曜から夜更かし...」</p>
-                    <a href="#" class="text-xs text-yellow-500 hover:underline block mt-2">
-                        おすすめが出る 👉
-                    </a>
+                <!-- 3. ウォッチリスト一覧 -->
+                <div x-show="tab === 'watchlist'" class="space-y-3">
+                    @forelse($watchlistMovies ?? [] as $movie)
+                        <div class="bg-gray-800 p-3 rounded-xl border border-gray-700 flex justify-between items-center">
+                            <span class="font-bold text-sm text-white truncate max-w-[200px]">{{ $movie->title }}</span>
+                            <a href="{{ route('movies.show', $movie->tmdb_id) }}"
+                                class="text-xs text-yellow-500 hover:underline">詳細 ＞</a>
+                        </div>
+                    @empty
+                        <p class="text-center text-xs text-gray-500 py-4">ウォッチリストは空です</p>
+                    @endforelse
                 </div>
             </div>
 
@@ -141,9 +116,9 @@
                 <span>編集⚙️</span>
             </a>
 
-            <a href="#"
+            <a href="{{ route('community.index') }}"
                 class="flex items-center space-x-1.5 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-full text-xs shadow-md transition">
-                <span>マイページへ 👉</span>
+                <span>コミュニティへ 👥</span>
             </a>
 
             <form method="POST" action="{{ route('logout') }}" class="m-0">

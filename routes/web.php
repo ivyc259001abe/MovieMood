@@ -14,6 +14,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\WatchlistController;
 
+
 // ★ TMDb人気映画取得ヘルパー関数
 if (!function_exists('getPopularMovies')) {
     function getPopularMovies()
@@ -28,22 +29,23 @@ if (!function_exists('getPopularMovies')) {
     }
 }
 
-// 🌟 トップページ（ログイン時は MovieController@home、未ログイン時は ログイン画面）
+// 🌟 トップページ（ログイン時は /home へ移動、未ログイン時は ログイン画面）
 Route::get('/', function () {
     if (Auth::check()) {
-        return app(MovieController::class)->home();
-    }
-    $popularMovies = getPopularMovies();
-    return view('login', compact('popularMovies'));
-})->name('login');
-
-Route::get('/login', function () {
-    if (Auth::check()) {
-        return redirect('/');
+        return redirect()->route('home');
     }
     $popularMovies = getPopularMovies();
     return view('login', compact('popularMovies'));
 });
+
+// 🔑 ログイン画面（認証エラー回避のため ->name('login') を付与）
+Route::get('/login', function () {
+    if (Auth::check()) {
+        return redirect()->route('home');
+    }
+    $popularMovies = getPopularMovies();
+    return view('login', compact('popularMovies'));
+})->name('login');
 
 // ログイン処理
 Route::post('/', [AuthenticatedSessionController::class, 'store']);
@@ -62,13 +64,20 @@ Route::get('/password/reset', function () {
 
 Route::post('/password/reset', [PasswordController::class, 'resetPassword'])->name('password.reset.update');
 
-// 🎬 コミュニティ表示ルート
-Route::get('/community', function () {
+// 🎬 コミュニティ表示ルート（気分絞り込み＆コメント等事前読み込み対応）
+Route::get('/community', function (Request $request) {
     $popularMovies = getPopularMovies();
 
-    $reviews = Review::with('user')
-        ->latest()
-        ->paginate(10);
+    // ユーザー・コメント・コメント投稿者・いいねをまとめて事前に取得（Eager Loading）
+    $query = Review::with(['user', 'comments.user', 'likes'])->latest();
+
+    // リクエストに気分（mood）パラメータが存在する場合は絞り込み
+    if ($request->filled('mood')) {
+        $query->where('mood', 'like', '%' . $request->mood . '%'); // ⭕️ 存在する mood カラムのみ指定
+    }
+
+    // ページネーション（パラメータを維持）
+    $reviews = $query->paginate(10)->withQueryString();
 
     return view('community', compact('reviews', 'popularMovies'));
 })->name('community.index');
@@ -76,19 +85,22 @@ Route::get('/community', function () {
 // 🌟 コミュニティ（投稿保存処理）
 Route::post('/community', function (Request $request) {
     $validated = $request->validate([
-        'movie_title' => 'required|string|max:255',
-        'rating' => 'required|integer|min:1|max:10', // ★ max:5 から max:10 に変更
+        'movie_title' => 'nullable|string|max:255',
+        'rating' => 'required|numeric|min:1|max:10',
         'comment' => 'required|string|max:1000',
         'moods' => 'nullable|array',
     ]);
 
     $moodsString = !empty($request->moods) ? implode(', ', $request->moods) : null;
+    $title = !empty($validated['movie_title']) ? $validated['movie_title'] : 'お気に入り映画';
 
     Review::create([
         'user_id' => auth()->id(),
-        'movie_title' => $validated['movie_title'],
-        'rating' => $validated['rating'],
+        'movie_id' => $request->input('movie_id', 0),
+        'movie_title' => $title,
+        'rating' => floatval($validated['rating']),
         'comment' => $validated['comment'],
+        'content' => $validated['comment'],
         'mood' => $moodsString,
     ]);
 
@@ -115,11 +127,26 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
 
-    // ✏️ レビュー・いいね関連
+    // ✏️ レビュー・いいね・コメント関連
     Route::get('/movies/{id}/reviews', [ReviewController::class, 'index'])->name('reviews.index');
     Route::get('/movies/{id}/reviews/create', [ReviewController::class, 'create'])->name('reviews.create');
     Route::post('/movies/{id}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::post('/reviews/{review}/like', [LikeController::class, 'toggle'])->name('reviews.like');
+
+    // 💬 コメント保存用ルート
+    Route::post('/reviews/{review}/comments', [ReviewController::class, 'storeComment'])->name('reviews.comments.store');
+
+    // 🔔 通知一括既読用ルート
+    Route::post('/notifications/read-all', function () {
+        auth()->user()->unreadNotifications->markAsRead();
+        return response()->json(['status' => 'success']);
+    })->name('notifications.readAll');
+
+    // 🗑️ 通知一括削除用ルート
+    Route::delete('/notifications/delete-all', function () {
+        auth()->user()->notifications()->delete();
+        return back()->with('success', 'お知らせをすべて消去しました');
+    })->name('notifications.deleteAll');
 
     // 🔖 ウォッチリスト関連
     Route::get('/watchlist', [WatchlistController::class, 'index'])->name('watchlist.index');
@@ -127,7 +154,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // 🔍 映画タイトルのリアルタイム検索API（TMDb連携）
-Route::get('/api/movies/search', function (Request $request) {
+Route::get('/api/movies/search', function (Illuminate\Http\Request $request) {
     $query = $request->query('query');
     if (!$query) {
         return response()->json([]);
@@ -135,12 +162,27 @@ Route::get('/api/movies/search', function (Request $request) {
 
     $apiKey = config('services.tmdb.api_key', env('TMDB_API_KEY'));
 
-    $response = Http::get("https://api.themoviedb.org/3/search/movie", [
+    $response = Illuminate\Support\Facades\Http::get("https://api.themoviedb.org/3/search/movie", [
         'api_key' => $apiKey,
         'language' => 'ja-JP',
         'query' => $query,
         'page' => 1,
     ]);
 
-    return $response->successful() ? $response->json()['results'] : [];
+    if ($response->successful()) {
+        $results = $response->json()['results'] ?? [];
+
+        $formatted = array_map(function ($item) {
+            return [
+                'id' => $item['id'],
+                'title' => $item['title'] ?? 'タイトル不明',
+                'poster_path' => $item['poster_path'] ?? null,
+                'release_date' => $item['release_date'] ?? '',
+            ];
+        }, array_slice($results, 0, 5));
+
+        return response()->json($formatted);
+    }
+
+    return response()->json([]);
 });

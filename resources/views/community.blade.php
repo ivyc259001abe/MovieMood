@@ -1,269 +1,209 @@
 <x-app-layout>
-    <div style="background-color: #000000; color: #ffffff; min-height: 100vh; padding: 24px 16px; box-sizing: border-box;">
-        <div style="max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+    <div class="py-6 space-y-6 max-w-4xl mx-auto sm:px-6 lg:px-8">
 
-            <!-- ヘッダー -->
-            <div style="background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px;">
-                <div style="background-color: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 12px; font-size: 24px;">
-                    💬
-                </div>
-                <div>
-                    <h1 style="font-size: 20px; font-weight: 800; color: #ffffff; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
-                        みんなの <span style="color: #f59e0b;">感情タイムライン</span>
-                    </h1>
-                    <p style="font-size: 12px; color: #9ca3af; margin: 0;">
-                        映画を観たあとの「生の感情」が集まる場所。今の気分にぴったりの映画を見つけよう！
-                    </p>
-                </div>
+        <!-- コミュニティヘッダー -->
+        <div class="bg-[#121824] border border-gray-800 rounded-2xl p-6 shadow-xl text-center">
+            <h1 class="text-2xl font-bold text-amber-500 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-users"></i> みんなの感情タイムライン
+            </h1>
+            <p class="text-xs text-gray-400 mt-1">～ 今のムードから観たい映画を見つけよう ～</p>
+        </div>
+
+        <!-- 気分で絞り込みフィルタボタン -->
+        <div
+            class="bg-[#121824] border border-gray-800 rounded-2xl p-4 shadow-lg flex flex-wrap items-center justify-between gap-3">
+            <span class="text-xs font-bold text-gray-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-filter text-amber-500"></i> 気分で絞り込み:
+            </span>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                <a href="{{ route('community.index') }}"
+                    class="px-3 py-1.5 rounded-full font-medium transition {{ !request('mood') ? 'bg-amber-500 text-black font-bold' : 'bg-gray-800 text-gray-300 hover:bg-gray-700' }}">
+                    すべて
+                </a>
+                <a href="{{ route('community.index', ['mood' => '号泣']) }}"
+                    class="px-3 py-1.5 rounded-full font-medium border border-gray-700 transition {{ request('mood') == '号泣' ? 'bg-amber-500 text-black border-amber-500 font-bold' : 'bg-[#1a2332] text-amber-400 hover:border-amber-500' }}">
+                    😭 #号泣
+                </a>
+                <a href="{{ route('community.index', ['mood' => 'スカッと']) }}"
+                    class="px-3 py-1.5 rounded-full font-medium border border-gray-700 transition {{ request('mood') == 'スカッと' ? 'bg-amber-500 text-black border-amber-500 font-bold' : 'bg-[#1a2332] text-amber-400 hover:border-amber-500' }}">
+                    😆 #スカッと
+                </a>
+                <a href="{{ route('community.index', ['mood' => 'ハラハラ']) }}"
+                    class="px-3 py-1.5 rounded-full font-medium border border-gray-700 transition {{ request('mood') == 'ハラハラ' ? 'bg-amber-500 text-black border-amber-500 font-bold' : 'bg-[#1a2332] text-amber-400 hover:border-amber-500' }}">
+                    😱 #ハラハラ
+                </a>
+                <a href="{{ route('community.index', ['mood' => 'キュン']) }}"
+                    class="px-3 py-1.5 rounded-full font-medium border border-gray-700 transition {{ request('mood') == 'キュン' ? 'bg-amber-500 text-black border-amber-500 font-bold' : 'bg-[#1a2332] text-amber-400 hover:border-amber-500' }}">
+                    💖 #キュン
+                </a>
             </div>
+        </div>
 
-            <!-- メインコンテンツ（左右2カラム） -->
-            <div style="display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start;">
+        <!-- タイムラインカード一覧 -->
+        <div class="space-y-4">
+            @forelse ($reviews as $review)
+                @php
+                    $movieId = $review->tmdb_id ?? $review->movie_id ?? $review->tmdb_movie_id ?? null;
 
-                <!-- 左側：投稿フォーム ＆ レビュー一覧 -->
-                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    // ユーザーのアイコン画像パスを取得 (avatar, icon, icon_path の順で判定)
+                    $userIcon = $review->user->avatar ?? $review->user->icon ?? $review->user->icon_path ?? null;
+                @endphp
 
-                    <!-- 投稿カード -->
-                    <div style="background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; box-sizing: border-box;">
-                        <h2 style="font-size: 14px; font-weight: bold; color: #f59e0b; margin: 0 0 16px 0; display: flex; align-items: center; gap: 6px;">
-                            📝 観た映画の「今の感情」を投稿する
-                        </h2>
+                <!-- Alpine.js でコメントセクションの開閉状態（showComments）を管理 -->
+                <div x-data="{ showComments: false }"
+                    class="bg-[#121824] border border-gray-800 rounded-2xl p-5 shadow-xl space-y-3">
 
-                        @if (session('success'))
-                            <div style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; color: #10b981; font-size: 12px; padding: 10px; border-radius: 8px; margin-bottom: 16px;">
-                                {{ session('success') }}
-                            </div>
-                        @endif
+                    <!-- 上段：ヘッダー（ユーザー情報・★評価） -->
+                    <div class="flex items-start justify-between border-b border-gray-800/80 pb-3">
+                        <div class="flex items-center gap-3">
 
-                        <form method="POST" action="{{ route('community.store') }}" style="display: flex; flex-direction: column; gap: 16px; margin: 0;">
-                            @csrf
-
-                            <!-- 映画タイトル -->
-                            <div style="position: relative;">
-                                <label for="movie_title" style="display: block; font-size: 11px; font-weight: bold; color: #e5e7eb; margin-bottom: 6px;">
-                                    映画タイトル <span style="color: #f59e0b; font-size: 10px; font-weight: normal;">(入力すると候補が自動取得されます)</span>
-                                </label>
-                                <input id="movie_title" type="text" name="movie_title" value="{{ old('movie_title') }}" required placeholder="例: アベンジャーズ / エンドゲーム" autocomplete="off"
-                                    style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 8px; padding: 10px 12px; font-size: 12px; outline: none; box-sizing: border-box;"
-                                    onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#374151'">
-                                
-                                <div id="movie_suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background-color: #111827; border: 1px solid #374151; border-radius: 8px; margin-top: 4px; max-height: 200px; overflow-y: auto; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.8);"></div>
-                            </div>
-
-                            <!-- スライダー評価UI -->
-                            <div style="background-color: #000000; border: 1px solid #1f2937; border-radius: 8px; padding: 14px 16px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                    <label style="font-size: 11px; font-weight: bold; color: #e5e7eb; display: flex; align-items: center; gap: 4px;">
-                                        ⭐ 評価 <span style="font-size: 10px; color: #9ca3af; font-weight: normal;">(1〜10段階)</span>
-                                    </label>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span id="rating_label" style="font-size: 10px; color: #f59e0b; font-weight: bold;">かなりおすすめ</span>
-                                        <div style="background-color: #111827; border: 1px solid #374151; border-radius: 6px; padding: 2px 8px; font-size: 12px; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 4px;">
-                                            ★ <span id="rating_value">7</span>
-                                        </div>
-                                    </div>
+                            <!-- アバターアイコン -->
+                            @if ($userIcon && file_exists(public_path($userIcon)))
+                                <img src="{{ asset($userIcon) }}" alt="{{ $review->user->name ?? 'User' }}"
+                                    class="w-9 h-9 rounded-full object-cover border border-amber-500/40 shadow-inner">
+                            @elseif ($userIcon && (str_starts_with($userIcon, 'http://') || str_starts_with($userIcon, 'https://')))
+                                <img src="{{ $userIcon }}" alt="{{ $review->user->name ?? 'User' }}"
+                                    class="w-9 h-9 rounded-full object-cover border border-amber-500/40 shadow-inner">
+                            @else
+                                <div
+                                    class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-500 flex items-center justify-center font-bold text-xs shadow-inner">
+                                    {{ mb_substr($review->user->nickname ?? $review->user->name ?? '匿', 0, 1) }}
                                 </div>
-                                <input type="range" id="rating_range" min="1" max="10" step="0.1" value="{{ old('rating', 7.0) }}"
-    style="width: 100%; accent-color: #f59e0b; cursor: pointer; height: 6px; background-color: #374151; border-radius: 9999px; outline: none;">
-                                <input type="hidden" name="rating" id="rating_input" value="{{ old('rating', 7) }}">
-                            </div>
+                            @endif
 
-                            <!-- 今のあなたの気分は？ -->
                             <div>
-                                <label style="display: block; font-size: 11px; font-weight: bold; color: #e5e7eb; margin-bottom: 8px;">
-                                    現在の「気分」は？ <span style="font-size: 10px; color: #9ca3af; font-weight: normal;">(複数選択可)</span>
-                                </label>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                    <label class="mood-checkbox-label" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #000000; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #e5e7eb; cursor: pointer; transition: all 0.2s; user-select: none;">
-                                        <input type="checkbox" name="moods[]" value="#号泣" style="display: none;" onchange="toggleMoodStyle(this)">
-                                        <span>😭</span> <span>#号泣</span>
-                                    </label>
-                                    <label class="mood-checkbox-label" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #000000; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #e5e7eb; cursor: pointer; transition: all 0.2s; user-select: none;">
-                                        <input type="checkbox" name="moods[]" value="#スカッと" style="display: none;" onchange="toggleMoodStyle(this)">
-                                        <span>😆</span> <span>#スカッと</span>
-                                    </label>
-                                    <label class="mood-checkbox-label" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #000000; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #e5e7eb; cursor: pointer; transition: all 0.2s; user-select: none;">
-                                        <input type="checkbox" name="moods[]" value="#ハラハラ" style="display: none;" onchange="toggleMoodStyle(this)">
-                                        <span>😱</span> <span>#ハラハラ</span>
-                                    </label>
-                                    <label class="mood-checkbox-label" style="display: flex; align-items: center; justify-content: center; gap: 6px; background-color: #000000; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #e5e7eb; cursor: pointer; transition: all 0.2s; user-select: none;">
-                                        <input type="checkbox" name="moods[]" value="#キュン" style="display: none;" onchange="toggleMoodStyle(this)">
-                                        <span>💖</span> <span>#キュン</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- 感想・レビュー本文 -->
-                            <div>
-                                <label for="comment" style="display: block; font-size: 11px; font-weight: bold; color: #e5e7eb; margin-bottom: 6px;">
-                                    💬 感想・レビュー本文
-                                </label>
-                                <textarea id="comment" name="comment" rows="4" required placeholder="この作品の見どころや感じたことを自由に書いてみよう..."
-                                    style="width: 100%; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 8px; padding: 10px 12px; font-size: 12px; outline: none; box-sizing: border-box; resize: vertical;"
-                                    onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#374151'">{{ old('comment') }}</textarea>
-                            </div>
-
-                            <button type="submit" style="width: 100%; background-color: #f59e0b; color: #000000; font-weight: 800; padding: 10px; border-radius: 9999px; font-size: 12px; border: none; cursor: pointer; transition: background-color 0.2s; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25); display: flex; align-items: center; justify-content: center; gap: 6px;"
-                                onmouseover="this.style.backgroundColor='#fbbf24'" onmouseout="this.style.backgroundColor='#f59e0b'">
-                                ✈️ 投稿する
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- 絞り込みフィルター＆レビュータイムライン -->
-                    <div style="display: flex; flex-direction: column; gap: 16px;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                            <span style="font-size: 12px; font-weight: bold; color: #9ca3af;">気分で絞り込み:</span>
-                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                <a href="{{ route('community.index') }}" style="font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-decoration: none; background-color: #f59e0b; color: #000000;">すべて</a>
-                                <a href="{{ route('community.index', ['mood' => '#号泣']) }}" style="font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-decoration: none; background-color: #111827; border: 1px solid #374151; color: #d1d5db;">😭 #号泣</a>
-                                <a href="{{ route('community.index', ['mood' => '#スカッと']) }}" style="font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-decoration: none; background-color: #111827; border: 1px solid #374151; color: #d1d5db;">😆 #スカッと</a>
-                                <a href="{{ route('community.index', ['mood' => '#ハラハラ']) }}" style="font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-decoration: none; background-color: #111827; border: 1px solid #374151; color: #d1d5db;">😱 #ハラハラ</a>
-                                <a href="{{ route('community.index', ['mood' => '#キュン']) }}" style="font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-decoration: none; background-color: #111827; border: 1px solid #374151; color: #d1d5db;">💖 #キュン</a>
+                                <span class="font-bold text-sm text-gray-200 block leading-tight">
+                                    {{ $review->user->nickname ?? $review->user->name ?? '匿名ユーザー' }}
+                                </span>
+                                <span class="text-[10px] text-gray-500">
+                                    {{ $review->created_at ? $review->created_at->diffForHumans() : '' }}
+                                </span>
                             </div>
                         </div>
 
-                        <!-- タイムライン一覧 -->
-                        @if(isset($reviews) && count($reviews) > 0)
-                            <div style="display: flex; flex-direction: column; gap: 12px;">
-                                @foreach($reviews as $review)
-                                    <div style="background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; box-sizing: border-box;">
-                                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                                            <div>
-                                                <span style="font-size: 13px; font-weight: 800; color: #ffffff;">{{ $review->movie_title }}</span>
-                                                <div style="font-size: 10px; color: #6b7280; margin-top: 2px;">
-                                                    {{ $review->user->name ?? '匿名ユーザー' }} • {{ $review->created_at ? $review->created_at->diffForHumans() : '' }}
-                                                </div>
-                                            </div>
-                                            <div style="background-color: #111827; border: 1px solid rgba(245, 158, 11, 0.5); border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 800; color: #fbbf24;">
-                                                ★ {{ number_format((float)$review->rating, 1) }}
-                                            </div>
+                        <!-- ★評価バッジ -->
+                        <div
+                            class="bg-amber-500/10 border border-amber-500/30 text-amber-400 px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 shadow-sm">
+                            <i class="fa-solid fa-star text-amber-400"></i>
+                            <span>{{ number_format($review->rating, 1) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- 中段：映画タイトル & 気分タグ -->
+                    <div>
+                        <h2 class="text-base font-bold text-white transition mb-1.5">
+                            @if($movieId)
+                                <!-- 映画詳細ページへのリンク -->
+                                <a href="{{ route('movies.show', $movieId) }}"
+                                    class="inline-flex items-center gap-2 hover:text-amber-400 hover:underline transition">
+                                    <i class="fa-solid fa-film text-xs text-amber-500"></i>
+                                    {{ $review->movie_title ?? ($review->movie->title ?? '映画作品') }}
+                                </a>
+                            @else
+                                <span class="flex items-center gap-2">
+                                    <i class="fa-solid fa-film text-xs text-amber-500"></i>
+                                    {{ $review->movie_title ?? ($review->movie->title ?? '映画作品') }}
+                                </span>
+                            @endif
+                        </h2>
+
+                        <!-- 気分タグ -->
+                        @if(!empty($review->moods) || !empty($review->mood))
+                            <div class="flex flex-wrap gap-1.5 my-2">
+                                @php
+                                    $moodList = is_array($review->moods) ? $review->moods : explode(',', $review->moods ?? $review->mood ?? '');
+                                @endphp
+                                @foreach($moodList as $m)
+                                    @if(trim($m))
+                                        <span
+                                            class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] px-2.5 py-0.5 rounded-md font-semibold">
+                                            #{{ trim(str_replace('#', '', $m)) }}
+                                        </span>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- 下段：レビュー本文 -->
+                    <div
+                        class="bg-[#1a2332] p-4 rounded-xl border border-gray-800/80 text-sm text-gray-200 leading-relaxed shadow-inner">
+                        {{ $review->comment }}
+                    </div>
+
+                    <!-- アクションエリア（いいね・コメントボタン） -->
+                    <div class="flex items-center justify-between pt-3 border-t border-gray-800/60 text-xs">
+                        <div class="flex items-center gap-3">
+                            <!-- ❤️ いいねボタン -->
+                            <form action="{{ route('reviews.like', $review->id ?? $review->review_id) }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                    class="flex items-center gap-1.5 px-3 py-1 rounded-full border transition cursor-pointer {{ method_exists($review, 'isLikedBy') && $review->isLikedBy(Auth::user()) ? 'bg-rose-500/20 border-rose-500/50 text-rose-400 font-bold' : 'bg-gray-800/80 border-gray-700 text-gray-400 hover:text-rose-400 hover:border-rose-500/30' }}">
+                                    <i
+                                        class="{{ method_exists($review, 'isLikedBy') && $review->isLikedBy(Auth::user()) ? 'fa-solid' : 'fa-regular' }} fa-heart text-xs"></i>
+                                    <span>いいね！
+                                        {{ $review->likes_count ?? (method_exists($review, 'comments') ? $review->likes->count() : 0) }}</span>
+                                </button>
+                            </form>
+
+                            <!-- 💬 コメント開閉ボタン -->
+                            <button @click="showComments = !showComments"
+                                class="flex items-center gap-1.5 px-3 py-1 rounded-full border bg-gray-800/80 border-gray-700 text-gray-300 hover:text-amber-400 hover:border-amber-500/40 transition cursor-pointer font-medium">
+                                <i class="fa-regular fa-comment text-xs"></i>
+                                <span>コメント
+                                    {{ $review->comments_count ?? (method_exists($review, 'comments') ? $review->comments->count() : 0) }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 💬 コメント表示＆投稿エリア（クリックで開閉） -->
+                    <div x-show="showComments" x-cloak class="pt-3 mt-3 border-t border-gray-800/80 space-y-3">
+
+                        <!-- 既存のコメント一覧 -->
+                        @if(method_exists($review, 'comments') && $review->comments->count() > 0)
+                            <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                @foreach($review->comments as $comment)
+                                    <div class="bg-[#182130] p-2.5 rounded-lg border border-gray-800 text-xs space-y-1">
+                                        <div class="flex items-center justify-between text-gray-400">
+                                            <span class="font-bold text-gray-300">{{ $comment->user->name ?? '匿名' }}</span>
+                                            <span class="text-[9px]">{{ $comment->created_at->diffForHumans() }}</span>
                                         </div>
-
-                                        @if(!empty($review->mood))
-                                            <div style="margin-bottom: 8px; display: flex; gap: 4px; flex-wrap: wrap;">
-                                                <span style="font-size: 9px; background-color: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b; padding: 1px 6px; border-radius: 4px;">
-                                                    {{ $review->mood }}
-                                                </span>
-                                            </div>
-                                        @endif
-
-                                        <p style="font-size: 11px; color: #e5e7eb; margin: 0; line-height: 1.5; white-space: pre-wrap;">{{ $review->comment }}</p>
+                                        <p class="text-gray-200 leading-snug">{{ $comment->content ?? $comment->comment }}</p>
                                     </div>
                                 @endforeach
                             </div>
                         @else
-                            <div style="background-color: #0d1117; border: 1px dashed #374151; border-radius: 12px; padding: 30px; text-align: center; color: #9ca3af;">
-                                <div style="font-size: 24px; margin-bottom: 6px;">💬</div>
-                                <p style="font-size: 12px; margin: 0;">最初のレビューを投稿してみましょう！</p>
-                            </div>
+                            <p class="text-xs text-gray-500 text-center py-1">まだコメントはありません</p>
                         @endif
-                    </div>
-                </div>
 
-                <!-- 右側：サイドバーエリア -->
-                <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <!-- コメント投稿フォーム -->
+                        <form action="{{ route('reviews.comments.store', $review->id ?? $review->review_id) }}"
+                            method="POST" class="flex gap-2">
+                            @csrf
+                            <input type="text" name="comment" required placeholder="コメントを入力..."
+                                class="flex-grow bg-[#182130] border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 transition">
+                            <button type="submit"
+                                class="bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs px-3 py-1.5 rounded-lg transition shrink-0 cursor-pointer">
+                                送信
+                            </button>
+                        </form>
 
-                    <!-- みんなが感じている感情 -->
-                    <div style="background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 16px;">
-                        <h3 style="font-size: 12px; font-weight: bold; color: #f59e0b; margin: 0 0 12px 0; display: flex; align-items: center; gap: 6px;">
-                            🔥 今みんなが感じている感情
-                        </h3>
-                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                            <span style="font-size: 10px; background-color: #000000; border: 1px solid #374151; color: #ffffff; padding: 4px 10px; border-radius: 9999px;">😭 #号泣</span>
-                            <span style="font-size: 10px; background-color: #000000; border: 1px solid #374151; color: #ffffff; padding: 4px 10px; border-radius: 9999px;">😆 #スカッと</span>
-                            <span style="font-size: 10px; background-color: #000000; border: 1px solid #374151; color: #ffffff; padding: 4px 10px; border-radius: 9999px;">😱 #ハラハラ</span>
-                            <span style="font-size: 10px; background-color: #000000; border: 1px solid #374151; color: #ffffff; padding: 4px 10px; border-radius: 9999px;">💖 #キュン</span>
-                        </div>
-                    </div>
-
-                    <!-- MovieMood コミュニティの楽しみ方 -->
-                    <div style="background-color: #0d1117; border: 1px solid #1f2937; border-radius: 12px; padding: 16px;">
-                        <h3 style="font-size: 12px; font-weight: bold; color: #f59e0b; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px;">
-                            💡 MovieMood コミュニティの楽しみ方
-                        </h3>
-                        <p style="font-size: 10px; color: #9ca3af; line-height: 1.5; margin: 0;">
-                            「キュンキュンしたい」「泣いてすっきりしたい」など、その時の気分に合った映画の感想を探せます。感情タグを添えて感想を共有しましょう！
-                        </p>
                     </div>
 
                 </div>
-
-            </div>
+            @empty
+                <div class="bg-[#121824] border border-gray-800 rounded-2xl p-12 text-center">
+                    <p class="text-sm text-gray-400">該当する気分のレビューはまだ投稿されていません。</p>
+                </div>
+            @endforelse
         </div>
+
+        <!-- ページネーション -->
+        @if (method_exists($reviews, 'hasPages') && $reviews->hasPages())
+            <div class="mt-6">
+                {{ $reviews->links() }}
+            </div>
+        @endif
+
     </div>
-
-    <!-- JavaScript -->
-    <script>
-        const ratingRange = document.getElementById('rating_range');
-        const ratingValue = document.getElementById('rating_value');
-        const ratingLabel = document.getElementById('rating_label');
-        const ratingInput = document.getElementById('rating_input');
-
-        const labels = {
-            1: '全然おすすめしない', 2: 'イマイチ', 3: '普通以下', 4: 'まあまあ', 5: '普通',
-            6: '良い', 7: 'かなりおすすめ', 8: 'とても面白い', 9: '最高！', 10: '人生の神作'
-        };
-
-        if (ratingRange) {
-            ratingRange.addEventListener('input', function() {
-                const val = this.value;
-                ratingValue.textContent = val;
-                ratingInput.value = val;
-                ratingLabel.textContent = labels[val] || '';
-            });
-        }
-
-        function toggleMoodStyle(checkbox) {
-            const label = checkbox.parentElement;
-            if (checkbox.checked) {
-                label.style.backgroundColor = 'rgba(245, 158, 11, 0.15)';
-                label.style.borderColor = '#f59e0b';
-                label.style.color = '#f59e0b';
-            } else {
-                label.style.backgroundColor = '#000000';
-                label.style.borderColor = '#374151';
-                label.style.color = '#e5e7eb';
-            }
-        }
-
-        const movieInput = document.getElementById('movie_title');
-        const suggestionsBox = document.getElementById('movie_suggestions');
-
-        if (movieInput) {
-            movieInput.addEventListener('input', async function() {
-                const query = this.value.trim();
-                if (query.length < 2) {
-                    suggestionsBox.style.display = 'none';
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`/api/movies/search?query=${encodeURIComponent(query)}`);
-                    const movies = await response.json();
-
-                    if (movies.length > 0) {
-                        suggestionsBox.innerHTML = '';
-                        movies.slice(0, 5).forEach(movie => {
-                            const div = document.createElement('div');
-                            div.style.cssText = 'padding: 8px 12px; font-size: 11px; color: #ffffff; cursor: pointer; border-bottom: 1px solid #1f2937;';
-                            div.textContent = movie.title;
-                            div.onmouseover = () => div.style.backgroundColor = '#1f2937';
-                            div.onmouseout = () => div.style.backgroundColor = 'transparent';
-                            div.onclick = () => {
-                                movieInput.value = movie.title;
-                                suggestionsBox.style.display = 'none';
-                            };
-                            suggestionsBox.appendChild(div);
-                        });
-                        suggestionsBox.style.display = 'block';
-                    } else {
-                        suggestionsBox.style.display = 'none';
-                    }
-                } catch (e) {
-                    suggestionsBox.style.display = 'none';
-                }
-            });
-        }
-    </script>
 </x-app-layout>

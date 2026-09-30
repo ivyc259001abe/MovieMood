@@ -1,4 +1,4 @@
-<nav x-data="{ open: false }" class="bg-black/90 border-b border-gray-800">
+<nav x-data="{ open: false, notifOpen: false }" class="bg-black/90 border-b border-gray-800 relative z-50">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -21,14 +21,94 @@
                 </div>
             </div>
 
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+            <!-- Settings & Notification Dropdown -->
+            <div class="hidden sm:flex sm:items-center sm:ms-6 space-x-4">
+
+                <!-- 🔔 1. 通知ベルマーク ＆ ドロップダウンメニュー -->
+                <div class="relative" x-data="{ notifOpen: false }">
+                    <button @click="notifOpen = !notifOpen" @click.away="notifOpen = false"
+                        class="relative p-2 text-gray-400 hover:text-amber-400 focus:outline-none transition">
+                        <i class="fa-solid fa-bell text-lg"></i>
+                        @if(Auth::check() && Auth::user()->unreadNotifications->count() > 0)
+                            <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping"></span>
+                            <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full"></span>
+                        @endif
+                    </button>
+
+                    <!-- ドロップダウン本体 -->
+                    <div x-show="notifOpen" x-transition
+                        class="absolute right-0 mt-2 w-80 bg-[#121824] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-50"
+                        style="display: none;">
+                        <div class="p-3 border-b border-gray-800/80 flex items-center justify-between bg-[#0d1117]">
+                            <span class="text-xs font-bold text-gray-200 flex items-center gap-1.5">
+                                <i class="fa-solid fa-bell text-amber-500"></i> お知らせ
+                            </span>
+                            @if(Auth::check() && Auth::user()->unreadNotifications->count() > 0)
+                                <span
+                                    class="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-extrabold">
+                                    {{ Auth::user()->unreadNotifications->count() }}件未読
+                                </span>
+                            @endif
+                        </div>
+
+                        <!-- 通知リスト -->
+                        <div class="max-h-64 overflow-y-auto divide-y divide-gray-800/60">
+                            @if(Auth::check())
+                                @forelse(Auth::user()->notifications as $notification)
+                                    @php
+                                        // IDなどの取得
+                                        $movieId = $notification->data['movie_id'] ?? $notification->data['tmdb_id'] ?? null;
+                                        $reviewId = $notification->data['review_id'] ?? null;
+
+                                        // URLの構築
+                                        $targetUrl = '#';
+                                        if (!empty($notification->data['url']) && $notification->data['url'] !== '#') {
+                                            $targetUrl = $notification->data['url'];
+                                        } elseif ($movieId) {
+                                            // Routeの存在確認をしてから生成（無ければフォールバックURL）
+                                            if (\Illuminate\Support\Facades\Route::has('reviews.index')) {
+                                                $targetUrl = route('reviews.index', $movieId);
+                                            } else {
+                                                $targetUrl = url('/movies/' . $movieId);
+                                            }
+
+                                            if ($reviewId) {
+                                                $targetUrl .= '#review-' . $reviewId;
+                                            }
+                                        }
+
+                                        $senderName = $notification->data['user_name'] ?? $notification->data['user_nickname'] ?? 'ユーザー';
+                                    @endphp
+
+                                    {{-- 💡 確実に画面遷移させるために @click に window.location.href を設定 --}}
+                                    <a href="{{ $targetUrl }}"
+                                        @click="if ('{{ $targetUrl }}' !== '#') { window.location.href = '{{ $targetUrl }}'; }"
+                                        class="block w-full p-3 hover:bg-gray-800/80 transition text-left border-b border-gray-800/40 cursor-pointer">
+                                        <p class="text-xs text-gray-200 leading-snug">
+                                            <span class="font-bold text-amber-400">
+                                                {{ $senderName }}
+                                            </span>
+                                            {{ $notification->data['message'] ?? 'さんから反応がありました' }}
+                                        </p>
+                                        <span class="text-[10px] text-gray-500 block mt-1">
+                                            {{ $notification->created_at->diffForHumans() }}
+                                        </span>
+                                    </a>
+                                @empty
+                                    <div class="p-4 text-center text-xs text-gray-500">
+                                        お知らせはありません
+                                    </div>
+                                @endforelse
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 👤 2. アカウントメニュー -->
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button
                             class="inline-flex items-center gap-2 px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-300 bg-gray-900 hover:text-white focus:outline-none transition ease-in-out duration-150">
-
-                            <!-- 1. PC用 アバター表示部分 -->
                             <div
                                 class="w-8 h-8 rounded-full overflow-hidden bg-gray-800 border border-amber-500 flex items-center justify-center shrink-0">
                                 @if(Auth::check() && Auth::user()->avatar)
@@ -38,9 +118,7 @@
                                     <i class="fa-solid fa-user text-gray-400 text-xs"></i>
                                 @endif
                             </div>
-
                             <div>{{ Auth::user()->name }}</div>
-
                             <div class="ms-1">
                                 <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
                                     viewBox="0 0 20 20">
@@ -99,8 +177,6 @@
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-800">
             <div class="px-4 flex items-center gap-3">
-
-                <!-- 2. スマホメニュー用 アバター表示部分 -->
                 <div
                     class="w-10 h-10 rounded-full overflow-hidden bg-gray-800 border border-amber-500 flex items-center justify-center shrink-0">
                     @if(Auth::check() && Auth::user()->avatar)
@@ -110,7 +186,6 @@
                         <i class="fa-solid fa-user text-gray-400 text-sm"></i>
                     @endif
                 </div>
-
                 <div>
                     <div class="font-medium text-base text-gray-200">{{ Auth::user()->name }}</div>
                     <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>

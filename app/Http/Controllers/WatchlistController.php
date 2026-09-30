@@ -15,7 +15,7 @@ class WatchlistController extends Controller
         return view('watchlists.index', compact('watchlists'));
     }
 
-    // トグル登録・削除（Alpine.js / Ajax 対応）
+    // トグル登録・削除（フォーム送信 / Ajax 両対応）
     public function toggle(Request $request)
     {
         $request->validate([
@@ -31,7 +31,14 @@ class WatchlistController extends Controller
 
         if ($existing) {
             $existing->delete();
-            return response()->json(['status' => 'removed', 'message' => 'ウォッチリストから削除しました']);
+
+            // Ajaxリクエストの場合はJSONで返す
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['status' => 'removed', 'message' => 'ウォッチリストから削除しました']);
+            }
+
+            // 通常のフォーム送信の場合は元の画面へ戻す
+            return back()->with('success', 'ウォッチリストから削除しました');
         }
 
         Watchlist::create([
@@ -41,6 +48,12 @@ class WatchlistController extends Controller
             'poster_path' => $request->poster_path,
         ]);
 
-        return response()->json(['status' => 'added', 'message' => 'ウォッチリストに追加しました']);
+        // Ajaxリクエストの場合はJSONで返す
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['status' => 'added', 'message' => 'ウォッチリストに追加しました']);
+        }
+
+        // 通常のフォーム送信の場合は元の画面へ戻す
+        return back()->with('success', 'ウォッチリストに追加しました');
     }
 }

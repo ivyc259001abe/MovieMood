@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'avatar',
     ];
+
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -45,8 +46,36 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    public function watchlists()
+
+    /**
+     * ウォッチリスト情報（単数形呼び出し対応）
+     */
+    public function watchlist(): HasMany
     {
         return $this->hasMany(Watchlist::class);
+    }
+
+    /**
+     * ウォッチリスト情報（複数形呼び出し対応）
+     */
+    public function watchlists(): HasMany
+    {
+        return $this->hasMany(Watchlist::class);
+    }
+
+    /**
+     * 投稿したレビュー一覧
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * いいね一覧
+     */
+    public function likes(): HasMany
+    {
+        return $this->hasMany(Like::class);
     }
 }
