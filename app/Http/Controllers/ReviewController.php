@@ -31,10 +31,9 @@ class ReviewController extends Controller
             'poster_path' => '',
         ];
 
+        // ⭕ tmdb_id の検索を削除し、movie_id だけにしてエラーを防止
         $reviews = Review::with(['user', 'likes', 'comments.user'])
-            ->where(function ($q) use ($id) {
-                $q->where('tmdb_id', $id)->orWhere('movie_id', $id);
-            })
+            ->where('movie_id', $id)
             ->latest()
             ->paginate(10);
 

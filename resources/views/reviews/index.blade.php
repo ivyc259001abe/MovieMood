@@ -1,13 +1,6 @@
-<!DOCTYPE html>
-<html lang="ja">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MovieMood - {{ $movie['title'] ?? '映画' }}のレビュー一覧</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<x-app-layout>
+    {{-- ジャンプした時にレビュー枠を少しハイライトするスタイルの追加 --}}
     <style>
-        /* ジャンプした時にレビュー枠を少しふわっとハイライト表示するアニメーション */
         :target {
             animation: highlight 2s ease-in-out;
         }
@@ -23,21 +16,10 @@
             }
         }
     </style>
-</head>
 
-<body
-    class="bg-black text-white min-h-screen w-full flex flex-col justify-between items-center py-4 px-4 overflow-y-auto">
-
-    <!-- メインフレーム -->
-    <div class="w-full max-w-md flex flex-col items-center flex-1 my-auto space-y-3 mb-4">
-
-        <!-- ヘッダータイトル -->
-        <div class="text-center">
-            <h1 class="text-2xl font-extrabold text-amber-500 tracking-wide">MovieMood</h1>
-        </div>
-
+    <div class="py-6 sm:py-10 px-4 flex justify-center">
         <!-- メインカード -->
-        <div class="w-full bg-[#121824] border border-gray-700/80 rounded-2xl p-4 shadow-2xl space-y-4">
+        <div class="w-full max-w-md bg-[#121824] border border-gray-700/80 rounded-2xl p-4 shadow-2xl space-y-4">
 
             <!-- サブヘッダー (戻る) -->
             <div class="flex items-center justify-between border-b border-gray-800 pb-2">
@@ -57,7 +39,7 @@
                 <div>
                     <h2 class="text-sm font-bold text-white leading-snug">{{ $movie['title'] ?? '映画作品' }}</h2>
                     <p class="text-[11px] text-amber-400 font-bold mt-0.5">
-                        ★ {{ number_format($movie['vote_average'] ?? 0, 1) }} <span class="text-gray-400 text-[9px]">\
+                        ★ {{ number_format($movie['vote_average'] ?? 0, 1) }} <span class="text-gray-400 text-[9px]">/
                             10</span>
                     </p>
                 </div>
@@ -66,7 +48,7 @@
             <!-- レビュー一覧 -->
             <div class="space-y-2.5">
                 @forelse($reviews as $rev)
-                    {{-- 💡 id="review-{{ $rev->id }}" を付与して直接ジャンプを可能に！ --}}
+                    {{-- id="review-{{ $rev->id }}" を付与して直接ジャンプ可能 --}}
                     <div id="review-{{ $rev->id }}"
                         class="bg-[#1a2332] border border-gray-800 rounded-lg p-3 space-y-1.5 text-xs scroll-mt-4 transition-all duration-300">
                         <!-- ユーザー情報 & 気分タグ -->
@@ -128,9 +110,5 @@
             @endif
 
         </div>
-
     </div>
-
-</body>
-
-</html>
+</x-app-layout>

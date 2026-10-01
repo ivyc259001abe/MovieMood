@@ -3,12 +3,12 @@
 
         <!-- 👤 プロフィールヘッダーカード -->
         <div
-            class="bg-gray-900/90 rounded-2xl p-6 border border-gray-800 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
+            class="bg-gray-900/90 rounded-2xl p-5 sm:p-6 border border-gray-800 shadow-xl flex items-center justify-between gap-4">
 
-            <!-- 左側：アバター ＆ ユーザー情報 -->
-            <div class="flex items-center gap-5 w-full sm:w-auto">
+            <!-- 左側：アバター ＆ ユーザー情報（常に横並び） -->
+            <div class="flex items-center gap-4 sm:gap-5 min-w-0">
                 <div
-                    class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-amber-500 overflow-hidden bg-gray-800 flex items-center justify-center shadow-md flex-shrink-0">
+                    class="relative w-14 h-14 sm:w-20 sm:h-20 rounded-full border-2 border-amber-500 overflow-hidden bg-gray-800 flex items-center justify-center shadow-md flex-shrink-0">
                     @php
                         $user = auth()->user();
                         $avatarPath = $user->avatar ?? $user->icon ?? $user->icon_path ?? null;
@@ -19,29 +19,32 @@
                             class="w-full h-full object-cover"
                             onError="this.onerror=null; this.src='{{ asset($avatarPath) }}';">
                     @else
-                        <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                             <path
                                 d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                         </svg>
                     @endif
                 </div>
 
-                <div class="space-y-1">
-                    <span class="text-xs text-amber-500 font-bold tracking-wider uppercase block">MY PROFILE</span>
-                    <h1 class="text-xl sm:text-2xl font-extrabold text-white">
+                <div class="space-y-0.5 sm:space-y-1 min-w-0">
+                    <span class="text-[10px] sm:text-xs text-amber-500 font-bold tracking-wider uppercase block">MY
+                        PROFILE</span>
+                    <h1 class="text-base sm:text-2xl font-extrabold text-white truncate">
                         {{ auth()->user()->nickname ?? auth()->user()->name ?? 'ユーザー' }}
                     </h1>
-                    <p class="text-xs text-gray-400 font-medium">
+                    <p class="text-[11px] sm:text-xs text-gray-400 font-medium truncate">
                         {{ auth()->user()->email }}
                     </p>
                 </div>
             </div>
 
-            <!-- 右側：アカウント編集ボタン -->
-            <div class="w-full sm:w-auto flex justify-end">
+            <!-- 右側：アカウント編集ボタン（右寄せ・縮小防止） -->
+            <div class="flex-shrink-0">
                 <a href="{{ route('profile.edit') }}"
-                    class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-800 hover:bg-amber-500 hover:text-black text-amber-400 font-bold rounded-full text-xs transition border border-gray-700 shadow-md">
-                    <i class="fa-solid fa-gear"></i> アカウントを編集
+                    class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-gray-800 hover:bg-amber-500 hover:text-black text-amber-400 font-bold rounded-full text-xs transition border border-gray-700 shadow-md whitespace-nowrap">
+                    <i class="fa-solid fa-gear"></i>
+                    <span class="hidden sm:inline">アカウントを編集</span>
+                    <span class="sm:hidden">編集</span>
                 </a>
             </div>
 
@@ -205,7 +208,7 @@
 
     </div>
 
-    <!-- 💡 バニラJavaScriptによる確実なタブ切り替え機能 -->
+
     <script>
         function switchProfileTab(tabName) {
             // すべてのパネルを隠す
