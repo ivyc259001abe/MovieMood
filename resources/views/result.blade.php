@@ -1,75 +1,90 @@
-<x-app-layout>
-    <!-- 幅を1280pxまで拡張し、レスポンシブな余白を設定 -->
-    <div style="max-width: 1280px; margin: 0 auto; padding: 24px 20px;">
+<x-app-layout :popularMovies="$popularMovies ?? []">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        <!-- 1. ページ上部：検索バー -->
-        <div style="margin-bottom: 24px; display: flex; justify-content: flex-end;">
-            <!-- 検索バー -->
-            <form action="{{ route('movies.search') }}" method="GET"
-                style="width: 100%; max-width: 480px; display: flex; gap: 8px; margin: 0;">
-                <input type="text" name="query" value="{{ request('query') }}" placeholder="キーワードで再検索..." required
-                    style="flex: 1; min-width: 0; background-color: #000000; border: 1px solid #374151; color: #ffffff; border-radius: 9999px; padding: 10px 18px; font-size: 13px; outline: none;">
-                <button type="submit"
-                    style="background-color: #f59e0b; color: #000000; font-weight: bold; padding: 10px 22px; border-radius: 9999px; font-size: 13px; border: none; cursor: pointer; flex-shrink: 0;">
-                    検索
-                </button>
-            </form>
+        <!-- 💡 直前のページに確実に戻るボタン -->
+        <div class="mb-4">
+            <button type="button" onclick="goBackOrHome()"
+                class="inline-flex items-center gap-2 bg-[#121927] hover:bg-gray-800 text-gray-300 border border-gray-800 font-bold px-4 py-2 rounded-full text-xs transition cursor-pointer">
+                <i class="fa-solid fa-arrow-left"></i> 一つ前に戻る
+            </button>
         </div>
 
-        <!-- 2. タイトルヘッダーカード -->
-        <div class="bg-gray-900/90 rounded-2xl border border-gray-800 shadow-xl"
-            style="padding: 20px 24px; margin-bottom: 24px;">
-            <div>
-                <span
-                    style="font-size: 11px; color: #fbbf24; font-weight: 800; display: block; letter-spacing: 0.08em; text-transform: uppercase;">
-                    SEARCH RESULT
-                </span>
-                <h1 style="font-size: 20px; font-weight: 800; color: #ffffff; margin: 4px 0 0 0;">
-                    @if(request('query'))
-                        🔍 「{{ request('query') }}」の検索結果
-                    @elseif(isset($moodName))
-                        🔍 「{{ $moodName }}」の検索結果
-                    @else
-                        🎬 検索結果
-                    @endif
-                </h1>
-            </div>
+        <!-- 🎭 見出し ＆ 別の作品を見るボタン（同じ行に配置） -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <h1 class="text-xl sm:text-2xl font-black text-white m-0">
+                @if(!empty($query))
+                    🔍 「<span class="text-amber-400">{{ $query }}</span>」の検索結果
+                @elseif(!empty($mood))
+                    🎭 #<span class="text-amber-400">{{ $mood }}</span> 気分のおすすめ作品（6選）
+                @else
+                    🎬 おすすめ作品一覧
+                @endif
+            </h1>
+
+            @if(!empty($mood))
+                <a href="{{ route('movies.search', ['mood' => $mood]) }}"
+                    class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-black font-extrabold px-4 py-2 rounded-full text-xs transition shadow cursor-pointer shrink-0">
+                    <i class="fa-solid fa-rotate-right"></i> 別の作品を見る
+                </a>
+            @endif
         </div>
 
-        <!-- 3. 映画一覧グリッド -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 20px;">
-            @forelse($movies ?? [] as $movie)
-                <a href="{{ route('movies.show', $movie['id']) }}"
-                    class="bg-gray-900/90 rounded-2xl border border-gray-800 shadow-xl group"
-                    style="padding: 12px; text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, border-color 0.2s;">
-                    <div class="overflow-hidden rounded-xl border border-gray-700"
-                        style="position: relative; aspect-ratio: 2/3; margin-bottom: 10px;">
-                        <img src="{{ !empty($movie['poster_path']) ? 'https://image.tmdb.org/t/p/w500' . $movie['poster_path'] : 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&q=80' }}"
-                            alt="{{ $movie['title'] }}"
-                            style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;"
-                            class="group-hover:scale-105">
+        <!-- 🍿 横6つ並び（カード背景・画像角丸・右下★評価対応） -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3.5 mb-10">
+            @forelse($movies as $m)
+                <a href="{{ route('movies.show', $m['id']) }}"
+                    class="bg-[#0f172a] border border-slate-800/80 rounded-2xl p-2.5 flex flex-col shadow-lg hover:border-amber-500/50 transition group">
+
+                    <!-- 縦長ポスター表示 -->
+                    <div class="relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-black mb-2">
+                        @php
+                            $imgSrc = !empty($m['poster_path'])
+                                ? 'https://image.tmdb.org/t/p/w500' . $m['poster_path']
+                                : (!empty($m['backdrop_path']) ? 'https://image.tmdb.org/t/p/w500' . $m['backdrop_path'] : null);
+                        @endphp
+
+                        @if($imgSrc)
+                            <img src="{{ $imgSrc }}" alt="{{ $m['title'] ?? '' }}"
+                                class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                        @else
+                            <div class="w-full h-full flex items-center justify-center text-gray-600 text-xs">No Image</div>
+                        @endif
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <h3 class="line-clamp-1" style="font-size: 13px; font-weight: bold; color: #ffffff; margin: 0;">
-                            {{ $movie['title'] }}
+
+                    <!-- カード下部：タイトル（上）＋ 公開年（左下）＆ ★評価（右下） -->
+                    <div class="flex-1 flex flex-col justify-between px-0.5">
+                        <h3 class="text-[12px] font-bold text-white group-hover:text-amber-400 transition truncate mb-1"
+                            title="{{ $m['title'] ?? '' }}">
+                            {{ $m['title'] ?? 'タイトル不明' }}
                         </h3>
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-                            <span
-                                style="color: #9ca3af;">{{ !empty($movie['release_date']) ? substr($movie['release_date'], 0, 4) . '年' : (!empty($movie['date']) ? substr($movie['date'], 0, 4) . '年' : '') }}</span>
-                            @if(!empty($movie['vote_average']))
-                                <span style="color: #fbbf24; font-weight: bold;">⭐
-                                    {{ number_format($movie['vote_average'], 1) }}</span>
-                            @endif
+
+                        <div class="flex items-center justify-between text-[10px] text-slate-400 mt-auto">
+                            <span>{{ !empty($m['release_date']) ? substr($m['release_date'], 0, 4) . '年' : '不明' }}</span>
+
+                            <div class="flex items-center gap-1 text-amber-400 font-extrabold">
+                                <i class="fa-solid fa-star text-[9px]"></i>
+                                <span>{{ number_format((float) ($m['vote_average'] ?? 0), 1) }}</span>
+                            </div>
                         </div>
                     </div>
                 </a>
             @empty
-                <div class="bg-gray-900/90 rounded-2xl border border-gray-800"
-                    style="grid-column: 1 / -1; padding: 60px 20px; text-align: center; color: #9ca3af;">
-                    <p style="margin: 0; font-size: 15px;">該当する映画が見つかりませんでした。</p>
+                <div class="col-span-full text-center py-12 text-gray-500 text-sm">
+                    該当する映画が見つかりませんでした。別のキーワードや感情タグでお試しください。
                 </div>
             @endforelse
         </div>
 
     </div>
-</x-app-layout>reg
+
+    <!-- 💡 遷移元に正しく戻すJavaScript -->
+    <script>
+        function goBackOrHome() {
+            if (document.referrer && document.referrer !== location.href) {
+                window.location.href = document.referrer;
+            } else {
+                history.back();
+            }
+        }
+    </script>
+</x-app-layout>

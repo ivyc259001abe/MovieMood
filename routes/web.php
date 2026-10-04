@@ -73,7 +73,7 @@ Route::get('/community', function (Request $request) {
 
     // リクエストに気分（mood）パラメータが存在する場合は絞り込み
     if ($request->filled('mood')) {
-        $query->where('mood', 'like', '%' . $request->mood . '%'); // ⭕️ 存在する mood カラムのみ指定
+        $query->where('mood', 'like', '%' . $request->mood . '%');
     }
 
     // ページネーション（パラメータを維持）
@@ -109,14 +109,14 @@ Route::post('/community', function (Request $request) {
 
 // 🌟 ログインユーザー専用機能グループ
 Route::middleware('auth')->group(function () {
-    // ホーム画面
+    // 1. ホーム画面
     Route::get('/home', [MovieController::class, 'home'])->name('home');
 
-    // 🔍 映画検索
+    // 2. 🔍 映画検索・Mood絞り込み（★404防止のためRoute::resourceより前に定義）
     Route::get('/movies/search', [MovieController::class, 'search'])->name('movies.search');
     Route::get('/result', [MovieController::class, 'search'])->name('result');
 
-    // 🎬 映画リソースルート
+    // 3. 🎬 映画リソースルート（★searchの後に配置）
     Route::resource('movies', MovieController::class);
 
     // 👤 マイページ＆プロフィール関連
@@ -153,36 +153,5 @@ Route::middleware('auth')->group(function () {
     Route::post('/watchlist/toggle', [WatchlistController::class, 'toggle'])->name('watchlist.toggle');
 });
 
-// 🔍 映画タイトルのリアルタイム検索API（TMDb連携）
-Route::get('/api/movies/search', function (Illuminate\Http\Request $request) {
-    $query = $request->query('query');
-    if (!$query) {
-        return response()->json([]);
-    }
-
-    $apiKey = config('services.tmdb.api_key', env('TMDB_API_KEY'));
-
-    $response = Illuminate\Support\Facades\Http::get("https://api.themoviedb.org/3/search/movie", [
-        'api_key' => $apiKey,
-        'language' => 'ja-JP',
-        'query' => $query,
-        'page' => 1,
-    ]);
-
-    if ($response->successful()) {
-        $results = $response->json()['results'] ?? [];
-
-        $formatted = array_map(function ($item) {
-            return [
-                'id' => $item['id'],
-                'title' => $item['title'] ?? 'タイトル不明',
-                'poster_path' => $item['poster_path'] ?? null,
-                'release_date' => $item['release_date'] ?? '',
-            ];
-        }, array_slice($results, 0, 5));
-
-        return response()->json($formatted);
-    }
-
-    return response()->json([]);
-});
+// 🔍 映画タイトルのリアルタイム検索API（MovieController@autocompleteへ接続）
+Route::get('/api/movies/search', [MovieController::class, 'autocomplete'])->name('api.movies.search');

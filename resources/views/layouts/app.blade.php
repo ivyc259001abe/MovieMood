@@ -53,39 +53,41 @@
 <body
     class="bg-black text-white min-h-screen flex flex-col font-sans antialiased w-full selection:bg-amber-500 selection:text-black overflow-x-hidden relative">
 
-    <!-- 🌟 ヘッダーナビゲーション -->
-    <header class="bg-[#0b0e14] border-b border-gray-800/80 sticky top-0 z-50 w-full py-2">
+    <!-- 🌟 ヘッダーナビゲーション（レスポンシブ・三本線メニュー対応） -->
+    <header x-data="{ mobileMenuOpen: false }"
+        class="bg-[#0b0e14] border-b border-gray-800/80 sticky top-0 z-50 w-full py-2">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between w-full">
 
             <!-- 左：MovieMoodロゴ ＆ キャッチコピー -->
-            <div class="flex flex-col items-start justify-center">
+            <div class="flex flex-col items-start justify-center min-w-0">
                 <a href="{{ route('home') }}" title="HOME画面へ戻る"
                     class="group text-lg sm:text-2xl font-extrabold text-amber-500 hover:text-amber-400 transition-all duration-200 tracking-wide shrink-0 no-underline inline-flex items-center gap-1.5">
                     <span class="group-hover:scale-105 transition-transform duration-200">MovieMood</span>
                 </a>
-                <p class="text-[10px] sm:text-xs text-gray-300 font-bold m-0 mt-0.5 pl-0.5 pointer-events-none">
+                <p
+                    class="text-[9px] sm:text-xs text-gray-300 font-bold m-0 mt-0.5 pl-0.5 pointer-events-none truncate max-w-[200px] sm:max-w-none">
                     〜 あなたの「今の気分」が、次に観る映画を決める。 〜
                 </p>
             </div>
 
-            <!-- 右：ナビゲーション（横一列に並べるエリア） -->
-            <div class="flex items-center gap-3 sm:gap-5 text-xs font-bold">
+            <!-- 右：PCナビゲーション（sm:flex で 640px以上 のみ表示） -->
+            <div class="hidden sm:flex items-center gap-3 sm:gap-5 text-xs font-bold">
                 @auth
                     <!-- 🔔 1. 通知アイコン（ドロップダウン） -->
                     <div x-data="{ open: false, unreadCount: {{ Auth::user()->unreadNotifications->count() }} }"
                         class="relative">
                         <button @click="
-                                            open = !open;
-                                            if (open && unreadCount > 0) {
-                                                fetch('{{ route('notifications.readAll') }}', {
-                                                    method: 'POST',
-                                                    headers: {
-                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                                        'Content-Type': 'application/json'
-                                                    }
-                                                }).then(() => unreadCount = 0);
-                                            }
-                                        "
+                                        open = !open;
+                                        if (open && unreadCount > 0) {
+                                            fetch('{{ route('notifications.readAll') }}', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                    'Content-Type': 'application/json'
+                                                }
+                                            }).then(() => unreadCount = 0);
+                                        }
+                                    "
                             class="relative text-gray-300 hover:text-amber-400 p-1.5 focus:outline-none transition cursor-pointer flex items-center"
                             title="お知らせ">
                             <i class="fa-solid fa-bell text-base text-amber-500"></i>
@@ -116,7 +118,6 @@
                                         $userName = $data['user_name'] ?? $data['sender_name'] ?? 'ユーザー';
                                         $rawMessage = $data['message'] ?? '新しいお知らせがあります';
 
-                                        // 遷移先URLの設定
                                         $targetUrl = '#';
                                         if (!empty($data['url']) && $data['url'] !== '#') {
                                             $targetUrl = $data['url'];
@@ -133,22 +134,18 @@
                                         $isUnread = is_null($notification->read_at);
                                     @endphp
 
-                                    <!-- 💡 rounded-xl と overflow-hidden で角丸はみ出しを完全ガード -->
                                     <div
                                         class="group relative rounded-xl transition duration-150 overflow-hidden border border-transparent {{ $isUnread ? 'bg-[#1a2332]/90' : 'bg-transparent hover:bg-gray-800/60' }} p-3">
                                         <div class="flex items-start gap-3">
-                                            <!-- 送信者イニシャルアイコン -->
                                             <div
                                                 class="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">
                                                 {{ mb_substr($userName, 0, 1) }}
                                             </div>
 
-                                            <!-- メッセージ本文 -->
                                             <div class="flex-1 min-w-0 text-xs text-gray-300 leading-relaxed space-y-1">
                                                 <div>
                                                     <span class="font-bold text-white">{{ $userName }}</span> さんがあなたの
 
-                                                    <!-- 💡 映画タイトル部分を押すと映画詳細ページへ飛ぶリンク -->
                                                     @if($movieId && $movieTitle)
                                                         <a href="{{ $targetUrl }}"
                                                             class="font-bold text-amber-400 hover:text-amber-300 hover:underline transition inline-block mx-0.5 relative z-10">
@@ -183,7 +180,7 @@
                         </div>
                     </div>
 
-                    <!-- 👤 2. マイページ（枠付きボタンデザイン） -->
+                    <!-- 👤 2. マイページ -->
                     <a href="{{ route('mypage') }}"
                         class="flex items-center gap-1.5 sm:gap-2 bg-[#161f2c] hover:bg-gray-800 border border-amber-500/50 rounded-full py-1 px-2.5 sm:px-3.5 transition shadow-sm group shrink-0 no-underline">
                         <div
@@ -222,7 +219,81 @@
                 @endauth
             </div>
 
+            <!-- 右：スマホ用ハンバーガーボタン（sm:hidden で 640px未満 のみ表示） -->
+            <div class="flex items-center gap-2 sm:hidden">
+                @auth
+                    <!-- スマホ用通知ベル -->
+                    <button type="button" @click="mobileMenuOpen = !mobileMenuOpen"
+                        class="text-amber-500 p-1.5 focus:outline-none">
+                        <i class="fa-solid fa-bell text-base"></i>
+                    </button>
+                @endauth
+
+                <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" aria-label="メニューを開く"
+                    class="p-2 rounded-lg text-amber-500 hover:bg-gray-800/80 focus:outline-none transition">
+                    <i class="fa-solid text-xl" :class="mobileMenuOpen ? 'fa-xmark' : 'fa-bars'"></i>
+                </button>
+            </div>
+
         </div>
+
+        <!-- 📱 スマホ用展開ドロワーメニュー（三本線タップ時にスライドダウン） -->
+        @auth
+            <div x-show="mobileMenuOpen" x-cloak @click.away="mobileMenuOpen = false"
+                class="sm:hidden bg-[#0e131f] border-t border-gray-800/80 px-4 pt-3 pb-4 space-y-3 mt-2">
+
+                <!-- ユーザー情報表示 -->
+                <div class="flex items-center gap-3 pb-2.5 border-b border-gray-800">
+                    <div
+                        class="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-amber-400">
+                        @if(Auth::check() && Auth::user()->avatar)
+                            <img src="{{ asset(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}"
+                                class="w-full h-full object-cover">
+                        @else
+                            <i class="fa-solid fa-user text-gray-400 text-xs"></i>
+                        @endif
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="font-bold text-xs text-amber-400 truncate">
+                            {{ Auth::user()->nickname ?? Auth::user()->name ?? 'ユーザー' }}</div>
+                        <div class="font-medium text-[10px] text-gray-500 truncate">{{ Auth::user()->email ?? '' }}</div>
+                    </div>
+                </div>
+
+                <!-- メニュー一覧 -->
+                <div class="space-y-1">
+                    <a href="{{ route('home') }}"
+                        class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-gray-200 hover:bg-gray-800 transition no-underline">
+                        <i class="fa-solid fa-house text-amber-500 w-4 text-center"></i>
+                        <span>ホーム</span>
+                    </a>
+
+                    <a href="{{ route('mypage') }}"
+                        class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-gray-200 hover:bg-gray-800 transition no-underline">
+                        <i class="fa-solid fa-user-gear text-amber-500 w-4 text-center"></i>
+                        <span>マイページ</span>
+                    </a>
+
+                    <a href="{{ route('community.index') }}"
+                        class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-gray-200 hover:bg-gray-800 transition no-underline">
+                        <i class="fa-solid fa-users text-amber-500 w-4 text-center"></i>
+                        <span>コミュニティ</span>
+                    </a>
+                </div>
+
+                <!-- ログアウトボタン -->
+                <div class="pt-2 border-t border-gray-800">
+                    <form method="POST" action="{{ route('logout') }}" class="m-0">
+                        @csrf
+                        <button type="submit"
+                            class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-rose-400 hover:bg-rose-500/10 transition flex items-center gap-2.5 bg-transparent border-0 cursor-pointer">
+                            <i class="fa-solid fa-right-from-bracket w-4 text-center"></i>
+                            <span>ログアウト</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @endauth
     </header>
 
     <!-- 📱 メインコンテンツエリア -->

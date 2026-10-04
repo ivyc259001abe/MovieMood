@@ -23,20 +23,28 @@ class ProfileController extends Controller
     {
         $user = auth()->user();
 
-        // 1. ユーザーのウォッチリスト一覧を取得（Watchlistモデルから直接検索）
-        $watchlist = Watchlist::where('user_id', $user->id)->latest()->get();
+        // 1. ユーザーのウォッチリスト一覧を取得（take(6) を追加して最大6件に制限）
+        $watchlist = Watchlist::where('user_id', $user->id)
+            ->latest()
+            ->take(6) // 👈 ここを追加（最大6件まで）
+            ->get()
+            ->map(function ($item) {
+                if (!isset($item->vote_average) && !isset($item->rating)) {
+                    $avgRating = Review::where('movie_id', $item->movie_id ?? $item->tmdb_id ?? $item->id)->avg('rating');
+                    $item->vote_average = $avgRating ? round($avgRating, 1) : null;
+                }
+                return $item;
+            });
 
-        // 2. 自分の投稿レビュー一覧を取得（Reviewモデルから直接検索）
+        // 2. 自分の投稿レビュー一覧を取得
         $myReviews = Review::where('user_id', $user->id)->latest()->get();
 
-        // 3. いいねした投稿を取得（Likeモデルから対象のレビューIDを取得してReviewを抽出）
+        // 3. いいねした投稿を取得
         $likedReviewIds = Like::where('user_id', $user->id)->pluck('review_id');
         $likedReviews = Review::whereIn('id', $likedReviewIds)->latest()->get();
 
-        // データをマイページのビュー（mypage）に渡す
         return view('mypage', compact('user', 'watchlist', 'myReviews', 'likedReviews'));
     }
-
     /**
      * プロフィール編集画面表示
      */

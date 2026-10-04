@@ -9,7 +9,7 @@ use App\Models\Review;
 class MovieController extends Controller
 {
     /**
-     * TMDB APIの共通リクエスト処理（SSLエラー対策・自動リトライ・タイムアウト設定）
+     * TMDB APIの共通リクエスト処理
      */
     private function fetchFromTmdb(string $url, array $params = [])
     {
@@ -18,7 +18,6 @@ class MovieController extends Controller
         $params['language'] = $params['language'] ?? 'ja-JP';
 
         try {
-            // 💡 withoutVerifying() でcURL 35エラー回避、retry(3, 100) で一時的通信失敗を自動リカバリー
             $response = Http::withoutVerifying()
                 ->retry(3, 100)
                 ->timeout(10)
@@ -41,18 +40,118 @@ class MovieController extends Controller
     }
 
     /**
+     * ホーム画面の表示
+     */
+    public function home()
+    {
+        $popularMovies = $this->getPopularMovies();
+
+        // 💡 本日のトピック：日付ベースのシード値で毎日ランダムに1作品を選出
+        $todayTopic = null;
+        if (!empty($popularMovies)) {
+            $daySeed = (int) date('Ymd');
+            $topicIndex = $daySeed % count($popularMovies);
+            $todayTopic = $popularMovies[$topicIndex];
+
+            // トピック映画の監督情報を補填
+            if (isset($todayTopic['id'])) {
+                $credits = $this->fetchFromTmdb("/movie/{$todayTopic['id']}/credits");
+                if ($credits && isset($credits['crew'])) {
+                    $directorObj = collect($credits['crew'])->firstWhere('job', 'Director');
+                    $todayTopic['director'] = $directorObj['name'] ?? '不明';
+                }
+            }
+        }
+
+        return view('home', compact('popularMovies', 'todayTopic'));
+    }
+
+    /**
+     * オートコンプリートAPI（検索窓入力時にリアルタイムで候補5件を返す）
+     */
+    public function autocomplete(Request $request)
+    {
+        $query = $request->input('query');
+        if (!$query) {
+            return response()->json([]);
+        }
+
+        $data = $this->fetchFromTmdb('/search/movie', ['query' => $query, 'page' => 1]);
+        $results = array_slice($data['results'] ?? [], 0, 5);
+
+        $suggestions = array_map(function ($movie) {
+            return [
+                'id' => $movie['id'],
+                'title' => $movie['title'] ?? 'タイトル不明',
+                'release_year' => isset($movie['release_date']) && !empty($movie['release_date']) ? substr($movie['release_date'], 0, 4) : '',
+                'poster_path' => $movie['poster_path'] ?? null
+            ];
+        }, $results);
+
+        return response()->json($suggestions);
+    }
+
+    /**
+     * 検索＆Mood絞り込み処理（ランダム6作品抽出対応）
+     */
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+        $mood = $request->input('mood');
+
+        $movies = [];
+
+        // 1. キーワード検索
+        if ($query) {
+            $data = $this->fetchFromTmdb('/search/movie', ['query' => $query, 'page' => 1]);
+            $movies = array_slice($data['results'] ?? [], 0, 6);
+        }
+        // 2. 感情（Mood）タグ検索（ランダム1～10ページから抽出して6件に限定）
+        elseif ($mood) {
+            $genreMap = [
+                '号泣' => 18,    // Drama
+                'スカッと' => 28,  // Action
+                'ハラハラ' => 53,  // Thriller
+                'キュン' => 10749, // Romance
+            ];
+
+            $genreId = $genreMap[$mood] ?? null;
+
+            if ($genreId) {
+                $randomPage = rand(1, 10);
+                $data = $this->fetchFromTmdb('/discover/movie', [
+                    'with_genres' => $genreId,
+                    'sort_by' => 'popularity.desc',
+                    'page' => $randomPage,
+                ]);
+
+                $allFetched = $data['results'] ?? [];
+                // シャッフルしてランダムに6件を取得
+                shuffle($allFetched);
+                $movies = array_slice($allFetched, 0, 6);
+            } else {
+                $movies = array_slice($this->getPopularMovies(), 0, 6);
+            }
+        } else {
+            $movies = array_slice($this->getPopularMovies(), 0, 6);
+        }
+
+        $popularMovies = $this->getPopularMovies();
+
+        return view('result', compact('movies', 'query', 'mood', 'popularMovies'));
+    }
+
+    /**
      * 映画詳細画面を表示
      */
     public function show($id)
     {
-        // 映画情報を取得
         $movieData = $this->fetchFromTmdb("/movie/{$id}");
 
         if (!$movieData) {
             abort(404, '映画情報が見つかりませんでした。');
         }
 
-        // 監督情報を追加で取得（credits endpoint）
         $director = '不明';
         $credits = $this->fetchFromTmdb("/movie/{$id}/credits");
         if ($credits && isset($credits['crew'])) {
@@ -62,12 +161,10 @@ class MovieController extends Controller
             }
         }
 
-        // 💡 overview が空または空白のみの場合はメッセージを自動補填
         $overview = (!empty($movieData['overview']) && trim($movieData['overview']) !== '')
             ? $movieData['overview']
             : '※日本語あらすじ情報は準備中です。';
 
-        // Viewへ渡す映画情報配列を作成
         $movie = [
             'id' => $movieData['id'],
             'title' => $movieData['title'] ?? 'タイトル不明',
@@ -80,10 +177,8 @@ class MovieController extends Controller
             'vote_average' => $movieData['vote_average'] ?? 0,
         ];
 
-        // カルバナー等で使用する人気映画リスト
         $popularMovies = $this->getPopularMovies();
 
-        // レビュー一覧の取得
         $reviews = Review::with('user', 'likes', 'comments.user')
             ->where('movie_id', $id)
             ->latest()
