@@ -39,31 +39,87 @@ class MovieController extends Controller
         return $data['results'] ?? [];
     }
 
-    /**
-     * ホーム画面の表示
-     */
     public function home()
     {
+        // 自身の getPopularMovies() メソッドから人気の映画を取得
         $popularMovies = $this->getPopularMovies();
+        $todayTopic = $popularMovies[0] ?? null;
 
-        // 💡 本日のトピック：日付ベースのシード値で毎日ランダムに1作品を選出
-        $todayTopic = null;
-        if (!empty($popularMovies)) {
-            $daySeed = (int) date('Ymd');
-            $topicIndex = $daySeed % count($popularMovies);
-            $todayTopic = $popularMovies[$topicIndex];
+        // --- 🌙 TODAY'S PICKUP の日替わり計算処理 ---
+        $moodThemes = [
+            [
+                'tag' => '#ハラハラ',
+                'mood' => 'ハラハラ',
+                'emoji' => '😱',
+                'bg' => 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20',
+                'messages' => [
+                    'スリルを味わおう',
+                    '極上の緊張感を体験したい日に',
+                    '最後まで目が離せない展開！',
+                ]
+            ],
+            [
+                'tag' => '#スカッと',
+                'mood' => 'スカッと',
+                'emoji' => '😆',
+                'bg' => 'bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20',
+                'messages' => [
+                    'モヤモヤを吹き飛ばそう！',
+                    '気分爽快！ストレス解消に',
+                    '思わず叫びたくなる最高の展開',
+                ]
+            ],
+            [
+                'tag' => '#号泣',
+                'mood' => '号泣',
+                'emoji' => '😭',
+                'bg' => 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20',
+                'messages' => [
+                    '涙で心をデトックスしたい夜へ',
+                    '心揺さぶられる感動のストーリー',
+                    'タオル必須！深すぎる愛の物語',
+                ]
+            ],
+            [
+                'tag' => '#キュン',
+                'mood' => 'キュン',
+                'emoji' => '💖',
+                'bg' => 'bg-pink-500/10 border-pink-500/30 text-pink-400 hover:bg-pink-500/20',
+                'messages' => [
+                    'ときめきと癒やしをチャージ',
+                    '甘酸っぱい気持ちに浸りたい日に',
+                    '胸がキュンとする最高のロマンス',
+                ]
+            ],
+        ];
 
-            // トピック映画の監督情報を補填
-            if (isset($todayTopic['id'])) {
-                $credits = $this->fetchFromTmdb("/movie/{$todayTopic['id']}/credits");
-                if ($credits && isset($credits['crew'])) {
-                    $directorObj = collect($credits['crew'])->firstWhere('job', 'Director');
-                    $todayTopic['director'] = $directorObj['name'] ?? '不明';
-                }
-            }
+        // 今日の日付を基準にする
+        $daySeed = (int) date('Ymd');
+
+        // 日替わりで感情テーマを選択
+        $themeIndex = $daySeed % count($moodThemes);
+        $selectedTheme = $moodThemes[$themeIndex];
+
+        // 日替わりでキャッチコピーを選択
+        $msgCount = count($selectedTheme['messages']);
+        $selectedMessage = $selectedTheme['messages'][$daySeed % $msgCount];
+
+        // 日替わりで映画をピックアップ
+        if (!empty($todayTopic)) {
+            $pickup = $todayTopic;
+        } elseif (!empty($popularMovies)) {
+            $movieIndex = $daySeed % count($popularMovies);
+            $pickup = $popularMovies[$movieIndex];
+        } else {
+            $pickup = null;
         }
 
-        return view('home', compact('popularMovies', 'todayTopic'));
+        return view('home', compact(
+            'popularMovies',
+            'selectedTheme',
+            'selectedMessage',
+            'pickup'
+        ));
     }
 
     /**

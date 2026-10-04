@@ -13,7 +13,7 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\WatchlistController;
-
+use App\Http\Controllers\ReviewCommentController; // 独立したコメントコントローラーを使用する場合
 
 // ★ TMDb人気映画取得ヘルパー関数
 if (!function_exists('getPopularMovies')) {
@@ -64,19 +64,23 @@ Route::get('/password/reset', function () {
 
 Route::post('/password/reset', [PasswordController::class, 'resetPassword'])->name('password.reset.update');
 
-// 🎬 コミュニティ表示ルート（気分絞り込み＆コメント等事前読み込み対応）
+// 🎬 コミュニティ表示ルート（気分絞り込み＆コメント最新順事前読み込み対応）
 Route::get('/community', function (Request $request) {
     $popularMovies = getPopularMovies();
 
-    // ユーザー・コメント・コメント投稿者・いいねをまとめて事前に取得（Eager Loading）
-    $query = Review::with(['user', 'comments.user', 'likes'])->latest();
+    // ユーザー・コメント（新しい順）・コメント投稿者・いいねをまとめて事前に取得（Eager Loading）
+    $query = Review::with([
+        'user',
+        'comments' => function ($q) {
+            $q->orderBy('created_at', 'desc')->with('user');
+        },
+        'likes'
+    ])->latest();
 
-    // リクエストに気分（mood）パラメータが存在する場合は絞り込み
     if ($request->filled('mood')) {
         $query->where('mood', 'like', '%' . $request->mood . '%');
     }
 
-    // ページネーション（パラメータを維持）
     $reviews = $query->paginate(10)->withQueryString();
 
     return view('community', compact('reviews', 'popularMovies'));
@@ -133,8 +137,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/movies/{id}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::post('/reviews/{review}/like', [LikeController::class, 'toggle'])->name('reviews.like');
 
-    // 💬 コメント保存用ルート
+    // 💬 コメント関連
     Route::post('/reviews/{review}/comments', [ReviewController::class, 'storeComment'])->name('reviews.comments.store');
+
+    // 🗑️ コメント削除用ルート（ReviewCommentControllerの場合）
+    Route::delete('/comments/{comment}', [ReviewCommentController::class, 'destroy'])->name('reviews.comments.destroy');
+
+    // ※もし ReviewController 内で削除処理を行う場合は上の行を消してこちらを有効化してください：
+    // Route::delete('/comments/{comment}', [ReviewController::class, 'destroyComment'])->name('reviews.comments.destroy');
 
     // 🔔 通知一括既読用ルート
     Route::post('/notifications/read-all', function () {
