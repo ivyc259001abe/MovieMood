@@ -25,7 +25,6 @@ class ReviewCommented extends Notification
     {
         return ['database'];
     }
-
     public function toDatabase($notifiable)
     {
         // 1. 投稿者名の判定（nickname > name > username > フォールバック）
@@ -41,24 +40,17 @@ class ReviewCommented extends Notification
                 ?? 'ユーザー';
         }
 
-        // 2. 映画IDの取得（movie_id または tmdb_id）
-        $movieId = $this->review->movie_id ?? $this->review->tmdb_id ?? null;
-
-        // 3. URLの生成
-        $url = '#';
-        if ($movieId) {
-            $url = route('reviews.index', $movieId) . '#review-' . $this->review->id;
-        }
+        // 2. 映画タイトルの取得（$this->review や $this->movie から取得）
+        $movieTitle = $this->review->movie_title
+            ?? $this->review->movie->title
+            ?? $this->movie->title
+            ?? '映画作品';
 
         return [
             'user_name' => $userName,
-            'user_nickname' => $userName,
-            'userName' => $userName,
-            // 💡 先頭に $userName を結合して「○○さんが〜」となるように修正
-            'message' => $userName . 'さんがあなたの『' . ($this->review->movie_title ?? '映画') . '』のレビューにコメントしました',
-            'movie_id' => $movieId,
-            'review_id' => $this->review->id,
-            'url' => $url,
+            'movie_title' => $movieTitle, // 👈 ここで動的な映画タイトルをセットします
+            'comment' => $this->comment->comment ?? '',
+            'url' => route('reviews.index', ['movie_id' => $this->review->movie_id ?? 1]) . '#review-' . ($this->review->id ?? ''),
         ];
     }
 }

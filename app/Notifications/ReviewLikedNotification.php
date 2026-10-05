@@ -27,24 +27,25 @@ class ReviewLikedNotification extends Notification
 
     public function toDatabase($notifiable)
     {
-        // ユーザー名の安全な取得
+        // 送信者（いいねを押した人）の名前を取得
         $userName = 'ユーザー';
-        if (is_object($this->liker)) {
+        if ($this->liker && is_object($this->liker)) {
             $userName = $this->liker->nickname ?? $this->liker->name ?? 'ユーザー';
         } elseif (auth()->check()) {
             $userName = auth()->user()->nickname ?? auth()->user()->name ?? 'ユーザー';
         }
 
-        // 💡 $movieId をここで事前に定義
         $movieId = $this->review->movie_id ?? $this->review->tmdb_id ?? null;
-
-        // 正しいルート名（reviews.index）でURL作成
         $url = $movieId ? route('reviews.index', $movieId) . '#review-' . $this->review->id : '#';
 
         return [
+            'type' => 'like', // ⭕ ハートアイコン判別用
             'user_name' => $userName,
-            'message' => 'さんがあなたのレビューに「いいね！」しました',
+            'sender_nickname' => $userName,
+            'sender_id' => $this->liker->id ?? auth()->id(), // ⭕ ユーザーIDの保存
+            'message' => 'あなたのレビューに「いいね！」しました',
             'movie_id' => $movieId,
+            'movie_title' => $this->review->movie_title ?? $this->review->title ?? null,
             'review_id' => $this->review->id,
             'url' => $url,
         ];

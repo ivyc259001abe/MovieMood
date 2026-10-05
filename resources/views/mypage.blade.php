@@ -82,7 +82,6 @@
             <!-- 1️⃣ タブ：ウォッチリスト表示 -->
             <div id="tab-content-watchlist" class="tab-panel p-4 sm:p-6">
                 @if(!empty($watchlist) && count($watchlist) > 0)
-                    <!-- パソコン画面で最大6列（6件）並ぶように設定する例 -->
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
                         @foreach($watchlist as $item)
                             @php
@@ -93,7 +92,6 @@
                                 $releaseDate = $data['release_date'] ?? $data['year'] ?? null;
                                 $year = $releaseDate ? substr($releaseDate, 0, 4) : '';
 
-                                // 評価値の取得（vote_average, rating, score 等）
                                 $rawRating = $data['vote_average'] ?? $data['rating'] ?? $data['score'] ?? null;
                                 $rating = (is_numeric($rawRating) && (float) $rawRating > 0) ? number_format((float) $rawRating, 1) : '-';
                             @endphp
@@ -101,14 +99,12 @@
                             <a href="{{ route('movies.show', $movieId) }}"
                                 class="group relative block rounded-2xl overflow-hidden bg-slate-900/80 border border-gray-800 hover:border-amber-500/50 transition duration-300 shadow-md hover:shadow-xl hover:-translate-y-1">
 
-                                <!-- ポスター画像エリア -->
                                 <div class="relative w-full overflow-hidden bg-gray-950" style="aspect-ratio: 2 / 3;">
                                     <img src="{{ !empty($posterPath) ? (str_starts_with($posterPath, 'http') ? $posterPath : 'https://image.tmdb.org/t/p/w500' . $posterPath) : asset('images/no-poster.png') }}"
                                         alt="{{ $title }}"
                                         class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                                 </div>
 
-                                <!-- 下部情報エリア（タイトル、公開年、★評価） -->
                                 <div class="p-3 bg-slate-900/90 space-y-1">
                                     <p class="text-xs font-bold text-white group-hover:text-amber-400 truncate">
                                         {{ $title }}
@@ -129,10 +125,10 @@
                 @endif
             </div>
 
-            <!-- 2️⃣ タブ：マイレビュー -->
+            <!-- 2️⃣ タブ：マイレビュー（2列グリッド配置） -->
             <div id="tab-content-reviews" class="tab-panel p-6 hidden">
                 @if(!empty($myReviews) && count($myReviews) > 0)
-                    <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         @foreach($myReviews as $review)
                             <div
                                 class="p-4 bg-black/40 rounded-xl border border-gray-800 space-y-2 transition hover:border-gray-700">
@@ -161,10 +157,10 @@
                 @endif
             </div>
 
-            <!-- 3️⃣ タブ：いいね -->
+            <!-- 3️⃣ タブ：いいね（2列グリッド配置） -->
             <div id="tab-content-likes" class="tab-panel p-6 hidden">
                 @if(!empty($likedReviews) && count($likedReviews) > 0)
-                    <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         @foreach($likedReviews as $item)
                             <div
                                 class="p-4 bg-black/40 rounded-xl border border-gray-800 space-y-2 transition hover:border-gray-700">

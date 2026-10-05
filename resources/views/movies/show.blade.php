@@ -1,39 +1,49 @@
 <x-app-layout>
     <style>
+        /* スライダーの標準背景設定（JSでlinear-gradientを動的に変更） */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: linear-gradient(to right, #f59e0b 77.7%, #374151 77.7%);
+            border-radius: 8px;
+            outline: none;
+        }
+
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
             width: 18px;
             height: 18px;
             border-radius: 50%;
-            background: #f59e0b;
+            background: #ffffff;
+            border: 2px solid #f59e0b;
             cursor: pointer;
-            box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
             transition: transform 0.1s ease;
         }
 
         input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.15);
+            transform: scale(1.2);
         }
 
         input[type="range"]::-moz-range-thumb {
             width: 18px;
             height: 18px;
             border-radius: 50%;
-            background: #f59e0b;
+            background: #ffffff;
+            border: 2px solid #f59e0b;
             cursor: pointer;
-            box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
-            border: none;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
             transition: transform 0.1s ease;
         }
 
         input[type="range"]::-moz-range-thumb:hover {
-            transform: scale(1.15);
+            transform: scale(1.2);
         }
 
         /* カスタムスクロールバー */
         .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
+            width: 6px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
@@ -42,12 +52,12 @@
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #374151;
+            background: #f59e0b;
             border-radius: 8px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #4b5563;
+            background: #d97706;
         }
 
         /* ハイライトアニメーション */
@@ -201,15 +211,15 @@
                                 @endif
                             </div>
 
-                            <!-- あらすじエリア -->
+                            <!-- あらすじエリア（文字サイズ拡大＆高さ制限スクロール対応） -->
                             <div class="space-y-1.5 flex-1 min-h-0 flex flex-col pt-1">
                                 <h3
-                                    class="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1 flex-shrink-0">
+                                    class="text-xs sm:text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1 flex-shrink-0">
                                     <i class="fa-solid fa-book-open"></i> STORY / あらすじ
                                 </h3>
                                 <div
-                                    class="bg-[#1a2332] p-3 rounded-xl border border-gray-800/80 flex-1 overflow-y-auto custom-scrollbar max-h-48 sm:max-h-none">
-                                    <p class="text-xs text-gray-300 leading-relaxed font-normal">
+                                    class="bg-[#1a2332] p-3 rounded-xl border border-gray-800/80 flex-1 overflow-y-auto custom-scrollbar max-h-48 sm:max-h-60">
+                                    <p class="text-sm sm:text-base text-gray-200 leading-relaxed font-normal">
                                         {{ (!empty($movie['overview']) && trim($movie['overview']) !== '') ? $movie['overview'] : '※日本語あらすじ情報は準備中です。' }}
                                     </p>
                                 </div>
@@ -247,10 +257,10 @@
                         <input type="hidden" name="movie_id" value="{{ $movie['id'] }}">
                         <input type="hidden" name="movie_title" value="{{ $movie['title'] }}">
                         <input type="hidden" name="poster_path" value="{{ $movie['poster_path'] ?? '' }}">
-                        <input type="hidden" name="status" id="review_status" value="watched">
+                        <input type="hidden" name="status" id="review_status" value="{{ old('status', 'watched') }}">
 
                         <div class="space-y-3">
-                            <!-- 【鑑賞後エリア】評価スライダー -->
+                            <!-- 【共通エリア】評価・期待度スライダー -->
                             <div id="ratingSection" class="space-y-1.5">
                                 <div class="flex items-center justify-between">
                                     <label for="ratingSlider" id="ratingTitle"
@@ -260,12 +270,12 @@
                                     <div
                                         class="text-amber-400 font-extrabold text-xs sm:text-sm flex items-center gap-1">
                                         <i class="fa-solid fa-star text-amber-400 text-[10px]"></i>
-                                        <span id="ratingValue">8.0</span>
+                                        <span id="ratingValue">{{ number_format(old('rating', 8.0), 1) }}</span>
                                     </div>
                                 </div>
 
                                 <input type="range" name="rating" id="ratingSlider" min="1.0" max="10.0" step="0.1"
-                                    value="8.0"
+                                    value="{{ old('rating', '8.0') }}"
                                     class="w-full h-2 rounded-lg appearance-none cursor-pointer focus:outline-none transition-all duration-75"
                                     oninput="updateRatingDisplay(this)">
 
@@ -279,11 +289,14 @@
 
                             <!-- 【共通エリア】気分・期待タグ -->
                             <div id="moodTagSection" class="space-y-1">
-                                <span id="moodTagLabel"
-                                    class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                                    観たあとの気分タグ（複数選択可）
-                                </span>
-                                <div id="moodTagContainer" class="flex flex-wrap gap-1.5">
+                                <div class="flex items-center justify-between">
+                                    <span id="moodTagLabel"
+                                        class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                                        観たあとの気分タグ（最大4つ選択可）
+                                    </span>
+                                    <span class="text-[10px] text-gray-500 font-bold" id="tagCountText">0/4</span>
+                                </div>
+                                <div id="moodTagContainer" class="flex flex-wrap gap-1.5 pt-1">
                                     <!-- JSでタグ生成 -->
                                 </div>
                             </div>
@@ -295,7 +308,7 @@
                                     レビュー感想コメント
                                 </label>
                                 <textarea id="comment" name="comment" required placeholder="この映画を観た感想や見どころを書いてみましょう..."
-                                    class="w-full h-24 bg-[#1a2332] border border-gray-700/80 rounded-xl p-2.5 text-xs text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none leading-relaxed resize-none custom-scrollbar"></textarea>
+                                    class="w-full h-24 bg-[#1a2332] border border-gray-700/80 rounded-xl p-2.5 text-xs text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none leading-relaxed resize-none custom-scrollbar">{{ old('comment') }}</textarea>
                             </div>
                         </div>
 
@@ -360,7 +373,7 @@
                                         @if(($review->status ?? 'watched') === 'want_to_watch')
                                             <span
                                                 class="bg-blue-500/20 border border-blue-500/40 text-blue-300 px-2 py-0.5 rounded-full text-[10px] font-bold">
-                                                ✨ 鑑賞前メモ
+                                                ✨ 期待度: {{ number_format($review->rating ?? 0, 1) }}
                                             </span>
                                         @else
                                             <div
@@ -433,7 +446,8 @@
                                                     <span>{{ $comment->created_at ? $comment->created_at->diffForHumans() : '' }}</span>
                                                 </div>
                                                 <p class="text-gray-200 leading-snug text-[11px]">
-                                                    {{ $comment->comment ?? $comment->body }}</p>
+                                                    {{ $comment->comment ?? $comment->body }}
+                                                </p>
                                             </div>
                                         @endforeach
                                     </div>
@@ -467,17 +481,13 @@
     </div>
 
     <script>
-        const moodTagsList = [
-            '号泣',
-            '号泣するかも',
-            'スカッと',
-            'ハラハラ',
-            'キュン',
-            '考えさせられる',
-            'ほっこり',
-            'ビクビク',
-            '笑える'
-        ];
+        // 鑑賞後・鑑賞前それぞれのタグ配列定義
+        const watchedMoodTags = ['号泣', 'スカッと', 'ハラハラ', 'キュン'];
+        const wantToWatchMoodTags = ['号泣しそう', 'スカッとしそう', 'ハラハラしそう', 'キュンとしそう'];
+
+        const MAX_MOOD_TAGS = 4; // 全4つ選択可能に設定
+
+        let currentStatus = "{{ old('status', 'watched') }}"; // 現在のステータス管理
 
         function goBackOrHome() {
             if (document.referrer && document.referrer !== location.href) {
@@ -487,16 +497,19 @@
             }
         }
 
+        /* 鑑賞後/鑑賞前 タブ切り替え処理 */
         function switchStatus(status) {
+            currentStatus = status;
             const statusInput = document.getElementById('review_status');
             const tabWatched = document.getElementById('tabWatched');
             const tabWantToWatch = document.getElementById('tabWantToWatch');
 
-            const ratingSection = document.getElementById('ratingSection');
+            const ratingTitle = document.getElementById('ratingTitle');
             const moodTagLabel = document.getElementById('moodTagLabel');
             const commentLabel = document.getElementById('commentLabel');
             const commentTextarea = document.getElementById('comment');
             const submitBtnText = document.getElementById('submitBtnText');
+            const slider = document.getElementById('ratingSlider');
 
             statusInput.value = status;
 
@@ -504,76 +517,126 @@
                 tabWatched.className = "py-1.5 text-center text-xs font-bold rounded-lg transition duration-200 bg-amber-500 text-black shadow-md flex items-center justify-center gap-1";
                 tabWantToWatch.className = "py-1.5 text-center text-xs font-bold rounded-lg transition duration-200 text-gray-400 hover:text-white flex items-center justify-center gap-1";
 
-                ratingSection.classList.remove('hidden');
-                moodTagLabel.innerText = '観たあとの気分タグ（複数選択可）';
+                ratingTitle.innerText = '評価（1.0 〜 10.0）';
+                moodTagLabel.innerText = `観たあとの気分タグ（最大${MAX_MOOD_TAGS}つ選択可）`;
                 commentLabel.innerText = 'レビュー感想コメント';
                 commentTextarea.placeholder = 'この映画を観た感想や見どころを書いてみましょう...';
                 submitBtnText.innerText = 'レビューを投稿する';
+
+                // 鑑賞後タグをレンダリング
+                renderMoodTags(watchedMoodTags);
             } else {
                 tabWantToWatch.className = "py-1.5 text-center text-xs font-bold rounded-lg transition duration-200 bg-amber-500 text-black shadow-md flex items-center justify-center gap-1";
                 tabWatched.className = "py-1.5 text-center text-xs font-bold rounded-lg transition duration-200 text-gray-400 hover:text-white flex items-center justify-center gap-1";
 
-                ratingSection.classList.add('hidden');
-                moodTagLabel.innerText = '観る前の期待タグ（複数選択可）';
+                ratingTitle.innerText = '期待度（1.0 〜 10.0）';
+                moodTagLabel.innerText = `観る前の期待タグ（最大${MAX_MOOD_TAGS}つ選択可）`;
                 commentLabel.innerText = '観たい理由・期待メモ';
                 commentTextarea.placeholder = 'この映画を観たい理由や、期待しているポイントを書いてみましょう...';
                 submitBtnText.innerText = '鑑賞前メモを保存する';
+
+                // 鑑賞前タグをレンダリング
+                renderMoodTags(wantToWatchMoodTags);
+            }
+
+            // スライダー表示テキストの更新
+            if (slider) {
+                updateRatingDisplay(slider);
             }
         }
 
-        function renderMoodTags() {
-            const container = document.getElementById('moodTagContainer');
-            if (!container) return;
-
-            container.innerHTML = moodTagsList.map(m => `
-                <label class="cursor-pointer">
-                    <input type="checkbox" name="moods[]" value="${m}" class="peer hidden">
-                    <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#1a2332] border border-gray-700 text-gray-300 peer-checked:bg-amber-500 peer-checked:text-black peer-checked:border-amber-400 transition hover:border-gray-500">
-                        #${m}
-                    </span>
-                </label>
-            `).join('');
-        }
-
-        function updateRatingDisplay(slider) {
-            const val = parseFloat(slider.value);
-            const min = parseFloat(slider.min) || 1.0;
-            const max = parseFloat(slider.max) || 10.0;
+        /* スライダー制御 & 背景グラデーション動的着色 */
+        function updateRatingDisplay(input) {
+            const min = parseFloat(input.min) || 1.0;
+            const max = parseFloat(input.max) || 10.0;
+            const val = parseFloat(input.value);
 
             const percentage = ((val - min) / (max - min)) * 100;
-            slider.style.background = `linear-gradient(to right, #f59e0b 0%, #f59e0b ${percentage}%, #374151 ${percentage}%, #374151 100%)`;
+            input.style.background = `linear-gradient(to right, #f59e0b ${percentage}%, #374151 ${percentage}%)`;
 
-            const ratingValueElem = document.getElementById('ratingValue');
-            if (ratingValueElem) {
-                ratingValueElem.innerText = val.toFixed(1);
-            }
+            document.getElementById('ratingValue').innerText = val.toFixed(1);
 
-            const ratingLabelElem = document.getElementById('ratingLabel');
-            if (ratingLabelElem) {
-                let text = '';
-                if (val >= 9.0) text = '🏆 最高傑作！絶対観るべき';
-                else if (val >= 7.5) text = '✨ 超おすすめ！観て後悔なし';
-                else if (val >= 5.0) text = '👍 普通に面白い・佳作';
-                else text = '🤔 好みが分かれる作品かも';
-                ratingLabelElem.innerText = text;
-            }
-        }
-
-        function toggleCommentBox(reviewId) {
-            const box = document.getElementById(`comment-box-${reviewId}`);
-            const arrow = document.getElementById(`comment-arrow-${reviewId}`);
-            if (box) {
-                box.classList.toggle('hidden');
-                if (arrow) {
-                    arrow.classList.toggle('rotate-180');
+            const labelEl = document.getElementById('ratingLabel');
+            if (currentStatus === 'watched') {
+                if (val >= 9.0) {
+                    labelEl.innerText = '🏆 神作！人生の一本レベル';
+                } else if (val >= 7.5) {
+                    labelEl.innerText = '✨ 超おすすめ！観て後悔なし';
+                } else if (val >= 5.0) {
+                    labelEl.innerText = '👍 普通に楽しめる良作';
+                } else {
+                    labelEl.innerText = '🤔 好みが分かれる作品かも';
+                }
+            } else {
+                if (val >= 9.0) {
+                    labelEl.innerText = '🔥 期待度MAX！絶対に観たい';
+                } else if (val >= 7.5) {
+                    labelEl.innerText = '✨ かなり楽しみ！期待大';
+                } else if (val >= 5.0) {
+                    labelEl.innerText = '👀 ちょっと気になる程度';
+                } else {
+                    labelEl.innerText = '💭 暇があれば観てみたい';
                 }
             }
         }
 
+        /* タグ描画処理 */
+        function renderMoodTags(tagsList) {
+            const container = document.getElementById('moodTagContainer');
+            if (!container) return;
+
+            // タグ一覧変更時に選択カウントを初期化
+            const tagCountText = document.getElementById('tagCountText');
+            if (tagCountText) tagCountText.innerText = `0/${MAX_MOOD_TAGS}`;
+
+            container.innerHTML = tagsList.map(m => {
+                const cleanTag = m.replace(/^#/, '');
+                return `
+                    <label class="cursor-pointer">
+                        <input type="checkbox" name="moods[]" value="${cleanTag}" onchange="handleTagChange(this)" class="peer hidden">
+                        <span class="inline-block text-[10px] sm:text-[11px] px-2.5 py-1 rounded-lg border border-gray-700 bg-[#1a2332] text-gray-300 font-semibold transition-all duration-150 peer-checked:bg-amber-500 peer-checked:text-black peer-checked:border-amber-400 peer-checked:font-bold hover:border-amber-500/50">
+                            #${cleanTag}
+                        </span>
+                    </label>
+                `;
+            }).join('');
+        }
+
+        /* タグ選択数の制限チェック（全4つまで選択可） */
+        function handleTagChange(checkbox) {
+            const checkedBoxes = document.querySelectorAll('#moodTagContainer input[type="checkbox"]:checked');
+
+            if (checkedBoxes.length > MAX_MOOD_TAGS) {
+                checkbox.checked = false;
+                alert(`タグは最大${MAX_MOOD_TAGS}つまで選択可能です。`);
+                return;
+            }
+
+            const tagCountText = document.getElementById('tagCountText');
+            if (tagCountText) {
+                tagCountText.innerText = `${checkedBoxes.length}/${MAX_MOOD_TAGS}`;
+            }
+        }
+
+        /* コメント開閉表示 */
+        function toggleCommentBox(reviewId) {
+            const box = document.getElementById(`comment-box-${reviewId}`);
+            const arrow = document.getElementById(`comment-arrow-${reviewId}`);
+
+            if (box) box.classList.toggle('hidden');
+            if (arrow) arrow.classList.toggle('rotate-180');
+        }
+
+        /* DOM読み込み完了時の初期化処理 */
         document.addEventListener('DOMContentLoaded', () => {
-            renderMoodTags();
+            // 現在のステータスでUIを正しく初期表示
+            switchStatus(currentStatus);
+
+            // スライダー着色の初期化
             const slider = document.getElementById('ratingSlider');
-            if (slider) updateRatingDisplay(slider);
+            if (slider) {
+                updateRatingDisplay(slider);
+            }
         });
     </script>
 </x-app-layout>

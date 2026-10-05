@@ -53,41 +53,40 @@
 <body
     class="bg-black text-white min-h-screen flex flex-col font-sans antialiased w-full selection:bg-amber-500 selection:text-black overflow-x-hidden relative">
 
-    <!-- 🌟 ヘッダーナビゲーション（レスポンシブ・三本線メニュー対応） -->
-    <header x-data="{ mobileMenuOpen: false }"
-        class="bg-[#0b0e14] border-b border-gray-800/80 sticky top-0 z-50 w-full py-2">
+    <!-- 🌟 ヘッダーナビゲーション -->
+    <header class="bg-[#0b0e14] border-b border-gray-800/80 sticky top-0 z-50 w-full py-2">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between w-full">
 
             <!-- 左：MovieMoodロゴ ＆ キャッチコピー -->
-            <div class="flex flex-col items-start justify-center min-w-0">
-                <a href="{{ route('home') }}" title="HOME画面へ戻る"
+            <div class="flex flex-col items-start justify-center">
+                <a href="{{ \Illuminate\Support\Facades\Route::has('home') ? route('home') : url('/') }}"
+                    title="HOME画面へ戻る"
                     class="group text-lg sm:text-2xl font-extrabold text-amber-500 hover:text-amber-400 transition-all duration-200 tracking-wide shrink-0 no-underline inline-flex items-center gap-1.5">
                     <span class="group-hover:scale-105 transition-transform duration-200">MovieMood</span>
                 </a>
-                <p
-                    class="text-[9px] sm:text-xs text-gray-300 font-bold m-0 mt-0.5 pl-0.5 pointer-events-none truncate max-w-[200px] sm:max-w-none">
+                <p class="text-[10px] sm:text-xs text-gray-300 font-bold m-0 mt-0.5 pl-0.5 pointer-events-none">
                     〜 あなたの「今の気分」が、次に観る映画を決める。 〜
                 </p>
             </div>
 
-            <!-- 右：PCナビゲーション（sm:flex で 640px以上 のみ表示） -->
-            <div class="hidden sm:flex items-center gap-3 sm:gap-5 text-xs font-bold">
+            <!-- 右：ナビゲーション -->
+            <div class="flex items-center gap-3 sm:gap-5 text-xs font-bold">
                 @auth
                     <!-- 🔔 1. 通知アイコン（ドロップダウン） -->
                     <div x-data="{ open: false, unreadCount: {{ Auth::user()->unreadNotifications->count() }} }"
                         class="relative">
                         <button @click="
-                                        open = !open;
-                                        if (open && unreadCount > 0) {
-                                            fetch('{{ route('notifications.readAll') }}', {
-                                                method: 'POST',
-                                                headers: {
-                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                                    'Content-Type': 'application/json'
-                                                }
-                                            }).then(() => unreadCount = 0);
-                                        }
-                                    "
+                                                            open = !open;
+                                                            if (open && unreadCount > 0) {
+                                                                fetch('{{ \Illuminate\Support\Facades\Route::has('notifications.readAll') ? route('notifications.readAll') : '#' }}', {
+                                                                    method: 'POST',
+                                                                    headers: {
+                                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                                        'Content-Type': 'application/json'
+                                                                    }
+                                                                }).then(() => unreadCount = 0);
+                                                            }
+                                                        "
                             class="relative text-gray-300 hover:text-amber-400 p-1.5 focus:outline-none transition cursor-pointer flex items-center"
                             title="お知らせ">
                             <i class="fa-solid fa-bell text-base text-amber-500"></i>
@@ -115,18 +114,50 @@
                                         $movieId = $data['movie_id'] ?? $data['tmdb_id'] ?? null;
                                         $reviewId = $data['review_id'] ?? null;
                                         $movieTitle = $data['movie_title'] ?? $data['title'] ?? null;
-                                        $userName = $data['user_name'] ?? $data['sender_name'] ?? 'ユーザー';
-                                        $rawMessage = $data['message'] ?? '新しいお知らせがあります';
 
+                                        // ⭕ 1. メッセージから不要な「さんが」や「ユーザー」を取り除いて整形
+                                        $rawMessage = $data['message'] ?? 'のお知らせがあります。';
+                                        // 「さんがあなたの...」や「ユーザーさんが...」が残っている場合を強制除去
+                                        $rawMessage = preg_replace('/^(ユーザー|.*?さん|さん)\s*/u', '', $rawMessage);
+                                        $rawMessage = preg_replace('/^が\s*/u', '', $rawMessage);
+
+                                        // ⭕ 2. ユーザー名の取得
+                                        $userName = $data['sender_nickname'] ?? $data['user_name'] ?? $data['sender_name'] ?? null;
+
+                                        // DBに「ユーザー」と保存されていた場合の補完処理
+                                        if (empty($userName) || $userName === 'ユーザー') {
+                                            if (!empty($data['sender_id'])) {
+                                                $sender = \App\Models\User::find($data['sender_id']);
+                                                $userName = $sender->nickname ?? $sender->name ?? null;
+                                            }
+
+                                            // それでも取れない場合、レビューの「いいね」を行った最近のユーザーを推測（最後の手段）
+                                            if (empty($userName) || $userName === 'ユーザー') {
+                                                if ($reviewId) {
+                                                    $latestLike = \Illuminate\Support\Facades\DB::table('likes')
+                                                        ->where('review_id', $reviewId)
+                                                        ->latest()
+                                                        ->first();
+                                                    if ($latestLike) {
+                                                        $likeUser = \App\Models\User::find($latestLike->user_id);
+                                                        $userName = $likeUser->nickname ?? $likeUser->name ?? null;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        $displayUserName = ($userName && $userName !== 'ユーザー') ? $userName : 'ゲスト';
+
+                                        // ⭕ 3. アイコン判別（いいね＝赤ハート / コメント＝金コメント）
+                                        $notificationType = $data['type'] ?? $notification->type ?? '';
+                                        $isLike = str_contains($notificationType, 'like') || str_contains($notificationType, 'Like') || str_contains($rawMessage, 'いいね');
+                                        $isComment = str_contains($notificationType, 'comment') || str_contains($notificationType, 'Comment') || str_contains($rawMessage, 'コメント');
+
+                                        // ⭕ 4. リンクURL
                                         $targetUrl = '#';
                                         if (!empty($data['url']) && $data['url'] !== '#') {
                                             $targetUrl = $data['url'];
                                         } elseif ($movieId) {
-                                            if (\Illuminate\Support\Facades\Route::has('movies.show')) {
-                                                $targetUrl = route('movies.show', $movieId);
-                                            } else {
-                                                $targetUrl = url('/movies/' . $movieId);
-                                            }
+                                            $targetUrl = \Illuminate\Support\Facades\Route::has('movies.show') ? route('movies.show', $movieId) : url('/movies/' . $movieId);
                                             if ($reviewId) {
                                                 $targetUrl .= '#review-' . $reviewId;
                                             }
@@ -134,33 +165,31 @@
                                         $isUnread = is_null($notification->read_at);
                                     @endphp
 
-                                    <div
-                                        class="group relative rounded-xl transition duration-150 overflow-hidden border border-transparent {{ $isUnread ? 'bg-[#1a2332]/90' : 'bg-transparent hover:bg-gray-800/60' }} p-3">
+                                    <a href="{{ $targetUrl }}"
+                                        class="group block relative rounded-xl transition duration-150 overflow-hidden border border-transparent {{ $isUnread ? 'bg-[#1a2332]/90' : 'bg-transparent hover:bg-gray-800/60' }} p-3 no-underline">
                                         <div class="flex items-start gap-3">
+
+                                            <!-- ⭕ 5. 赤色ハート / 金色コメント アイコン（FontAwesome） -->
                                             <div
-                                                class="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">
-                                                {{ mb_substr($userName, 0, 1) }}
+                                                class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 border {{ $isLike ? 'bg-red-500/20 border-red-500/50 text-red-500' : ($isComment ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' : 'bg-amber-500/20 border-amber-500/50 text-amber-400') }}">
+                                                @if($isLike)
+                                                    <i class="fa-solid fa-heart text-red-500 text-xs"></i>
+                                                @elseif($isComment)
+                                                    <i class="fa-solid fa-comment text-amber-400 text-xs"></i>
+                                                @else
+                                                    <i class="fa-solid fa-bell text-amber-400 text-xs"></i>
+                                                @endif
                                             </div>
 
                                             <div class="flex-1 min-w-0 text-xs text-gray-300 leading-relaxed space-y-1">
                                                 <div>
-                                                    <span class="font-bold text-white">{{ $userName }}</span> さんがあなたの
-
-                                                    @if($movieId && $movieTitle)
-                                                        <a href="{{ $targetUrl }}"
-                                                            class="font-bold text-amber-400 hover:text-amber-300 hover:underline transition inline-block mx-0.5 relative z-10">
+                                                    <span class="font-bold text-white">{{ $displayUserName }}</span> さんが
+                                                    @if($movieTitle)
+                                                        <span class="font-bold text-amber-400 mx-0.5">
                                                             『{{ $movieTitle }}』
-                                                        </a>
-                                                    @elseif($movieId)
-                                                        <a href="{{ $targetUrl }}"
-                                                            class="font-bold text-amber-400 hover:text-amber-300 hover:underline transition inline-block mx-0.5 relative z-10">
-                                                            映画ページへ
-                                                        </a>
-                                                    @else
-                                                        <span class="text-gray-200">{{ $rawMessage }}</span>
+                                                        </span>
                                                     @endif
-
-                                                    のレビューにコメントしました。
+                                                    {{ $rawMessage }}
                                                 </div>
 
                                                 <div class="flex items-center justify-between text-[10px] text-gray-500 pt-1">
@@ -172,7 +201,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </a>
                                 @empty
                                     <p class="text-center text-xs text-gray-500 py-6 m-0">新着のお知らせはありません</p>
                                 @endforelse
@@ -181,119 +210,65 @@
                     </div>
 
                     <!-- 👤 2. マイページ -->
-                    <a href="{{ route('mypage') }}"
-                        class="flex items-center gap-1.5 sm:gap-2 bg-[#161f2c] hover:bg-gray-800 border border-amber-500/50 rounded-full py-1 px-2.5 sm:px-3.5 transition shadow-sm group shrink-0 no-underline">
-                        <div
-                            class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-900 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-amber-400">
-                            @if(Auth::check() && Auth::user()->avatar)
-                                <img src="{{ asset(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}"
-                                    class="w-full h-full object-cover">
-                            @else
-                                <i class="fa-solid fa-user text-gray-400 text-[9px] sm:text-[10px]"></i>
-                            @endif
-                        </div>
-                        <span
-                            class="text-[11px] sm:text-xs text-gray-200 group-hover:text-amber-400 transition max-w-[80px] sm:max-w-[130px] truncate">
-                            {{ Auth::user()->nickname ?? Auth::user()->name ?? 'マイページ' }}
-                        </span>
-                    </a>
+                    @if(\Illuminate\Support\Facades\Route::has('mypage'))
+                        <a href="{{ route('mypage') }}"
+                            class="flex items-center gap-1.5 sm:gap-2 bg-[#161f2c] hover:bg-gray-800 border border-amber-500/50 rounded-full py-1 px-2.5 sm:px-3.5 transition shadow-sm group shrink-0 no-underline">
+                            <div
+                                class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-900 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-amber-400">
+                                @if(Auth::user()->avatar)
+                                    <img src="{{ asset(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}"
+                                        class="w-full h-full object-cover">
+                                @else
+                                    <i class="fa-solid fa-user text-gray-400 text-[9px] sm:text-[10px]"></i>
+                                @endif
+                            </div>
+                            <span
+                                class="text-[11px] sm:text-xs text-gray-200 group-hover:text-amber-400 transition max-w-[80px] sm:max-w-[130px] truncate">
+                                {{ Auth::user()->nickname ?? Auth::user()->name ?? 'マイページ' }}
+                            </span>
+                        </a>
+                    @endif
 
                     <!-- 👥 3. コミュニティ -->
-                    <a href="{{ route('community.index') }}"
-                        class="text-amber-500 hover:text-amber-400 transition flex items-center gap-1 px-1 py-1 shrink-0 no-underline"
-                        title="コミュニティ">
-                        <i class="fa-solid fa-users text-amber-500 text-sm sm:text-xs"></i>
-                        <span>コミュニティ</span>
-                    </a>
+                    @if(\Illuminate\Support\Facades\Route::has('community.index'))
+                        <a href="{{ route('community.index') }}"
+                            class="text-amber-500 hover:text-amber-400 transition flex items-center gap-1 px-1 py-1 shrink-0 no-underline"
+                            title="コミュニティ">
+                            <i class="fa-solid fa-users text-amber-500 text-sm sm:text-xs"></i>
+                            <span>コミュニティ</span>
+                        </a>
+                    @endif
 
                     <!-- 🚪 4. ログアウト -->
-                    <form method="POST" action="{{ route('logout') }}" class="inline shrink-0 m-0">
-                        @csrf
-                        <button type="submit"
-                            class="text-red-500 hover:text-red-400 transition flex items-center gap-1 px-1 py-1 font-bold cursor-pointer bg-transparent border-0"
-                            title="ログアウト">
-                            <i class="fa-solid fa-right-from-bracket text-red-500 text-sm sm:text-xs"></i>
-                            <span>ログアウト</span>
-                        </button>
-                    </form>
+                    @if(\Illuminate\Support\Facades\Route::has('logout'))
+                        <form method="POST" action="{{ route('logout') }}" class="inline shrink-0 m-0">
+                            @csrf
+                            <button type="submit"
+                                class="text-red-500 hover:text-red-400 transition flex items-center gap-1 px-1 py-1 font-bold cursor-pointer bg-transparent border-0"
+                                title="ログアウト">
+                                <i class="fa-solid fa-right-from-bracket text-red-500 text-sm sm:text-xs"></i>
+                                <span>ログアウト</span>
+                            </button>
+                        </form>
+                    @endif
+                @else
+                    <!-- 🔓 ログイン・新規登録ボタン（未認証時） -->
+                    @if(\Illuminate\Support\Facades\Route::has('login'))
+                        <a href="{{ route('login') }}"
+                            class="text-gray-300 hover:text-amber-400 transition no-underline px-2 py-1">
+                            ログイン
+                        </a>
+                    @endif
+                    @if(\Illuminate\Support\Facades\Route::has('register'))
+                        <a href="{{ route('register') }}"
+                            class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-full transition no-underline">
+                            新規登録
+                        </a>
+                    @endif
                 @endauth
-            </div>
-
-            <!-- 右：スマホ用ハンバーガーボタン（sm:hidden で 640px未満 のみ表示） -->
-            <div class="flex items-center gap-2 sm:hidden">
-                @auth
-                    <!-- スマホ用通知ベル -->
-                    <button type="button" @click="mobileMenuOpen = !mobileMenuOpen"
-                        class="text-amber-500 p-1.5 focus:outline-none">
-                        <i class="fa-solid fa-bell text-base"></i>
-                    </button>
-                @endauth
-
-                <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" aria-label="メニューを開く"
-                    class="p-2 rounded-lg text-amber-500 hover:bg-gray-800/80 focus:outline-none transition">
-                    <i class="fa-solid text-xl" :class="mobileMenuOpen ? 'fa-xmark' : 'fa-bars'"></i>
-                </button>
             </div>
 
         </div>
-
-        <!-- 📱 スマホ用展開ドロワーメニュー（三本線タップ時にスライドダウン） -->
-        @auth
-            <div x-show="mobileMenuOpen" x-cloak @click.away="mobileMenuOpen = false"
-                class="sm:hidden bg-[#0e131f] border-t border-gray-800/80 px-4 pt-3 pb-4 space-y-3 mt-2">
-
-                <!-- ユーザー情報表示 -->
-                <div class="flex items-center gap-3 pb-2.5 border-b border-gray-800">
-                    <div
-                        class="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-amber-400">
-                        @if(Auth::check() && Auth::user()->avatar)
-                            <img src="{{ asset(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}"
-                                class="w-full h-full object-cover">
-                        @else
-                            <i class="fa-solid fa-user text-gray-400 text-xs"></i>
-                        @endif
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <div class="font-bold text-xs text-amber-400 truncate">
-                            {{ Auth::user()->nickname ?? Auth::user()->name ?? 'ユーザー' }}</div>
-                        <div class="font-medium text-[10px] text-gray-500 truncate">{{ Auth::user()->email ?? '' }}</div>
-                    </div>
-                </div>
-
-                <!-- メニュー一覧 -->
-                <div class="space-y-1">
-                    <a href="{{ route('home') }}"
-                        class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-gray-200 hover:bg-gray-800 transition no-underline">
-                        <i class="fa-solid fa-house text-amber-500 w-4 text-center"></i>
-                        <span>ホーム</span>
-                    </a>
-
-                    <a href="{{ route('mypage') }}"
-                        class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-gray-200 hover:bg-gray-800 transition no-underline">
-                        <i class="fa-solid fa-user-gear text-amber-500 w-4 text-center"></i>
-                        <span>マイページ</span>
-                    </a>
-
-                    <a href="{{ route('community.index') }}"
-                        class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-gray-200 hover:bg-gray-800 transition no-underline">
-                        <i class="fa-solid fa-users text-amber-500 w-4 text-center"></i>
-                        <span>コミュニティ</span>
-                    </a>
-                </div>
-
-                <!-- ログアウトボタン -->
-                <div class="pt-2 border-t border-gray-800">
-                    <form method="POST" action="{{ route('logout') }}" class="m-0">
-                        @csrf
-                        <button type="submit"
-                            class="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-rose-400 hover:bg-rose-500/10 transition flex items-center gap-2.5 bg-transparent border-0 cursor-pointer">
-                            <i class="fa-solid fa-right-from-bracket w-4 text-center"></i>
-                            <span>ログアウト</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
-        @endauth
     </header>
 
     <!-- 📱 メインコンテンツエリア -->
@@ -318,7 +293,7 @@
                 $popularMovies = [];
             }
         }
-        $loopMovies = array_merge($popularMovies, $popularMovies);
+        $loopMovies = array_merge($popularMovies ?? [], $popularMovies ?? []);
     @endphp
 
     <footer
@@ -336,7 +311,12 @@
                 <div class="w-full overflow-hidden relative">
                     <div class="animate-loop-scroll gap-2 will-change-transform">
                         @foreach($loopMovies as $movie)
-                            <a href="{{ route('movies.show', $movie['id'] ?? 0) }}"
+                            @php
+                                $movieShowUrl = \Illuminate\Support\Facades\Route::has('movies.show')
+                                    ? route('movies.show', $movie['id'] ?? 0)
+                                    : url('/movies/' . ($movie['id'] ?? 0));
+                            @endphp
+                            <a href="{{ $movieShowUrl }}"
                                 class="flex-none w-[110px] h-[150px] bg-gray-900 rounded-md overflow-hidden border border-gray-800 relative shadow-md group">
                                 @if(!empty($movie['poster_path']))
                                     <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}"

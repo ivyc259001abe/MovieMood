@@ -2,18 +2,15 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
-use App\Models\Review;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\PasswordController;
-use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\WatchlistController;
-use App\Http\Controllers\ReviewCommentController; // 独立したコメントコントローラーを使用する場合
+use App\Http\Controllers\ReviewController;
 
 // ★ TMDb人気映画取得ヘルパー関数
 if (!function_exists('getPopularMovies')) {
@@ -64,52 +61,9 @@ Route::get('/password/reset', function () {
 
 Route::post('/password/reset', [PasswordController::class, 'resetPassword'])->name('password.reset.update');
 
-// 🎬 コミュニティ表示ルート（気分絞り込み＆コメント最新順事前読み込み対応）
-Route::get('/community', function (Request $request) {
-    $popularMovies = getPopularMovies();
-
-    // ユーザー・コメント（新しい順）・コメント投稿者・いいねをまとめて事前に取得（Eager Loading）
-    $query = Review::with([
-        'user',
-        'comments' => function ($q) {
-            $q->orderBy('created_at', 'desc')->with('user');
-        },
-        'likes'
-    ])->latest();
-
-    if ($request->filled('mood')) {
-        $query->where('mood', 'like', '%' . $request->mood . '%');
-    }
-
-    $reviews = $query->paginate(10)->withQueryString();
-
-    return view('community', compact('reviews', 'popularMovies'));
-})->name('community.index');
-
-// 🌟 コミュニティ（投稿保存処理）
-Route::post('/community', function (Request $request) {
-    $validated = $request->validate([
-        'movie_title' => 'nullable|string|max:255',
-        'rating' => 'required|numeric|min:1|max:10',
-        'comment' => 'required|string|max:1000',
-        'moods' => 'nullable|array',
-    ]);
-
-    $moodsString = !empty($request->moods) ? implode(', ', $request->moods) : null;
-    $title = !empty($validated['movie_title']) ? $validated['movie_title'] : 'お気に入り映画';
-
-    Review::create([
-        'user_id' => auth()->id(),
-        'movie_id' => $request->input('movie_id', 0),
-        'movie_title' => $title,
-        'rating' => floatval($validated['rating']),
-        'comment' => $validated['comment'],
-        'content' => $validated['comment'],
-        'mood' => $moodsString,
-    ]);
-
-    return redirect()->route('community.index')->with('success', 'レビューを投稿しました！');
-})->name('community.store')->middleware('auth');
+// 🎬 コミュニティ表示・投稿（ReviewControllerへ集約）
+Route::get('/community', [ReviewController::class, 'community'])->name('community.index');
+Route::post('/community', [ReviewController::class, 'store'])->name('community.store')->middleware('auth');
 
 // 🌟 ログインユーザー専用機能グループ
 Route::middleware('auth')->group(function () {
@@ -140,11 +94,8 @@ Route::middleware('auth')->group(function () {
     // 💬 コメント関連
     Route::post('/reviews/{review}/comments', [ReviewController::class, 'storeComment'])->name('reviews.comments.store');
 
-    // 🗑️ コメント削除用ルート（ReviewCommentControllerの場合）
-    Route::delete('/comments/{comment}', [ReviewCommentController::class, 'destroy'])->name('reviews.comments.destroy');
-
-    // ※もし ReviewController 内で削除処理を行う場合は上の行を消してこちらを有効化してください：
-    // Route::delete('/comments/{comment}', [ReviewController::class, 'destroyComment'])->name('reviews.comments.destroy');
+    // 🗑️ コメント削除用ルート（ReviewControllerの削除処理を指定）
+    Route::delete('/comments/{comment}', [ReviewController::class, 'destroyComment'])->name('reviews.comments.destroy');
 
     // 🔔 通知一括既読用ルート
     Route::post('/notifications/read-all', function () {
@@ -165,3 +116,8 @@ Route::middleware('auth')->group(function () {
 
 // 🔍 映画タイトルのリアルタイム検索API（MovieController@autocompleteへ接続）
 Route::get('/api/movies/search', [MovieController::class, 'autocomplete'])->name('api.movies.search');
+
+Route::get('/clear-notifications', function () {
+    \Illuminate\Support\Facades\DB::table('notifications')->truncate();
+    return '通知データをすべて消去しました！';
+});

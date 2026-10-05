@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use App\Models\Review;
+use App\Models\Watchlist;
+use Illuminate\Support\Facades\Auth;
 
 class MovieController extends Controller
 {
@@ -43,7 +45,6 @@ class MovieController extends Controller
     {
         // 自身の getPopularMovies() メソッドから人気の映画を取得
         $popularMovies = $this->getPopularMovies();
-        $todayTopic = $popularMovies[0] ?? null;
 
         // --- 🌙 TODAY'S PICKUP の日替わり計算処理 ---
         $moodThemes = [
@@ -93,7 +94,7 @@ class MovieController extends Controller
             ],
         ];
 
-        // 今日の日付を基準にする
+        // 今日の日付を基準にする（例: 20261005）
         $daySeed = (int) date('Ymd');
 
         // 日替わりで感情テーマを選択
@@ -104,10 +105,8 @@ class MovieController extends Controller
         $msgCount = count($selectedTheme['messages']);
         $selectedMessage = $selectedTheme['messages'][$daySeed % $msgCount];
 
-        // 日替わりで映画をピックアップ
-        if (!empty($todayTopic)) {
-            $pickup = $todayTopic;
-        } elseif (!empty($popularMovies)) {
+        // 日替わりで映画をピックアップ（日付シードで人気映画リストから抽出）
+        if (!empty($popularMovies)) {
             $movieIndex = $daySeed % count($popularMovies);
             $pickup = $popularMovies[$movieIndex];
         } else {
@@ -240,6 +239,14 @@ class MovieController extends Controller
             ->latest()
             ->get();
 
-        return view('movies.show', compact('movie', 'reviews', 'popularMovies'));
+        // ログイン中ユーザーのWatchlistに入っているmovie_id一覧を取得
+        $watchlistMovieIds = [];
+        if (Auth::check()) {
+            $watchlistMovieIds = Watchlist::where('user_id', Auth::id())
+                ->pluck('movie_id')
+                ->toArray();
+        }
+
+        return view('movies.show', compact('movie', 'reviews', 'popularMovies', 'watchlistMovieIds'));
     }
 }
