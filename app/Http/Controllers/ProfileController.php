@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -23,18 +24,19 @@ class ProfileController extends Controller
     {
         $user = auth()->user();
 
-        // 1. ユーザーのウォッチリスト一覧を取得（take(6) を追加して最大6件に制限）
+        // 1. ユーザーのウォッチリスト一覧を1ページあたり6件でページネーション取得
         $watchlist = Watchlist::where('user_id', $user->id)
             ->latest()
-            ->take(6) // 👈 ここを追加（最大6件まで）
-            ->get()
-            ->map(function ($item) {
-                if (!isset($item->vote_average) && !isset($item->rating)) {
-                    $avgRating = Review::where('movie_id', $item->movie_id ?? $item->tmdb_id ?? $item->id)->avg('rating');
-                    $item->vote_average = $avgRating ? round($avgRating, 1) : null;
-                }
-                return $item;
-            });
+            ->paginate(6);
+
+        // ページネーション内の各要素に対して評価値（vote_average）をセット
+        $watchlist->getCollection()->transform(function ($item) {
+            if (!isset($item->vote_average) && !isset($item->rating)) {
+                $avgRating = Review::where('movie_id', $item->movie_id ?? $item->tmdb_id ?? $item->id)->avg('rating');
+                $item->vote_average = $avgRating ? round($avgRating, 1) : null;
+            }
+            return $item;
+        });
 
         // 2. 自分の投稿レビュー一覧を取得
         $myReviews = Review::where('user_id', $user->id)->latest()->get();
@@ -45,6 +47,7 @@ class ProfileController extends Controller
 
         return view('mypage', compact('user', 'watchlist', 'myReviews', 'likedReviews'));
     }
+
     /**
      * プロフィール編集画面表示
      */
@@ -61,18 +64,30 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(Request $request)
     {
+        $user = Auth::user();
+
+        // バリデーション
         $request->validate([
-            'name' => ['required', 'string', 'max:15'],
+            'nickname' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $user = $request->user();
+        // ニックネーム（ユーザー名）更新
+        if (Schema::hasColumn('users', 'nickname')) {
+            $user->nickname = $request->nickname;
+        }
+        $user->name = $request->nickname;
 
-        $user->fill($request->safe()->only(['name', 'email']));
+        // メールアドレスに入力がある場合のみ更新
+        if ($request->filled('email')) {
+            $user->email = $request->email;
 
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
+            if ($user->isDirty('email')) {
+                $user->email_verified_at = null;
+            }
         }
 
         // アバター画像の保存処理
@@ -110,12 +125,8 @@ class ProfileController extends Controller
             }
         }
 
-        // パスワード変更（入力がある場合のみ新しいパスワードの検証＆更新）
+        // パスワード変更（入力がある場合のみ更新）
         if ($request->filled('password')) {
-            $request->validate([
-                'password' => ['required', 'string', 'min:8', 'confirmed'],
-            ]);
-
             $user->password = Hash::make($request->password);
         }
 

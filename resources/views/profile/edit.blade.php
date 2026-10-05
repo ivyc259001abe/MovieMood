@@ -15,10 +15,7 @@
                 <div class="p-4 bg-red-900/40 border border-red-500/50 rounded-xl text-xs text-red-200 space-y-1.5">
                     <p class="font-bold text-red-400">入力内容をご確認ください：</p>
                     <ul class="list-disc list-inside space-y-1 text-red-300">
-                        @php
-                            $errorMessages = $errors->all();
-                        @endphp
-                        @foreach ($errorMessages as $error)
+                        @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
                     </ul>
@@ -33,7 +30,7 @@
                 <!-- アバター画像変更 -->
                 <div class="flex flex-col items-center gap-3">
                     <div
-                        class="relative w-24 h-24 rounded-full border-2 border-amber-500 overflow-hidden bg-gray-800 flex items-center justify-center shadow-lg">
+                        class="relative w-24 h-24 rounded-full border-2 border-amber-500 overflow-hidden bg-gray-800 flex items-center justify-center shadow-lg shrink-0">
                         @php
                             $user = auth()->user();
                             $avatarPath = $user->avatar ?? $user->icon ?? $user->icon_path ?? null;
@@ -41,9 +38,8 @@
 
                         @if($avatarPath)
                             <img id="avatar-preview"
-                                src="{{ str_starts_with($avatarPath, 'http') ? $avatarPath : asset('storage/' . $avatarPath) }}"
-                                class="w-full h-full object-cover"
-                                onError="this.onerror=null; this.src='{{ asset($avatarPath) }}';">
+                                src="{{ str_starts_with($avatarPath, 'http') ? $avatarPath : asset($avatarPath) }}"
+                                alt="{{ $user->nickname ?? $user->name }}" class="w-full h-full object-cover">
                         @else
                             <svg id="avatar-placeholder" class="w-12 h-12 text-gray-400" fill="currentColor"
                                 viewBox="0 0 24 24">
@@ -67,25 +63,26 @@
                     <span id="size-notice" class="text-[10px] text-gray-500">※ 2MB以下の画像を選択してください</span>
                 </div>
 
-                <!-- ニックネーム -->
+                <!-- ニックネーム (name属性を nickname に修正) -->
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-gray-300">ニックネーム</label>
-                    <input type="text" name="name" value="{{ old('name', auth()->user()->name) }}" required
+                    <input type="text" name="nickname"
+                        value="{{ old('nickname', auth()->user()->nickname ?? auth()->user()->name) }}" required
                         placeholder="ニックネーム"
                         class="w-full bg-gray-100 border-none focus:ring-2 focus:ring-amber-500 rounded-full px-5 py-3 text-xs text-gray-900 placeholder-gray-400">
                 </div>
 
-                <!-- メールアドレス -->
+                <!-- メールアドレス (requiredを除去し、空欄を許可) -->
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-gray-300">メールアドレス</label>
-                    <input type="email" name="email" value="{{ old('email', auth()->user()->email) }}" required
-                        placeholder="メールアドレス"
+                    <input type="email" name="email" value="{{ old('email', auth()->user()->email) }}"
+                        placeholder="メールアドレス（変更する場合のみ入力）"
                         class="w-full bg-gray-100 border-none focus:ring-2 focus:ring-amber-500 rounded-full px-5 py-3 text-xs text-gray-900 placeholder-gray-400">
                 </div>
 
                 <hr class="border-gray-800 my-4">
 
-                <!-- パスワード変更セクション（再設定画面と揃えたデザイン） -->
+                <!-- パスワード変更セクション -->
                 <div class="space-y-4">
                     <h2 class="text-sm font-bold text-gray-200">パスワードの変更 <span
                             class="text-xs text-gray-500 font-normal">（変更する場合のみ入力）</span></h2>
@@ -107,12 +104,13 @@
 
                 <!-- アクションボタン -->
                 <div class="pt-6 flex items-center justify-between gap-4 border-t border-gray-800">
-                    <a href="{{ route('mypage') }}" class="text-xs font-bold text-gray-400 hover:text-white transition">
+                    <a href="{{ route('mypage') }}"
+                        class="text-xs font-bold text-gray-400 hover:text-white transition no-underline">
                         キャンセル（戻る）
                     </a>
 
                     <button type="submit" id="submit-btn"
-                        class="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black font-extrabold rounded-full text-xs transition shadow-lg">
+                        class="px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black font-extrabold rounded-full text-xs transition shadow-lg cursor-pointer">
                         変更を保存する
                     </button>
                 </div>
@@ -134,7 +132,7 @@
 
                 <div class="flex justify-end">
                     <button type="submit"
-                        class="px-5 py-2.5 bg-red-600/80 hover:bg-red-600 text-white font-bold rounded-xl text-xs transition shadow-md">
+                        class="px-5 py-2.5 bg-red-600/80 hover:bg-red-600 text-white font-bold rounded-xl text-xs transition shadow-md cursor-pointer">
                         アカウントを削除する
                     </button>
                 </div>
@@ -153,7 +151,7 @@
 
             if (!file) return;
 
-            const maxSize = 2 * 1024 * 1024;
+            const maxSize = 2 * 1024 * 1024; // 2MB
 
             if (file.size > maxSize) {
                 sizeError.classList.remove('hidden');

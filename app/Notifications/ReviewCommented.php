@@ -25,32 +25,21 @@ class ReviewCommented extends Notification
     {
         return ['database'];
     }
-    public function toDatabase($notifiable)
+
+    public function toDatabase(object $notifiable): array
     {
-        // 1. 投稿者名の判定（nickname > name > username > フォールバック）
-        $userName = 'ユーザー';
-        if (is_object($this->commenter)) {
-            $userName = $this->commenter->nickname
-                ?? $this->commenter->name
-                ?? $this->commenter->user_name
-                ?? 'ユーザー';
-        } elseif (auth()->check()) {
-            $userName = auth()->user()->nickname
-                ?? auth()->user()->name
-                ?? 'ユーザー';
-        }
-
-        // 2. 映画タイトルの取得（$this->review や $this->movie から取得）
-        $movieTitle = $this->review->movie_title
-            ?? $this->review->movie->title
-            ?? $this->movie->title
-            ?? '映画作品';
-
         return [
-            'user_name' => $userName,
-            'movie_title' => $movieTitle, // 👈 ここで動的な映画タイトルをセットします
-            'comment' => $this->comment->comment ?? '',
-            'url' => route('reviews.index', ['movie_id' => $this->review->movie_id ?? 1]) . '#review-' . ($this->review->id ?? ''),
+            'type' => 'comment',
+            'sender_id' => $this->commenter->id ?? null,
+            'sender_name' => $this->commenter->nickname ?? $this->commenter->name ?? 'ユーザー',
+            'movie_title' => $this->review->movie_title ?? $this->review->title ?? '映画',
+            'review_id' => $this->review->id ?? null,
+            'comment_body' => $this->commentBody,
         ];
+    }
+
+    public function toArray(object $notifiable): array
+    {
+        return $this->toDatabase($notifiable);
     }
 }

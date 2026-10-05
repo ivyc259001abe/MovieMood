@@ -89,12 +89,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/movies/{id}/reviews', [ReviewController::class, 'index'])->name('reviews.index');
     Route::get('/movies/{id}/reviews/create', [ReviewController::class, 'create'])->name('reviews.create');
     Route::post('/movies/{id}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     Route::post('/reviews/{review}/like', [LikeController::class, 'toggle'])->name('reviews.like');
 
     // 💬 コメント関連
     Route::post('/reviews/{review}/comments', [ReviewController::class, 'storeComment'])->name('reviews.comments.store');
-
-    // 🗑️ コメント削除用ルート（ReviewControllerの削除処理を指定）
+    Route::put('/reviews/comments/{comment}', [ReviewController::class, 'updateComment'])->name('reviews.comments.update'); // ← ★修正：ReviewControllerのupdateCommentを指定
     Route::delete('/comments/{comment}', [ReviewController::class, 'destroyComment'])->name('reviews.comments.destroy');
 
     // 🔔 通知一括既読用ルート

@@ -1,4 +1,30 @@
 <x-app-layout :popularMovies="$popularMovies ?? []">
+    <style>
+        /* 検索候補用のスタイリッシュな細いスクロールバー */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0b0e15;
+            border-radius: 9999px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 9999px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #f59e0b;
+        }
+
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #374151 #0b0e15;
+        }
+    </style>
+
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
@@ -43,7 +69,7 @@
                                 class="w-full bg-[#05080e] border border-gray-800 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-amber-500 transition">
 
                             <div id="autocompleteResults"
-                                class="hidden absolute top-full left-0 right-0 bg-[#0b0e15] border border-gray-800 rounded-xl mt-1 max-h-60 overflow-y-auto z-50 shadow-2xl">
+                                class="hidden absolute top-full left-0 right-0 bg-[#0b0e15] border border-gray-800 rounded-xl mt-1 max-h-60 overflow-y-auto custom-scrollbar z-50 shadow-2xl">
                             </div>
                         </div>
                         <button type="submit"
@@ -118,7 +144,7 @@
                 </div>
 
                 @if(!empty($pickup))
-                    <!-- 映画カード（画像・タイトル全体をクリック可能に） -->
+                    <!-- 映画カード -->
                     <a href="{{ route('movies.show', $pickup['id'] ?? 0) }}"
                         class="block group cursor-pointer w-full max-w-[180px] sm:max-w-[200px] mx-auto space-y-2.5">
                         <div
@@ -130,7 +156,7 @@
                             @endif
                         </div>
 
-                        <!-- タイトル：全文字表示 & フォントサイズ拡大 -->
+                        <!-- タイトル -->
                         <h3
                             class="text-sm sm:text-base font-extrabold text-white leading-tight break-words mt-2 group-hover:text-amber-400 transition">
                             {{ $pickup['title'] ?? '' }}

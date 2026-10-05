@@ -1,21 +1,26 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                {{-- 前に戻るボタン（ヘッダー部） --}}
+            <div class="flex items-center space-x-4">
+                {{-- ⬅️ ひとつ前に戻るボタン --}}
                 <button onclick="history.back()"
-                    class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs font-bold transition flex items-center space-x-1 border border-gray-700">
+                    class="px-3.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs font-bold transition flex items-center space-x-1.5 border border-gray-700 shadow-md cursor-pointer">
                     <span>←</span>
                     <span>戻る</span>
                 </button>
-                <h2 class="font-semibold text-xl text-yellow-400 leading-tight">
-                    コミュニティ
-                </h2>
+                <div>
+                    <h2 class="font-bold text-2xl text-amber-500 tracking-wide">
+                        MovieMood
+                    </h2>
+                    <p class="text-xs text-gray-400 mt-0.5">
+                        〜 あなたの「今の気分」が、次に観る映画を決める。〜
+                    </p>
+                </div>
             </div>
         </div>
     </x-slot>
 
-    {{-- ✨ 遷移時の発光（Glow）アニメーション定義 --}}
+    {{-- ✨ 発光アニメーション定義 --}}
     <style>
         @keyframes glow-highlight {
             0% {
@@ -42,44 +47,56 @@
     </style>
 
     <div class="py-8 bg-black min-h-screen text-white relative">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 pb-28">
+
+            {{-- ⬅️ 画面内上部に確実に配置する「戻る」ボタン --}}
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="history.back()"
+                    class="px-4 py-2 rounded-xl bg-gray-800/90 hover:bg-amber-500 hover:text-black text-gray-200 text-xs font-bold transition flex items-center space-x-2 border border-gray-700 shadow-lg cursor-pointer">
+                    <span>←</span>
+                    <span>前のページへ戻る</span>
+                </button>
+            </div>
 
             @forelse ($reviews as $review)
-                {{-- 映画タイトルのフォールバック判定 --}}
                 @php
                     $displayTitle = $review->movie_title
-                        ?? $review->movie->title
+                        ?? $review->movie?->title
                         ?? $review->title
                         ?? null;
+
+                    $currentUserId = Auth::id();
+                    $isLikedByMe = $currentUserId && $review->likes?->contains('user_id', $currentUserId);
+                    $hasCommentedByMe = $currentUserId && $review->comments?->contains('user_id', $currentUserId);
                 @endphp
 
                 <div id="review-{{ $review->id }}" x-data="{ openComments: false }"
                     class="bg-[#111827] border border-gray-800 rounded-2xl p-5 shadow-xl space-y-3.5 transition-all duration-300">
 
-                    {{-- 1. 上部：ユーザー情報・日時 ＆ ★評価バッジ --}}
+                    {{-- 1. ユーザー情報 ＆ ★評価 --}}
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
                             @php
                                 $user = $review->user;
-                                $avatarUrl = $user->profile_photo_path ?? $user->avatar ?? null;
+                                $avatarUrl = $user?->profile_photo_path ?? $user?->avatar ?? null;
                             @endphp
 
-                            @if(!empty($user->profile_photo_path))
+                            @if(!empty($user?->profile_photo_path))
                                 <img src="{{ asset('storage/' . $user->profile_photo_path) }}" alt="{{ $user->name ?? 'User' }}"
                                     class="w-10 h-10 rounded-full object-cover border border-yellow-500/40">
                             @elseif(!empty($avatarUrl))
-                                <img src="{{ asset($avatarUrl) }}" alt="{{ $user->name ?? 'User' }}"
+                                <img src="{{ asset($avatarUrl) }}" alt="{{ $user?->name ?? 'User' }}"
                                     class="w-10 h-10 rounded-full object-cover border border-yellow-500/40">
                             @else
                                 <div
                                     class="w-10 h-10 rounded-full bg-amber-600/30 text-amber-400 border border-amber-500/50 flex items-center justify-center font-bold text-sm">
-                                    {{ mb_substr($user->nickname ?? $user->name ?? '匿', 0, 1) }}
+                                    {{ mb_substr($user?->nickname ?? $user?->name ?? '匿', 0, 1) }}
                                 </div>
                             @endif
 
                             <div>
                                 <div class="font-bold text-sm text-gray-200">
-                                    {{ $user->nickname ?? $user->name ?? '匿名ユーザー' }}
+                                    {{ $user?->nickname ?? $user?->name ?? '匿名ユーザー' }}
                                 </div>
                                 <div class="text-xs text-gray-400">
                                     {{ $review->created_at ? $review->created_at->diffForHumans() : '' }}
@@ -87,7 +104,7 @@
                             </div>
                         </div>
 
-                        {{-- ★ 評価バッジ --}}
+                        {{-- ★ 評価 --}}
                         @if($review->rating)
                             <div
                                 class="px-3.5 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/40 text-yellow-400 font-extrabold text-sm sm:text-base flex items-center space-x-1">
@@ -97,90 +114,126 @@
                         @endif
                     </div>
 
-                    {{-- 2. 中段：映画タイトル（大きく表示） ＆ タグ --}}
+                    {{-- 2. 映画タイトル ＆ タグ --}}
                     <div class="flex flex-wrap items-center justify-between gap-2.5 pt-1">
-                        {{-- 🎬 映画タイトルリンク --}}
                         <a href="{{ route('movies.show', $review->movie_id) }}#review-{{ $review->id }}"
                             class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 hover:text-yellow-300 border border-indigo-700/70 text-base sm:text-lg font-extrabold transition shadow-md group">
                             <span>🎬</span>
                             <span class="group-hover:underline">
                                 {{ !empty($displayTitle) ? $displayTitle : '作品詳細を見る (ID: ' . $review->movie_id . ')' }}
                             </span>
-                            <span
-                                class="text-xs text-indigo-400 group-hover:text-yellow-400 transition-transform group-hover:translate-x-0.5">➔</span>
                         </a>
 
-                        {{-- 🏷️ タグ分裂表示 --}}
+                        {{-- 🏷️ タグ表示 --}}
                         @php
                             $rawMood = $review->moods ?? $review->mood ?? $review->tag ?? '';
                             $moodList = is_array($rawMood) ? $rawMood : explode(',', $rawMood);
+
+                            $beforeTagList = [
+                                '号泣しそう',
+                                'スカッとしそう',
+                                'ハラハラしそう',
+                                'キュンとしそう'
+                            ];
                         @endphp
 
                         @if(!empty(array_filter($moodList)))
                             <div class="flex flex-wrap gap-1.5">
                                 @foreach($moodList as $m)
-                                    @if(trim($m))
-                                        <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                                            #{{ trim(str_replace('#', '', $m)) }}
-                                        </span>
+                                    @php
+                                        $cleanTag = trim(str_replace('#', '', $m));
+                                        $isBeforeTag = in_array($cleanTag, $beforeTagList, true);
+                                    @endphp
+
+                                    @if($cleanTag)
+                                        @if($isBeforeTag)
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-purple-950/80 text-purple-300 border border-purple-500/50 shadow-sm">
+                                                #{{ $cleanTag }}
+                                            </span>
+                                        @else
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                                                #{{ $cleanTag }}
+                                            </span>
+                                        @endif
                                     @endif
                                 @endforeach
                             </div>
                         @endif
                     </div>
 
-                    {{-- 3. 本文エリア --}}
+                    {{-- 3. 本文 --}}
                     <div
                         class="bg-[#182232] border border-gray-800/80 rounded-xl p-4 text-gray-200 text-sm sm:text-base leading-relaxed whitespace-pre-line my-2">
                         {{ $review->comment ?? $review->content }}
                     </div>
 
-                    {{-- 4. 下部アクション：いいね ＆ コメント --}}
+                    {{-- 4. アクションボタン --}}
                     <div class="pt-2 border-t border-gray-800/60 flex items-center justify-between">
                         <form action="{{ route('reviews.like', $review->id) }}" method="POST" class="inline">
                             @csrf
                             <button type="submit"
-                                class="px-3.5 py-1 rounded-full bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-red-400 transition flex items-center space-x-1.5 text-xs border border-gray-700/50">
-                                <span class="text-red-400">♥</span>
-                                <span class="font-bold">{{ $review->likes ? $review->likes->count() : 0 }}</span>
+                                class="px-3 py-1 rounded-full text-xs transition border flex items-center space-x-1.5 {{ $isLikedByMe ? 'bg-rose-500/20 text-rose-400 border-rose-500/50' : 'bg-gray-800/80 text-gray-300 border-gray-700/50 hover:bg-gray-700 hover:text-red-400' }}">
+                                <span class="{{ $isLikedByMe ? 'text-rose-500 font-bold' : 'text-gray-400' }}">♥</span>
+                                <span
+                                    class="font-bold {{ $isLikedByMe ? 'text-rose-400' : 'text-gray-300' }}">{{ $review->likes ? $review->likes->count() : 0 }}</span>
                             </button>
                         </form>
 
-                        @php
-                            $commentsCount = $review->comments ? $review->comments->count() : 0;
-                        @endphp
                         <button @click="openComments = !openComments"
-                            class="text-gray-400 hover:text-yellow-400 flex items-center space-x-1.5 text-xs transition px-3 py-1 rounded-full bg-gray-800/80 border border-gray-700/50">
-                            <span>💬</span>
-                            <span class="font-bold">{{ $commentsCount }} 件</span>
+                            class="px-3 py-1 rounded-full text-xs transition border flex items-center space-x-1.5 {{ $hasCommentedByMe ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' : 'bg-gray-800/80 text-gray-400 border-gray-700/50 hover:text-yellow-400' }}">
+                            <span class="{{ $hasCommentedByMe ? 'text-yellow-400' : 'text-gray-400' }}">💬</span>
+                            <span
+                                class="font-bold {{ $hasCommentedByMe ? 'text-yellow-400' : 'text-gray-300' }}">{{ $review->comments ? $review->comments->count() : 0 }}
+                                件</span>
                             <span class="text-[10px]" x-text="openComments ? '▲' : '▼'">▼</span>
                         </button>
                     </div>
 
-                    {{-- 5. コメント展開エリア --}}
+                    {{-- 5. コメント領域 --}}
                     <div x-show="openComments" x-transition class="mt-3 pt-3 border-t border-gray-800/50 space-y-3">
                         @if($review->comments && $review->comments->count() > 0)
                             <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
                                 @foreach($review->comments as $comment)
-                                    <div
-                                        class="bg-gray-800/40 border border-gray-700/40 p-2.5 rounded-lg text-xs flex justify-between items-start">
-                                        <div>
-                                            <span class="font-semibold text-yellow-400">
-                                                {{ $comment->user->nickname ?? $comment->user->name ?? 'ユーザー' }}:
-                                            </span>
-                                            <span class="text-gray-200 ml-1">
-                                                {{ $comment->comment }}
-                                            </span>
+                                    <div x-data="{ editing: false, content: {{ \Illuminate\Support\Js::from($comment->comment) }} }"
+                                        class="bg-gray-800/40 border border-gray-700/40 p-2.5 rounded-lg text-xs">
+                                        <div x-show="!editing" class="flex justify-between items-start">
+                                            <div>
+                                                <span class="font-semibold text-yellow-400">
+                                                    {{ $comment->user?->nickname ?? $comment->user?->name ?? 'ユーザー' }}:
+                                                </span>
+                                                <span class="text-gray-200 ml-1" x-text="content"></span>
+                                            </div>
+
+                                            @if(Auth::id() === $comment->user_id)
+                                                <div class="flex items-center space-x-2 shrink-0 ml-2">
+                                                    <button type="button" @click="editing = true"
+                                                        class="text-[10px] text-gray-400 hover:text-yellow-400">編集</button>
+                                                    <form action="{{ route('reviews.comments.destroy', $comment->id) }}" method="POST"
+                                                        onsubmit="return confirm('コメントを削除しますか？')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit"
+                                                            class="text-[10px] text-red-400 hover:underline">削除</button>
+                                                    </form>
+                                                </div>
+                                            @endif
                                         </div>
-                                        @if(Auth::id() === $comment->user_id)
-                                            <form action="{{ route('reviews.comments.destroy', $comment->id) }}" method="POST"
-                                                onsubmit="return confirm('コメントを削除しますか？')">
+
+                                        <div x-show="editing" x-cloak class="mt-1">
+                                            <form action="{{ route('reviews.comments.update', $comment->id) }}" method="POST"
+                                                class="flex space-x-2">
                                                 @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-[10px] text-red-400 hover:underline ml-2">削除</button>
+                                                @method('PUT')
+                                                <input type="text" name="comment" x-model="content" required
+                                                    class="flex-1 bg-gray-900 border border-yellow-500/50 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-yellow-400">
+                                                <button type="button" @click="editing = false"
+                                                    class="px-2 py-1 bg-gray-700 text-gray-300 rounded text-[10px]">キャンセル</button>
+                                                <button type="submit"
+                                                    class="px-2 py-1 bg-yellow-500 text-black font-bold rounded text-[10px]">保存</button>
                                             </form>
-                                        @endif
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
@@ -189,12 +242,12 @@
                         @endif
 
                         <form action="{{ route('reviews.comments.store', $review->id) }}" method="POST"
-                            class="flex space-x-2">
+                            x-data="{ submitting: false }" @submit="submitting = true" class="flex space-x-2">
                             @csrf
                             <input type="text" name="comment" placeholder="コメントを入力..." required
                                 class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500">
-                            <button type="submit"
-                                class="bg-yellow-500 text-black font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-yellow-400 transition flex-shrink-0">
+                            <button type="submit" :disabled="submitting"
+                                class="bg-yellow-500 text-black font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-yellow-400 transition flex-shrink-0 disabled:opacity-50">
                                 送信
                             </button>
                         </form>
@@ -207,26 +260,49 @@
                 </div>
             @endforelse
 
-            <div class="mt-6">
-                {{ $reviews->links() }}
-            </div>
+            {{-- 📄 ページネーション --}}
+            @if(method_exists($reviews, 'hasPages') && $reviews->hasPages())
+                <div class="mt-8 flex justify-center items-center space-x-2">
+                    @if ($reviews->onFirstPage())
+                        <span
+                            class="w-9 h-9 flex items-center justify-center bg-gray-900 text-gray-600 rounded-lg text-xs cursor-not-allowed border border-gray-800">‹</span>
+                    @else
+                        <a href="{{ $reviews->previousPageUrl() }}"
+                            class="w-9 h-9 flex items-center justify-center bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg text-xs border border-gray-700 transition">‹</a>
+                    @endif
+
+                    @foreach ($reviews->getUrlRange(1, $reviews->lastPage()) as $page => $url)
+                        @if ($page == $reviews->currentPage())
+                            <span
+                                class="w-9 h-9 flex items-center justify-center bg-amber-500 text-black font-bold rounded-lg text-sm shadow-md">{{ $page }}</span>
+                        @else
+                            <a href="{{ $url }}"
+                                class="w-9 h-9 flex items-center justify-center bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg text-sm border border-gray-700 transition">{{ $page }}</a>
+                        @endif
+                    @endforeach
+
+                    @if ($reviews->hasMorePages())
+                        <a href="{{ $reviews->nextPageUrl() }}"
+                            class="w-9 h-9 flex items-center justify-center bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg text-xs border border-gray-700 transition">›</a>
+                    @else
+                        <span
+                            class="w-9 h-9 flex items-center justify-center bg-gray-900 text-gray-600 rounded-lg text-xs cursor-not-allowed border border-gray-800">›</span>
+                    @endif
+                </div>
+            @endif
 
         </div>
 
-        {{-- 右下固定：一つ前に戻る ＆ Topへ戻るボタングループ --}}
-        <div class="fixed bottom-6 right-6 flex flex-col space-y-3 z-50">
-            <button onclick="history.back()" title="一つ前に戻る"
-                class="w-11 h-11 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white font-bold text-sm rounded-full shadow-2xl flex items-center justify-center transition transform hover:scale-110">
-                ←
-            </button>
-            <button onclick="window.scrollTo({ top: 0, behavior: 'smooth' })" title="一番上へスクロール"
-                class="w-11 h-11 bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-lg rounded-full shadow-2xl flex items-center justify-center transition transform hover:scale-110">
+        {{-- ⬆️ トップへ戻る「↑」ボタン（右下に固定・ポスターに被らないよう z-index と位置を確保） --}}
+        <div class="fixed bottom-24 right-6 z-50">
+            <button type="button" onclick="window.scrollTo({ top: 0, behavior: 'smooth' })" title="一番上へスクロール"
+                class="w-12 h-12 bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xl rounded-full shadow-2xl flex items-center justify-center transition transform hover:scale-110 active:scale-95 border-2 border-black cursor-pointer">
                 ↑
             </button>
         </div>
     </div>
 
-    {{-- ✨ 遷移先カードの発光 ＆ スクロール処理 --}}
+    {{-- ✨ スクロール処理 --}}
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const hash = window.location.hash;

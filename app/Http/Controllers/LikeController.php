@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Review;
 use App\Models\Like;
-use App\Notifications\ReviewLiked;
-use App\Notifications\ReviewCommented;
+use App\Notifications\ReviewLikedNotification; // ← ここを ReviewLikedNotification に修正
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -34,9 +33,10 @@ class LikeController extends Controller
             ]);
             $liked = true;
 
-            // 🌟 ここを追加！：レビュー投稿者（自分以外）に通知を送信
-            if ($review->user_id !== $user->id) {
-                $review->user->notify(new ReviewLiked($user, $review));
+            // 🌟 レビュー投稿者（自分以外）に通知を送信
+            if ($review->user_id !== $user->id && $review->user) {
+                // 第1引数にログインユーザー($user)、第2引数にレビュー($review)を正しく渡す
+                $review->user->notify(new ReviewLikedNotification($user, $review));
             }
         }
 

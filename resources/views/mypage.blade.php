@@ -56,7 +56,11 @@
                     <span>📌</span>
                     <span>WATCHLIST</span>
                     <span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-300">
-                        {{ is_array($watchlist ?? null) || ($watchlist ?? null) instanceof \Countable ? count($watchlist) : 0 }}
+                        @if($watchlist instanceof \Illuminate\Contracts\Pagination\Paginator)
+                            {{ $watchlist->total() }}
+                        @else
+                            {{ is_array($watchlist ?? null) || ($watchlist ?? null) instanceof \Countable ? count($watchlist) : 0 }}
+                        @endif
                     </span>
                 </button>
 
@@ -79,7 +83,7 @@
                 </button>
             </div>
 
-            <!-- 1️⃣ タブ：ウォッチリスト表示 -->
+            <!-- 1️⃣ タブ：ウォッチリスト表示（6件＋シンプルページネーション） -->
             <div id="tab-content-watchlist" class="tab-panel p-4 sm:p-6">
                 @if(!empty($watchlist) && count($watchlist) > 0)
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
@@ -117,6 +121,34 @@
                             </a>
                         @endforeach
                     </div>
+
+                    <!-- 🔹 シンプルで小さめのページネーションUI -->
+                    @if($watchlist instanceof \Illuminate\Contracts\Pagination\Paginator && $watchlist->hasPages())
+                        <div class="mt-6 flex items-center justify-center gap-1.5 text-xs">
+                            {{-- 前へ --}}
+                            @if ($watchlist->onFirstPage())
+                                <span class="px-2 py-1 rounded bg-gray-800/60 text-gray-600 cursor-not-allowed">‹</span>
+                            @else
+                                <a href="{{ $watchlist->previousPageUrl() }}" class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition">‹</a>
+                            @endif
+
+                            {{-- ページ番号 --}}
+                            @foreach ($watchlist->getUrlRange(1, $watchlist->lastPage()) as $page => $url)
+                                @if ($page == $watchlist->currentPage())
+                                    <span class="px-2.5 py-1 rounded bg-amber-500 text-gray-950 font-bold">{{ $page }}</span>
+                                @else
+                                    <a href="{{ $url }}" class="px-2.5 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition">{{ $page }}</a>
+                                @endif
+                            @endforeach
+
+                            {{-- 次へ --}}
+                            @if ($watchlist->hasMorePages())
+                                <a href="{{ $watchlist->nextPageUrl() }}" class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition">›</a>
+                            @else
+                                <span class="px-2 py-1 rounded bg-gray-800/60 text-gray-600 cursor-not-allowed">›</span>
+                            @endif
+                        </div>
+                    @endif
                 @else
                     <div class="py-12 text-center space-y-2">
                         <div class="text-3xl text-gray-600">📌</div>
@@ -125,7 +157,7 @@
                 @endif
             </div>
 
-            <!-- 2️⃣ タブ：マイレビュー（2列グリッド配置） -->
+            <!-- 2️⃣ タブ：マイレビュー -->
             <div id="tab-content-reviews" class="tab-panel p-6 hidden">
                 @if(!empty($myReviews) && count($myReviews) > 0)
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -157,7 +189,7 @@
                 @endif
             </div>
 
-            <!-- 3️⃣ タブ：いいね（2列グリッド配置） -->
+            <!-- 3️⃣ タブ：いいね -->
             <div id="tab-content-likes" class="tab-panel p-6 hidden">
                 @if(!empty($likedReviews) && count($likedReviews) > 0)
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
