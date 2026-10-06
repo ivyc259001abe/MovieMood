@@ -121,3 +121,8 @@ Route::get('/clear-notifications', function () {
     \Illuminate\Support\Facades\DB::table('notifications')->truncate();
     return '通知データをすべて消去しました！';
 });
+// マイページ（/mypage）を開いた瞬間に通知を全削除する（テスト用）
+Route::get('/mypage-clear', function () {
+    auth()->user()->notifications()->delete();
+    return 'ログインユーザーの通知を削除しました！';
+})->middleware('auth');

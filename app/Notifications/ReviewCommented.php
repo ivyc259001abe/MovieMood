@@ -4,42 +4,66 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
-use App\Models\Review;
 
 class ReviewCommented extends Notification
 {
     use Queueable;
 
-    public $commenter;
-    public $review;
-    public $commentBody;
+    protected $sender;
+    protected $review;
+    protected $comment;
 
-    public function __construct($commenter, Review $review, $commentBody = '')
+    /**
+     * コメント通知を作成
+     */
+    public function __construct($sender, $review, $comment = null)
     {
-        $this->commenter = $commenter;
+        $this->sender = $sender;
         $this->review = $review;
-        $this->commentBody = $commentBody;
+        $this->comment = $comment;
     }
 
-    public function via(object $notifiable): array
+    /**
+     * 通知の送信方法
+     */
+    public function via($notifiable)
     {
         return ['database'];
     }
 
-    public function toDatabase(object $notifiable): array
+    /**
+     * データベースへ保存する通知データ
+     */
+    public function toArray($notifiable)
     {
-        return [
-            'type' => 'comment',
-            'sender_id' => $this->commenter->id ?? null,
-            'sender_name' => $this->commenter->nickname ?? $this->commenter->name ?? 'ユーザー',
-            'movie_title' => $this->review->movie_title ?? $this->review->title ?? '映画',
-            'review_id' => $this->review->id ?? null,
-            'comment_body' => $this->commentBody,
-        ];
-    }
+        $movieTitle = $this->review->movie_title
+            ?? $this->review->title
+            ?? '映画';
 
-    public function toArray(object $notifiable): array
-    {
-        return $this->toDatabase($notifiable);
+        return [
+            // コメント通知であることを明確にする
+            'type' => 'comment',
+
+            // コメントしたユーザー
+            'user_id' => $this->sender->id,
+            'user_name' => $this->sender->name,
+            'user_nickname' => $this->sender->name,
+
+            // 映画情報
+            'movie_id' => $this->review->movie_id
+                ?? $this->review->tmdb_id
+                ?? null,
+
+            'movie_title' => $movieTitle,
+
+            // レビュー情報
+            'review_id' => $this->review->getKey(),
+
+            // コメントID
+            'comment_id' => $this->comment?->getKey(),
+
+            // 表示用メッセージ
+            'message' => 'コメントしました。',
+        ];
     }
 }

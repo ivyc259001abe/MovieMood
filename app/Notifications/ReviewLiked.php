@@ -27,12 +27,16 @@ class ReviewLiked extends Notification
 
     public function toArray(object $notifiable): array
     {
-        $movieTitle = $this->review->movie_title ?? '映画';
+        // 映画タイトルの取得（リレーション movie も安全にフォールバック）
+        $movieTitle = $this->review->movie_title
+            ?? $this->review->movie->title
+            ?? $this->review->title
+            ?? '映画';
 
-        // Reviewモデル内の映画IDカラム名（movie_id または tmdb_id）を取得
+        // Reviewモデル内の映画ID
         $movieId = $this->review->movie_id ?? $this->review->tmdb_id ?? null;
 
-        // 遷移先のURLを事前に生成（movies.show や reviews.index などプロジェクトのルート名に対応）
+        // 遷移先のURLを事前に生成
         $url = '#';
         if ($movieId) {
             if (\Illuminate\Support\Facades\Route::has('movies.show')) {
@@ -42,16 +46,19 @@ class ReviewLiked extends Notification
             } else {
                 $url = url('/movies/' . $movieId);
             }
-            // レビューの特定の場所までスクロールさせたい場合
             $url .= '#review-' . $this->review->id;
         }
 
         return [
-            'message' => "{$this->liker->name} さんがあなたの『{$movieTitle}』のレビューにいいね！しました",
+            'type' => 'like',
+            'user_id' => $this->liker->id,
+            'user_nickname' => $this->liker->nickname ?? $this->liker->name ?? '映画ファン',
+            'sender_name' => $this->liker->nickname ?? $this->liker->name ?? '映画ファン', // 互換用
+            'movie_id' => $movieId,
+            'movie_title' => $movieTitle,
             'review_id' => $this->review->id,
-            'liker_id' => $this->liker->id,
-            'movie_id' => $movieId, // ← 追加：映画ID
-            'url' => $url,     // ← 追加：遷移先URL
+            'message' => 'に「いいね！」しました。', // ★末尾につく文章のみを指定
+            'url' => $url,
         ];
     }
 }

@@ -9,28 +9,56 @@ class ReviewLikedNotification extends Notification
 {
     use Queueable;
 
-    protected $review;
     protected $sender;
+    protected $review;
 
-    public function __construct($review, $sender)
+    /**
+     * 通知を作成
+     */
+    public function __construct($sender, $review)
     {
-        $this->review = $review;
         $this->sender = $sender;
+        $this->review = $review;
     }
 
+    /**
+     * 通知の送信先
+     */
     public function via($notifiable)
     {
-        return ['database']; // データベースに保存
+        return ['database'];
     }
 
+    /**
+     * データベースへ保存する通知データ
+     */
     public function toArray($notifiable)
     {
+        $movieTitle = $this->review->movie_title
+            ?? $this->review->title
+            ?? '映画';
+
         return [
+            // ★ いいね通知であることを明確にする
             'type' => 'like',
-            'sender_id' => $this->sender->id,
-            'sender_name' => $this->sender->nickname ?? $this->sender->name,
-            'movie_title' => $this->review->movie_title ?? $this->review->title ?? '映画',
-            'review_id' => $this->review->id,
+
+            // いいねをしたユーザー
+            'user_id' => $this->sender->id,
+            'user_name' => $this->sender->name,
+            'user_nickname' => $this->sender->name,
+
+            // 映画情報
+            'movie_id' => $this->review->movie_id
+                ?? $this->review->tmdb_id
+                ?? null,
+
+            'movie_title' => $movieTitle,
+
+            // レビュー情報
+            'review_id' => $this->review->getKey(),
+
+            // 表示用メッセージ
+            'message' => 'に「いいね！」しました。',
         ];
     }
 }

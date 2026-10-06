@@ -50,7 +50,7 @@
                         </span>
                         <h1 class="text-base sm:text-xl font-black mt-0.5">
                             <span class="text-amber-400">{{ Str::limit(Auth::user()->name ?? 'ゲスト', 15, '') }}</span>
-                            <span class="text-white"> さん、こんにちは！</span>
+                            <span class="text-white"> さん！</span>
                         </h1>
                     </div>
                 </div>

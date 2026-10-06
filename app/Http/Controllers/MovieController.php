@@ -94,20 +94,22 @@ class MovieController extends Controller
             ],
         ];
 
-        // 今日の日付を基準にする（例: 20261005）
-        $daySeed = (int) date('Ymd');
+        // 💡 今日の日付文字列（例: "2026-10-06"）からハッシュ値を生成し、疑似乱数のシードにする
+        $todayStr = date('Y-m-d');
+        $dailyHash = hexdec(substr(md5($todayStr), 0, 8)); // 日付ごとの大きなランダム数値
 
         // 日替わりで感情テーマを選択
-        $themeIndex = $daySeed % count($moodThemes);
+        $themeIndex = $dailyHash % count($moodThemes);
         $selectedTheme = $moodThemes[$themeIndex];
 
         // 日替わりでキャッチコピーを選択
         $msgCount = count($selectedTheme['messages']);
-        $selectedMessage = $selectedTheme['messages'][$daySeed % $msgCount];
+        $selectedMessage = $selectedTheme['messages'][$dailyHash % $msgCount];
 
-        // 日替わりで映画をピックアップ（日付シードで人気映画リストから抽出）
+        // 日替わりで映画をピックアップ
         if (!empty($popularMovies)) {
-            $movieIndex = $daySeed % count($popularMovies);
+            // シャッフル用シードとして使用し、毎日まったく異なるインデックスを抽出
+            $movieIndex = $dailyHash % count($popularMovies);
             $pickup = $popularMovies[$movieIndex];
         } else {
             $pickup = null;
@@ -120,7 +122,6 @@ class MovieController extends Controller
             'pickup'
         ));
     }
-
     /**
      * オートコンプリートAPI（検索窓入力時にリアルタイムで候補5件を返す）
      */

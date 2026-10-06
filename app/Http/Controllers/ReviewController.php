@@ -5,58 +5,74 @@ namespace App\Http\Controllers;
 use App\Models\Review;
 use App\Models\Comment;
 use App\Notifications\ReviewLikedNotification;
+use App\Notifications\ReviewCommented;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ReviewController extends Controller
 {
     /**
-     * コミュニティ（感情タイムライン）一覧表示
+     * コミュニティ画面
      */
     public function community(Request $request)
     {
-        $query = Review::with(['user', 'comments.user', 'likes']);
+        $query = Review::with([
+            'user',
+            'comments.user',
+            'likes'
+        ]);
 
-        // 気分（mood）による絞り込み
         if ($request->filled('mood')) {
-            $query->where('mood', 'like', '%' . $request->mood . '%');
+            $query->where(
+                'mood',
+                'like',
+                '%' . $request->mood . '%'
+            );
         }
 
-        $reviews = $query->latest()->paginate(10);
+        $reviews = $query
+            ->latest()
+            ->paginate(10);
 
         return view('community', compact('reviews'));
     }
 
     /**
-     * レビュー投稿の保存処理
+     * レビュー投稿
      */
     public function store(Request $request, $movieId = null)
     {
-        // 1. バリデーション
         $request->validate([
             'comment' => 'required|string',
             'movie_title' => 'nullable|string',
         ]);
 
-        // 2. タグ（moods）の配列を文字列に変換
-        $moods = $request->input('moods', $request->input('mood', []));
+        $moods = $request->input(
+            'moods',
+            $request->input('mood', [])
+        );
+
         if (is_array($moods)) {
-            $moodString = implode(',', array_filter($moods));
+            $moodString = implode(
+                ',',
+                array_filter($moods)
+            );
         } else {
             $moodString = (string) $moods;
         }
 
         $commentText = $request->input('comment');
 
-        // 映画タイトルの取得（複数のリクエストキーに対応）
         $movieTitle = $request->input('movie_title')
             ?? $request->input('title')
             ?? $request->input('movie_name');
 
-        // 3. レビュー作成
         Review::create([
             'user_id' => Auth::id(),
-            'movie_id' => (string) ($movieId ?? $request->input('movie_id')),
+            'movie_id' => (string) (
+                $movieId
+                ?? $request->input('movie_id')
+            ),
             'movie_title' => $movieTitle,
             'rating' => $request->input('rating', 8.0),
             'mood' => $moodString,
@@ -64,11 +80,13 @@ class ReviewController extends Controller
             'comment' => $commentText,
         ]);
 
-        return redirect()->to(url()->previous() . '#reviews')->with('success', 'レビューを投稿しました！');
+        return redirect()
+            ->to(url()->previous() . '#reviews')
+            ->with('success', 'レビューを投稿しました！');
     }
 
     /**
-     * レビューの削除処理
+     * レビュー削除
      */
     public function destroy($id)
     {
@@ -76,10 +94,17 @@ class ReviewController extends Controller
 
         if ($review->user_id === Auth::id()) {
             $review->delete();
-            return back()->with('success', 'レビューを削除しました。');
+
+            return back()->with(
+                'success',
+                'レビューを削除しました。'
+            );
         }
 
-        return back()->with('error', '削除権限がありません。');
+        return back()->with(
+            'error',
+            '削除権限がありません。'
+        );
     }
 
     /**
@@ -87,58 +112,102 @@ class ReviewController extends Controller
      */
     public function index($id)
     {
-        // get() を paginate(10) に変更し、likes も with に追加
-        $reviews = Review::where('movie_id', (string) $id)
-            ->with(['user', 'likes', 'comments.user'])
+        $reviews = Review::where(
+            'movie_id',
+            (string) $id
+        )
+            ->with([
+                'user',
+                'likes',
+                'comments.user'
+            ])
             ->latest()
             ->paginate(10);
 
-        return view('reviews.index', compact('reviews', 'id'));
+        return view(
+            'reviews.index',
+            compact('reviews', 'id')
+        );
     }
 
     /**
-     * コメントの保存処理
+     * コメント投稿
      */
-    public function storeComment(Request $request, $reviewId)
-    {
+    public function storeComment(
+        Request $request,
+        $reviewId
+    ) {
         $request->validate([
             'comment' => 'required|string|max:500',
         ]);
 
+        // コメント対象のレビューを取得
+        // レビュー投稿者も一緒に取得
+        $review = Review::with('user')
+            ->findOrFail($reviewId);
+
+        // 現在ログインしているユーザー
+        $user = Auth::user();
+
+        // コメントを保存
         $comment = Comment::create([
-            'user_id' => Auth::id(),
-            'review_id' => $reviewId,
+            'user_id' => $user->id,
+            'review_id' => $review->id,
             'comment' => $request->comment,
         ]);
 
-        return back()->with('success', 'コメントを投稿しました');
+        /*
+         * 自分のレビューに自分でコメントした場合は
+         * 通知を送らない
+         */
+        if ($review->user_id !== $user->id) {
+            $review->user->notify(
+                new ReviewCommented(
+                    $user,
+                    $review,
+                    $comment
+                )
+            );
+        }
+
+        return back()->with(
+            'success',
+            'コメントを投稿しました'
+        );
     }
 
     /**
-     * コメントの更新処理（★Commentモデルへ統一・修正済み）
+     * コメント編集
      */
-    public function updateComment(Request $request, $id)
-    {
+    public function updateComment(
+        Request $request,
+        $id
+    ) {
         $request->validate([
             'comment' => 'required|string|max:1000',
         ]);
 
         $comment = Comment::findOrFail($id);
 
-        // 自分のコメントかチェック
         if ($comment->user_id !== Auth::id()) {
-            return back()->with('error', '編集権限がありません。');
+            return back()->with(
+                'error',
+                '編集権限がありません。'
+            );
         }
 
         $comment->update([
             'comment' => $request->comment,
         ]);
 
-        return back()->with('success', 'コメントを更新しました！');
+        return back()->with(
+            'success',
+            'コメントを更新しました！'
+        );
     }
 
     /**
-     * コメントの削除
+     * コメント削除
      */
     public function destroyComment($commentId)
     {
@@ -146,9 +215,16 @@ class ReviewController extends Controller
 
         if ($comment->user_id === Auth::id()) {
             $comment->delete();
-            return back()->with('success', 'コメントを削除しました');
+
+            return back()->with(
+                'success',
+                'コメントを削除しました'
+            );
         }
 
-        return back()->with('error', '削除権限がありません');
+        return back()->with(
+            'error',
+            '削除権限がありません'
+        );
     }
 }
