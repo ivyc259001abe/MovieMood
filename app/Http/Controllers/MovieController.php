@@ -43,15 +43,17 @@ class MovieController extends Controller
 
     public function home()
     {
-        // 自身の getPopularMovies() メソッドから人気の映画を取得
-        $popularMovies = $this->getPopularMovies();
+        // =========================================================
+        // 🌙 TODAY'S PICKUP
+        // 「今日のMood」と「今日の映画」を連動させる
+        // =========================================================
 
-        // --- 🌙 TODAY'S PICKUP の日替わり計算処理 ---
         $moodThemes = [
             [
                 'tag' => '#ハラハラ',
                 'mood' => 'ハラハラ',
                 'emoji' => '😱',
+                'genre_id' => 53, // Thriller
                 'bg' => 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20',
                 'messages' => [
                     'スリルを味わおう',
@@ -63,6 +65,7 @@ class MovieController extends Controller
                 'tag' => '#スカッと',
                 'mood' => 'スカッと',
                 'emoji' => '😆',
+                'genre_id' => 28, // Action
                 'bg' => 'bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20',
                 'messages' => [
                     'モヤモヤを吹き飛ばそう！',
@@ -74,6 +77,7 @@ class MovieController extends Controller
                 'tag' => '#号泣',
                 'mood' => '号泣',
                 'emoji' => '😭',
+                'genre_id' => 18, // Drama
                 'bg' => 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20',
                 'messages' => [
                     '涙で心をデトックスしたい夜へ',
@@ -85,6 +89,7 @@ class MovieController extends Controller
                 'tag' => '#キュン',
                 'mood' => 'キュン',
                 'emoji' => '💖',
+                'genre_id' => 10749, // Romance
                 'bg' => 'bg-pink-500/10 border-pink-500/30 text-pink-400 hover:bg-pink-500/20',
                 'messages' => [
                     'ときめきと癒やしをチャージ',
@@ -94,26 +99,106 @@ class MovieController extends Controller
             ],
         ];
 
-        // 💡 今日の日付文字列（例: "2026-10-06"）からハッシュ値を生成し、疑似乱数のシードにする
-        $todayStr = date('Y-m-d');
-        $dailyHash = hexdec(substr(md5($todayStr), 0, 8)); // 日付ごとの大きなランダム数値
 
-        // 日替わりで感情テーマを選択
+        // =========================================================
+        // 📅 今日の日付から固定値を作成
+        //
+        // 同じ日なら同じ値になるため、
+        // ページを何度リロードしても同じMoodになる
+        // =========================================================
+
+        $todayStr = now()->format('Y-m-d');
+
+        $dailyHash = hexdec(
+            substr(md5($todayStr), 0, 8)
+        );
+
+
+        // =========================================================
+        // 🎭 今日のMoodを決定
+        // =========================================================
+
         $themeIndex = $dailyHash % count($moodThemes);
+
         $selectedTheme = $moodThemes[$themeIndex];
 
-        // 日替わりでキャッチコピーを選択
-        $msgCount = count($selectedTheme['messages']);
-        $selectedMessage = $selectedTheme['messages'][$dailyHash % $msgCount];
 
-        // 日替わりで映画をピックアップ
-        if (!empty($popularMovies)) {
-            // シャッフル用シードとして使用し、毎日まったく異なるインデックスを抽出
-            $movieIndex = $dailyHash % count($popularMovies);
-            $pickup = $popularMovies[$movieIndex];
+        // =========================================================
+        // 💬 今日のキャッチコピーを決定
+        // =========================================================
+
+        $msgCount = count($selectedTheme['messages']);
+
+        $messageIndex = $dailyHash % $msgCount;
+
+        $selectedMessage = $selectedTheme['messages'][$messageIndex];
+
+
+        // =========================================================
+        // 🎬 今日のMoodに合った映画をTMDBから取得
+        //
+        // 例：
+        // #キュン → Romance
+        // #ハラハラ → Thriller
+        // #スカッと → Action
+        // #号泣 → Drama
+        //
+        // TMDBのDiscover APIでジャンルを指定する
+        // =========================================================
+
+        $pickupData = $this->fetchFromTmdb('/discover/movie', [
+            'with_genres' => $selectedTheme['genre_id'],
+            'sort_by' => 'popularity.desc',
+            'page' => 1,
+            'include_adult' => false,
+            'include_video' => false,
+        ]);
+
+
+        $pickupMovies = $pickupData['results'] ?? [];
+
+
+        // =========================================================
+        // 🎯 今日のおすすめ映画を1作品固定
+        //
+        // 同じ日なら同じ映画になるように、
+        // 日付から作ったdailyHashを利用する
+        // =========================================================
+
+        if (!empty($pickupMovies)) {
+
+            // 映画ID順に並べることで、
+            // TMDBの人気順の変化による影響をできるだけ抑える
+            usort($pickupMovies, function ($a, $b) {
+                return ($a['id'] ?? 0) <=> ($b['id'] ?? 0);
+            });
+
+
+            // 今日の日付から1作品を選択
+            $movieCount = count($pickupMovies);
+
+            $movieIndex = $dailyHash % $movieCount;
+
+            $pickup = $pickupMovies[$movieIndex];
+
         } else {
+
             $pickup = null;
         }
+
+
+        // =========================================================
+        // ⭐ HOME下部のPOPULAR MOVIES用
+        //
+        // こちらは今まで通り人気映画を取得
+        // =========================================================
+
+        $popularMovies = $this->getPopularMovies();
+
+
+        // =========================================================
+        // HOME画面へ渡す
+        // =========================================================
 
         return view('home', compact(
             'popularMovies',

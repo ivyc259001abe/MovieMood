@@ -798,4 +798,3 @@
     </style>
 
 </x-guest-layout>
-```

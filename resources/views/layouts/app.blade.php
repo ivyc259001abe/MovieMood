@@ -64,17 +64,18 @@
 
 
         /* =========================================================
+           MOVIE GALLERY
            POPULAR MOVIES 横スクロール
         ========================================================== */
 
         @keyframes loop-scroll {
 
             0% {
-                transform: translateX(0);
+                transform: translate3d(0, 0, 0);
             }
 
             100% {
-                transform: translateX(-50%);
+                transform: translate3d(-50%, 0, 0);
             }
 
         }
@@ -88,6 +89,8 @@
 
             animation:
                 loop-scroll 120s linear infinite;
+
+            will-change: transform;
 
         }
 
@@ -179,6 +182,53 @@
 
 
         /* =========================================================
+           ポスター共通
+        ========================================================== */
+
+        .popular-movie-card {
+
+            position: relative;
+
+            flex: none;
+
+            width: 110px;
+
+            height: 150px;
+
+            background: #111827;
+
+            border-radius: 6px;
+
+            overflow: hidden;
+
+            border: 1px solid #1f2937;
+
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+
+        }
+
+
+        .popular-movie-card img {
+
+            display: block;
+
+            width: 110px;
+
+            height: 150px;
+
+            object-fit: cover;
+
+        }
+
+
+        .popular-movie-card:hover {
+
+            border-color: rgba(245, 158, 11, 0.65);
+
+        }
+
+
+        /* =========================================================
            PC
         ========================================================== */
 
@@ -206,6 +256,50 @@
                 padding-top: 2px;
 
                 padding-bottom: 4px;
+
+            }
+
+        }
+
+
+        /* =========================================================
+           MovieMood ロゴ
+           ログイン前・ログイン後で共通
+        ========================================================== */
+
+        .moviemood-logo {
+
+            font-family: Arial, Helvetica, sans-serif;
+
+            font-size: 24px;
+
+            font-weight: 900;
+
+            letter-spacing: -0.04em;
+
+            line-height: 1;
+
+            color: #f59e0b;
+
+            text-decoration: none;
+
+            white-space: nowrap;
+
+        }
+
+
+        .moviemood-logo:hover {
+
+            color: #fbbf24;
+
+        }
+
+
+        @media (max-width: 639px) {
+
+            .moviemood-logo {
+
+                font-size: 21px;
 
             }
 
@@ -239,7 +333,7 @@
 
                 <a href="{{ \Illuminate\Support\Facades\Route::has('home') ? route('home') : url('/') }}"
                     title="HOME画面へ戻る"
-                    class="group text-lg sm:text-2xl font-extrabold text-amber-500 hover:text-amber-400 transition-all duration-200 tracking-wide shrink-0 no-underline inline-flex items-center gap-1.5">
+                    class="group moviemood-logo shrink-0 no-underline inline-flex items-center gap-1.5">
 
                     <span class="group-hover:scale-105 transition-transform duration-200">
 
@@ -655,10 +749,13 @@
                         <a href="{{ route('community.index') }}"
                             class="text-amber-500 hover:text-amber-400 transition flex items-center gap-1.5 px-2 py-1 shrink-0 no-underline">
 
-                            <i class="fa-solid fa-users text-amber-500 text-xs"></i>
+                            <i class="fa-solid fa-users text-amber-500 text-xs">
+                            </i>
 
                             <span>
+
                                 コミュニティ
+
                             </span>
 
                         </a>
@@ -684,7 +781,9 @@
                                 </i>
 
                                 <span>
+
                                     ログアウト
+
                                 </span>
 
                             </button>
@@ -786,10 +885,13 @@
                                 class="px-2 py-1 text-xs font-bold text-amber-400 border-b border-gray-800 mb-1 flex justify-between items-center">
 
                                 <span>
+
                                     お知らせ
+
                                 </span>
 
                                 <span class="text-[10px] text-gray-400" x-text="unreadCount + '件の未読'">
+
                                 </span>
 
                             </div>
@@ -1018,7 +1120,9 @@
                             </i>
 
                             <span>
+
                                 マイページ
+
                             </span>
 
                         </a>
@@ -1035,7 +1139,9 @@
                             </i>
 
                             <span>
+
                                 コミュニティ
+
                             </span>
 
                         </a>
@@ -1063,7 +1169,9 @@
                                 </i>
 
                                 <span>
+
                                     ログアウト
+
                                 </span>
 
                             </button>
@@ -1119,12 +1227,9 @@
     <!-- =========================================================
          メインコンテンツ
 
-         ★ ここが今回の重要変更箇所
-
-         flex-grow を外しています。
-
-         これにより、HOMEの内容が必要以上に
-         画面の高さを占有しません。
+         flex-grow は使用しません。
+         HOMEなどのページ内容が必要以上に
+         画面の高さを占有しないようにしています。
     ========================================================== -->
 
     <main class="w-full max-w-full overflow-x-hidden">
@@ -1141,6 +1246,12 @@
 
     @php
 
+        /*
+         * 各ページから $popularMovies が渡されている場合は
+         * そのデータをそのまま利用します。
+         *
+         * 渡されていないページだけ、ここでTMDBから取得します。
+         */
         if (empty($popularMovies)) {
 
             try {
@@ -1155,14 +1266,16 @@
                 if ($apiKey) {
 
                     $response =
-                        \Illuminate\Support\Facades\Http::get(
-                            "https://api.themoviedb.org/3/movie/popular",
-                            [
-                                'api_key' => $apiKey,
-                                'language' => 'ja-JP',
-                                'page' => 1,
-                            ]
-                        );
+                        \Illuminate\Support\Facades\Http::withoutVerifying()
+                            ->timeout(10)
+                            ->get(
+                                "https://api.themoviedb.org/3/movie/popular",
+                                [
+                                    'api_key' => $apiKey,
+                                    'language' => 'ja-JP',
+                                    'page' => 1,
+                                ]
+                            );
 
 
                     $popularMovies =
@@ -1181,10 +1294,60 @@
         }
 
 
+        /*
+         * ---------------------------------------------------------
+         * 映画の重複を除去
+         * ---------------------------------------------------------
+         *
+         * TMDBから取得した作品に同じ映画IDが存在する場合、
+         * 同じ作品を何度も表示しないようにします。
+         */
+        $uniquePopularMovies = [];
+
+        foreach (($popularMovies ?? []) as $movie) {
+
+            $movieId = $movie['id'] ?? null;
+
+            if (!$movieId) {
+                continue;
+            }
+
+            if (!isset($uniquePopularMovies[$movieId])) {
+
+                $uniquePopularMovies[$movieId] = $movie;
+
+            }
+
+        }
+
+
+        /*
+         * ---------------------------------------------------------
+         * 表示用の映画一覧を作成
+         * ---------------------------------------------------------
+         *
+         * 取得した順番を基本的に維持します。
+         */
+        $popularMoviesForSlider =
+            array_values($uniquePopularMovies);
+
+
+        /*
+         * ---------------------------------------------------------
+         * 無限スクロール用
+         * ---------------------------------------------------------
+         *
+         * 同じセットを2つ連続させることで、
+         * CSSの -50% アニメーションと
+         * シームレスにつながるようにします。
+         *
+         * これは「同じ映画が2回しか存在しない」という意味ではなく、
+         * 画面上で無限に流し続けるための複製です。
+         */
         $loopMovies =
             array_merge(
-                $popularMovies ?? [],
-                $popularMovies ?? []
+                $popularMoviesForSlider,
+                $popularMoviesForSlider
             );
 
     @endphp
@@ -1193,15 +1356,12 @@
 
     <!-- =========================================================
          共通フッター
-
-         ★ mt-6 を削除
-         ★ POPULAR MOVIESをメイン直下に配置
     ========================================================== -->
 
     <footer class="movie-footer bg-black border-t border-gray-900 text-gray-400 text-xs">
 
 
-        @if(!empty($popularMovies))
+        @if(!empty($popularMoviesForSlider))
 
 
             <!-- =================================================
@@ -1211,7 +1371,9 @@
             <div class="popular-movies-area border-b border-gray-900 bg-black">
 
 
-                <!-- タイトル -->
+                <!-- =================================================
+                         タイトル
+                    ================================================== -->
 
                 <div class="w-full text-center mb-1.5 px-4">
 
@@ -1238,7 +1400,7 @@
                 <div class="popular-movies-track-wrapper">
 
 
-                    <div class="animate-loop-scroll gap-2 will-change-transform">
+                    <div class="animate-loop-scroll gap-2">
 
 
                         @foreach($loopMovies as $movie)
@@ -1263,18 +1425,19 @@
 
 
 
-                                    <!-- ポスター -->
+                                    <!-- =================================================
+                                                 ポスター
+                                            ================================================== -->
 
-                                    <a href="{{ $movieShowUrl }}"
-                                        class="flex-none w-[110px] h-[150px] bg-gray-900 rounded-md overflow-hidden border border-gray-800 relative shadow-md group">
+                                    <a href="{{ $movieShowUrl }}" class="popular-movie-card group no-underline">
 
 
                                         @if(!empty($movie['poster_path']))
 
 
                                             <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}"
-                                                alt="{{ $movie['title'] ?? '' }}"
-                                                class="w-[110px] h-[150px] object-cover group-hover:scale-105 transition duration-300">
+                                                alt="{{ $movie['title'] ?? '' }}" loading="lazy"
+                                                class="group-hover:scale-105 transition-transform duration-300">
 
 
                                         @else
@@ -1291,7 +1454,9 @@
 
 
 
-                                        <!-- 評価 -->
+                                        <!-- =================================================
+                                                     評価
+                                                ================================================== -->
 
                                         <div
                                             class="absolute top-1 right-1 bg-black/85 border border-amber-500/80 text-amber-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full backdrop-blur-sm">
@@ -1330,9 +1495,9 @@
 
 
 
-        <!-- =================================================
+        <!-- =========================================================
              コピーライト
-        ================================================== -->
+        ========================================================== -->
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 text-center text-[10px] text-gray-500 font-medium">
 
@@ -1342,6 +1507,7 @@
                 &copy; 2026 MovieMood. All rights reserved.
 
             </p>
+
 
         </div>
 

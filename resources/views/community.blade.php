@@ -20,7 +20,7 @@
                         MovieMood
                     </h2>
 
-                    {{-- ★ キャッチコピー変更 --}}
+                    {{-- ★ キャッチコピー --}}
                     <p class="text-xs text-gray-400 mt-0.5">
                         〜 観る前の「気分」も、観た後の「感想」も、映画と一緒に。 〜
                     </p>
@@ -128,6 +128,59 @@
                                 $currentUserId
                             );
 
+
+                        /*
+                         * =================================================
+                         * 鑑賞前 / 鑑賞後の判定
+                         *
+                         * 鑑賞前：
+                         * want_to_watch / want / before
+                         * または「〜しそう」タグ
+                         *
+                         * 鑑賞後：
+                         * 上記以外
+                         * =================================================
+                         */
+
+                        $statusVal =
+                            strtolower(
+                                trim(
+                                    $review->status ?? ''
+                                )
+                            );
+
+
+                        $moodVal =
+                            $review->moods
+                            ?? $review->mood
+                            ?? $review->tag
+                            ?? '';
+
+
+                        $moodStr =
+                            is_array($moodVal)
+                            ? implode(',', $moodVal)
+                            : (string) $moodVal;
+
+
+                        $isWantToWatch =
+                            in_array(
+                                $statusVal,
+                                [
+                                    'want_to_watch',
+                                    'want',
+                                    'want-to-watch',
+                                    '1',
+                                    'before'
+                                ],
+                                true
+                            )
+                            ||
+                            str_contains(
+                                $moodStr,
+                                'しそう'
+                            );
+
                     @endphp
 
 
@@ -136,7 +189,7 @@
 
 
                         {{-- =================================================
-                        1. ユーザー情報 ＆ ★評価
+                        1. ユーザー情報 ＆ 評価
                         ================================================== --}}
 
                         <div class="flex items-center justify-between">
@@ -214,20 +267,43 @@
                             </div>
 
 
-                            {{-- ★ 評価 --}}
+                            {{-- =================================================
+                            ★ 評価 / ✨ 期待度
+                            鑑賞後 → 金色
+                            鑑賞前 → 紫
+                            ================================================== --}}
 
                             @if($review->rating)
 
-                                <div
-                                    class="px-3.5 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/40 text-yellow-400 font-extrabold text-sm sm:text-base flex items-center space-x-1">
+                                @if($isWantToWatch)
 
-                                    <span>★</span>
+                                    {{-- 鑑賞前 --}}
+                                    <div
+                                        class="px-3.5 py-1 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-extrabold text-sm sm:text-base flex items-center gap-1">
 
-                                    <span>
-                                        {{ number_format($review->rating, 1) }}
-                                    </span>
+                                        <span>✨</span>
 
-                                </div>
+                                        <span>
+                                            期待度: {{ number_format($review->rating, 1) }}
+                                        </span>
+
+                                    </div>
+
+                                @else
+
+                                    {{-- 鑑賞後 --}}
+                                    <div
+                                        class="px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/40 text-amber-400 font-extrabold text-sm sm:text-base flex items-center gap-1">
+
+                                        <span>★</span>
+
+                                        <span>
+                                            {{ number_format($review->rating, 1) }}
+                                        </span>
+
+                                    </div>
+
+                                @endif
 
                             @endif
 
@@ -303,13 +379,23 @@
                                                     true
                                                 );
 
+                                            /*
+                                             * 鑑賞前レビューなら、
+                                             * タグが「しそう」系でなくても
+                                             * 紫色に統一する
+                                             */
+                                            $isPurpleTag =
+                                                $isWantToWatch
+                                                || $isBeforeTag;
+
                                         @endphp
 
 
                                         @if($cleanTag)
 
-                                            @if($isBeforeTag)
+                                            @if($isPurpleTag)
 
+                                                {{-- 鑑賞前：紫 --}}
                                                 <span
                                                     class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-purple-950/80 text-purple-300 border border-purple-500/50 shadow-sm">
                                                     #{{ $cleanTag }}
@@ -317,6 +403,7 @@
 
                                             @else
 
+                                                {{-- 鑑賞後：金色 --}}
                                                 <span
                                                     class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
                                                     #{{ $cleanTag }}
@@ -341,7 +428,9 @@
 
                         <div
                             class="bg-[#182232] border border-gray-800/80 rounded-xl p-4 text-gray-200 text-sm sm:text-base leading-relaxed whitespace-pre-line my-2">
+
                             {{ $review->comment ?? $review->content }}
+
                         </div>
 
 
@@ -367,7 +456,7 @@
                 $isLikedByMe
                 ? 'text-rose-500 font-bold'
                 : 'text-gray-400'
-                                            }}">
+                                        }}">
                                         ♥
                                     </span>
 
@@ -375,7 +464,7 @@
                 $isLikedByMe
                 ? 'text-rose-400'
                 : 'text-gray-300'
-                                            }}">
+                                        }}">
                                         {{ $review->likes ? $review->likes->count() : 0 }}
                                     </span>
 
@@ -396,7 +485,7 @@
                 $hasCommentedByMe
                 ? 'text-yellow-400'
                 : 'text-gray-400'
-                                        }}">
+                                    }}">
                                     💬
                                 </span>
 
@@ -404,7 +493,7 @@
                 $hasCommentedByMe
                 ? 'text-yellow-400'
                 : 'text-gray-300'
-                                        }}">
+                                    }}">
                                     {{ $review->comments ? $review->comments->count() : 0 }}
                                     件
                                 </span>
@@ -431,9 +520,9 @@
                                     @foreach($review->comments as $comment)
 
                                                 <div x-data="{
-                                                                    editing: false,
-                                                                    content: {{ \Illuminate\Support\Js::from($comment->comment) }}
-                                                                }" class="bg-gray-800/40 border border-gray-700/40 p-2.5 rounded-lg text-xs">
+                                                                editing: false,
+                                                                content: {{ \Illuminate\Support\Js::from($comment->comment) }}
+                                                            }" class="bg-gray-800/40 border border-gray-700/40 p-2.5 rounded-lg text-xs">
 
                                                     <div x-show="!editing" class="flex justify-between items-start">
 
@@ -449,7 +538,8 @@
 
                                                             </span>
 
-                                                            <span class="text-gray-200 ml-1" x-text="content"></span>
+                                                            <span class="text-gray-200 ml-1" x-text="content">
+                                                            </span>
 
                                                         </div>
 
@@ -708,21 +798,6 @@
              * --------------------------------------------------
              * 「↑」トップへ戻るボタン
              * --------------------------------------------------
-             *
-             * 変更点：
-             *
-             * ・ページ上部
-             *      → 非表示
-             *
-             * ・300px以上スクロール
-             *      → 表示
-             *
-             * ・ページ最下部から260px以内
-             *      → 非表示
-             *
-             * これにより、共通レイアウトの
-             * 「POPULAR MOVIES」のポスター部分に
-             * 「↑」ボタンが重ならないようにする。
              */
 
             const backToTop =
@@ -735,15 +810,6 @@
 
                     /*
                      * ページ最下部までの残り距離
-                     *
-                     * document.documentElement.scrollHeight
-                     *   = ページ全体の高さ
-                     *
-                     * window.innerHeight
-                     *   = 現在表示されている画面の高さ
-                     *
-                     * window.scrollY
-                     *   = 現在のスクロール位置
                      */
 
                     const distanceFromBottom =
@@ -753,8 +819,6 @@
 
                     /*
                      * 最下部付近では非表示
-                     *
-                     * 260px以内に入ったら消す
                      */
 
                     if (distanceFromBottom <= 260) {

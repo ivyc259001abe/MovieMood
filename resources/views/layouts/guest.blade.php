@@ -14,6 +14,34 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <style>
+        /* =========================================================
+           MovieMood ロゴ
+           ログイン前・ログイン後で共通
+        ========================================================== */
+
+        .moviemood-logo {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            color: #f59e0b;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .moviemood-logo:hover {
+            color: #fbbf24;
+        }
+
+        @media (max-width: 639px) {
+            .moviemood-logo {
+                font-size: 21px;
+            }
+        }
+    </style>
 </head>
 
 <body style="
@@ -48,21 +76,17 @@
 
             <!-- MovieMood ロゴ -->
 
-            <a href="/" style="
+            <a href="/" class="moviemood-logo" style="
                     display: flex;
                     align-items: center;
                     gap: 8px;
-                    text-decoration: none;
-                    font-size: 28px;
-                    font-weight: 900;
-                    color: #f59e0b;
-                    letter-spacing: 0.05em;
-                ">
+                " title="HOME画面へ戻る">
 
                 <svg style="
-                        width: 32px;
-                        height: 32px;
+                        width: 30px;
+                        height: 30px;
                         fill: #f59e0b;
+                        flex-shrink: 0;
                     " viewBox="0 0 24 24" aria-hidden="true">
 
                     <path
@@ -70,7 +94,7 @@
 
                 </svg>
 
-                MovieMood
+                <span>MovieMood</span>
 
             </a>
 

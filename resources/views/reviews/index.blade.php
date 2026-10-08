@@ -96,14 +96,67 @@
                                 </div>
                             </div>
                         </div>
+                        @php
+                            // 鑑賞前 / 鑑賞後を判定
+                            $statusVal = strtolower(trim($review->status ?? ''));
 
-                        {{-- ★ 評価バッジ --}}
+                            $rawMood = $review->moods
+                                ?? $review->mood
+                                ?? $review->tag
+                                ?? '';
+
+                            $moodStr = is_array($rawMood)
+                                ? implode(',', $rawMood)
+                                : (string) $rawMood;
+
+                            $isWantToWatch =
+                                in_array($statusVal, [
+                                    'want_to_watch',
+                                    'want',
+                                    'want-to-watch',
+                                    '1',
+                                    'before'
+                                ])
+                                || str_contains($moodStr, 'しそう');
+                        @endphp
+
+
                         @if($review->rating)
-                            <div
-                                class="px-3.5 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/40 text-yellow-400 font-extrabold text-sm sm:text-base flex items-center space-x-1">
-                                <span>★</span>
-                                <span>{{ number_format($review->rating, 1) }}</span>
-                            </div>
+
+                            @if($isWantToWatch)
+
+                                {{-- =================================================
+                                ✨ 鑑賞前：紫・期待値
+                                ================================================== --}}
+                                <div
+                                    class="px-3.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/40 text-purple-300 font-extrabold text-sm sm:text-base flex items-center space-x-1">
+
+                                    <span>✨</span>
+
+                                    <span>
+                                        期待度 {{ number_format($review->rating, 1) }}
+                                    </span>
+
+                                </div>
+
+                            @else
+
+                                {{-- =================================================
+                                🍿 鑑賞後：金色・評価
+                                ================================================== --}}
+                                <div
+                                    class="px-3.5 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/40 text-yellow-400 font-extrabold text-sm sm:text-base flex items-center space-x-1">
+
+                                    <span>★</span>
+
+                                    <span>
+                                        {{ number_format($review->rating, 1) }}
+                                    </span>
+
+                                </div>
+
+                            @endif
+
                         @endif
                     </div>
 
