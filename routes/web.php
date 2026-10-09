@@ -84,14 +84,13 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update']);
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
-
     // ✏️ レビュー・いいね・コメント関連
     Route::get('/movies/{id}/reviews', [ReviewController::class, 'index'])->name('reviews.index');
     Route::get('/movies/{id}/reviews/create', [ReviewController::class, 'create'])->name('reviews.create');
     Route::post('/movies/{id}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('reviews.update');
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     Route::post('/reviews/{review}/like', [LikeController::class, 'toggle'])->name('reviews.like');
-
     // 💬 コメント関連
     Route::post('/reviews/{review}/comments', [ReviewController::class, 'storeComment'])->name('reviews.comments.store');
     Route::put('/reviews/comments/{comment}', [ReviewController::class, 'updateComment'])->name('reviews.comments.update'); // ← ★修正：ReviewControllerのupdateCommentを指定

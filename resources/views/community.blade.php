@@ -1,906 +1,787 @@
+
 <x-app-layout>
 
     <x-slot name="header">
-
         <div class="flex items-center justify-between">
-
-            <div class="flex items-center space-x-4">
-
-                {{-- ⬅️ ひとつ前に戻るボタン --}}
-                <button onclick="history.back()"
-                    class="px-3.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs font-bold transition flex items-center space-x-1.5 border border-gray-700 shadow-md cursor-pointer">
+            <div class="flex items-center gap-3">
+                <button
+                    onclick="history.back()"
+                    class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs font-bold transition flex items-center gap-1 border border-gray-700">
                     <span>←</span>
                     <span>戻る</span>
                 </button>
 
+                <h2 class="font-semibold text-xl text-amber-400 leading-tight">
+                    コミュニティ
+                </h2>
+            </div>
+        </div>
+    </x-slot>
 
-                <div>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
 
-                    <h2 class="font-bold text-2xl text-amber-500 tracking-wide">
-                        MovieMood
-                    </h2>
+        html {
+            scroll-behavior: smooth;
+        }
 
-                    {{-- ★ キャッチコピー --}}
-                    <p class="text-xs text-gray-400 mt-0.5">
-                        〜 観る前の「気分」も、観た後の「感想」も、映画と一緒に。 〜
-                    </p>
+        /* レビューカードのハイライト */
+        @keyframes glow-highlight {
+            0% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8);
+                border-color: rgba(245, 158, 11, 1);
+            }
+
+            50% {
+                box-shadow: 0 0 24px 5px rgba(245, 158, 11, 0.4);
+                border-color: rgba(251, 191, 36, 1);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+                border-color: rgba(55, 65, 81, 1);
+            }
+        }
+
+        .highlight-card {
+            animation: glow-highlight 2.5s ease-in-out;
+        }
+
+        /* ページトップボタン */
+        #back-to-top {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #back-to-top.is-visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+    </style>
+
+    {{-- ページ全体 --}}
+    <div class="min-h-screen bg-black text-white py-6 sm:py-8">
+
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+
+            {{-- コミュニティヘッダー --}}
+            <div class="bg-gray-900/90 rounded-2xl p-5 sm:p-6 border border-gray-800 shadow-xl">
+
+                <div class="flex items-center justify-between gap-4">
+
+                    <div class="min-w-0">
+                        <span class="text-[10px] sm:text-xs text-amber-500 font-bold tracking-wider uppercase block">
+                            MOVIEMOOD COMMUNITY
+                        </span>
+
+                        <h1 class="text-xl sm:text-2xl font-extrabold text-white mt-1">
+                            みんなの映画レビュー
+                        </h1>
+
+                        <p class="text-xs sm:text-sm text-gray-400 mt-2">
+                            映画の感想や期待度を共有しよう
+                        </p>
+                    </div>
+
+                    <div class="hidden sm:flex w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/30 items-center justify-center text-2xl flex-shrink-0">
+                        🎬
+                    </div>
 
                 </div>
 
             </div>
 
-        </div>
+            {{-- コミュニティメインパネル --}}
+            <div class="bg-gray-900/90 rounded-2xl border border-gray-800 shadow-xl overflow-hidden">
 
-    </x-slot>
+                {{-- レビュー一覧の見出し --}}
+                <div class="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-800 bg-black/40">
 
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="text-amber-500 text-lg">✍</span>
 
-    {{-- ✨ 発光アニメーション定義 --}}
+                        <h2 class="text-sm sm:text-base font-extrabold text-white">
+                            COMMUNITY FEED
+                        </h2>
+                    </div>
 
-    <style>
-        @keyframes glow-highlight {
-
-            0% {
-
-                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.9);
-
-                border-color: rgba(245, 158, 11, 1);
-
-                transform: scale(1.01);
-
-            }
-
-            50% {
-
-                box-shadow: 0 0 25px 6px rgba(245, 158, 11, 0.6);
-
-                border-color: rgba(251, 191, 36, 1);
-
-            }
-
-            100% {
-
-                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
-
-                border-color: rgba(31, 41, 55, 1);
-
-                transform: scale(1);
-
-            }
-
-        }
-
-
-        .highlight-card {
-
-            animation: glow-highlight 3s ease-in-out;
-
-        }
-    </style>
-
-
-    <div class="py-8 bg-black min-h-screen text-white relative">
-
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 pb-28">
-
-
-            {{-- ⬅️ 画面内上部に確実に配置する「戻る」ボタン --}}
-
-            <div class="flex items-center justify-between mb-4">
-
-                <button onclick="history.back()"
-                    class="px-4 py-2 rounded-xl bg-gray-800/90 hover:bg-amber-500 hover:text-black text-gray-200 text-xs font-bold transition flex items-center space-x-2 border border-gray-700 shadow-lg cursor-pointer">
-
-                    <span>←</span>
-
-                    <span>
-                        前のページへ戻る
+                    <span class="text-[10px] sm:text-xs text-gray-400 font-bold flex-shrink-0">
+                        {{ $reviews->total() }} 件の投稿
                     </span>
 
-                </button>
+                </div>
 
-            </div>
+                {{-- レビュー一覧 --}}
+                <div class="p-4 sm:p-6 space-y-4 sm:space-y-5">
 
+                    @forelse ($reviews as $review)
 
-            @forelse ($reviews as $review)
+                        @php
+                            /*
+                             * 映画タイトル
+                             */
+                            $displayTitle =
+                                $review->movie_title
+                                ?? $review->movie?->title
+                                ?? $review->title
+                                ?? null;
 
-                    @php
+                            /*
+                             * いいね状態
+                             */
+                            $isLikedByMe =
+                                Auth::check()
+                                && $review->likes
+                                && $review->likes->contains(
+                                    'user_id',
+                                    Auth::id()
+                                );
 
-                        $displayTitle =
-                            $review->movie_title
-                            ?? $review->movie?->title
-                            ?? $review->title
-                            ?? null;
+                            /*
+                             * コメント状態
+                             */
+                            $hasCommentedByMe =
+                                Auth::check()
+                                && $review->comments
+                                && $review->comments->contains(
+                                    'user_id',
+                                    Auth::id()
+                                );
 
-                        $currentUserId =
-                            Auth::id();
-
-                        $isLikedByMe =
-                            $currentUserId &&
-                            $review->likes?->contains(
-                                'user_id',
-                                $currentUserId
+                            /*
+                             * 鑑賞前・鑑賞後の判定
+                             */
+                            $statusVal = strtolower(
+                                trim($review->status ?? '')
                             );
 
-                        $hasCommentedByMe =
-                            $currentUserId &&
-                            $review->comments?->contains(
-                                'user_id',
-                                $currentUserId
-                            );
+                            $rawMood =
+                                $review->moods
+                                ?? $review->mood
+                                ?? $review->tag
+                                ?? '';
 
+                            $moodStr = is_array($rawMood)
+                                ? implode(',', $rawMood)
+                                : (string) $rawMood;
 
-                        /*
-                         * =================================================
-                         * 鑑賞前 / 鑑賞後の判定
-                         *
-                         * 鑑賞前：
-                         * want_to_watch / want / before
-                         * または「〜しそう」タグ
-                         *
-                         * 鑑賞後：
-                         * 上記以外
-                         * =================================================
-                         */
-
-                        $statusVal =
-                            strtolower(
-                                trim(
-                                    $review->status ?? ''
+                            $isWantToWatch =
+                                in_array(
+                                    $statusVal,
+                                    [
+                                        'want_to_watch',
+                                        'want',
+                                        'want-to-watch',
+                                        '1',
+                                        'before'
+                                    ]
                                 )
-                            );
+                                || str_contains($moodStr, 'しそう');
 
+                            /*
+                             * 投稿者
+                             */
+                            $user = $review->user;
 
-                        $moodVal =
-                            $review->moods
-                            ?? $review->mood
-                            ?? $review->tag
-                            ?? '';
+                            /*
+                             * コメント数
+                             */
+                            $commentsCount = $review->comments
+                                ? $review->comments->count()
+                                : 0;
 
+                            /*
+                             * タグ一覧
+                             */
+                            $moodList = is_array($rawMood)
+                                ? $rawMood
+                                : explode(',', $rawMood);
+                        @endphp
 
-                        $moodStr =
-                            is_array($moodVal)
-                            ? implode(',', $moodVal)
-                            : (string) $moodVal;
+                        {{-- レビューカード --}}
+                        <article
+                            id="review-{{ $review->id }}"
+                            x-data="{
+                                openComments: window.location.hash === '#review-{{ $review->id }}'
+                            }"
+                            class="profile-item bg-black/40 border border-gray-800 rounded-xl p-4 sm:p-5 space-y-4 transition duration-300 hover:border-gray-700">
 
+                            {{-- 投稿者情報・評価 --}}
+                            <div class="flex items-center justify-between gap-3">
 
-                        $isWantToWatch =
-                            in_array(
-                                $statusVal,
-                                [
-                                    'want_to_watch',
-                                    'want',
-                                    'want-to-watch',
-                                    '1',
-                                    'before'
-                                ],
-                                true
-                            )
-                            ||
-                            str_contains(
-                                $moodStr,
-                                'しそう'
-                            );
+                                <div class="flex items-center gap-3 min-w-0">
 
-                    @endphp
+                                    {{-- プロフィール画像 --}}
+                                    @php
+                                        $avatarUrl =
+                                            $user?->profile_photo_path
+                                            ?? $user?->avatar
+                                            ?? null;
+                                    @endphp
 
+                                    @if(!empty($user?->profile_photo_path))
 
-                    <div id="review-{{ $review->id }}" x-data="{ openComments: false }"
-                        class="bg-[#111827] border border-gray-800 rounded-2xl p-5 shadow-xl space-y-3.5 transition-all duration-300">
+                                        <img
+                                            src="{{ asset('storage/' . $user->profile_photo_path) }}"
+                                            alt="{{ $user->name ?? 'User' }}"
+                                            class="w-10 h-10 rounded-full object-cover border {{ $isWantToWatch ? 'border-purple-500/50' : 'border-amber-500/50' }} flex-shrink-0"
+                                            onerror="this.onerror=null;">
 
+                                    @elseif(!empty($avatarUrl))
 
-                        {{-- =================================================
-                        1. ユーザー情報 ＆ 評価
-                        ================================================== --}}
+                                        <img
+                                            src="{{ str_starts_with($avatarUrl, 'http') ? $avatarUrl : asset($avatarUrl) }}"
+                                            alt="{{ $user->name ?? 'User' }}"
+                                            class="w-10 h-10 rounded-full object-cover border {{ $isWantToWatch ? 'border-purple-500/50' : 'border-amber-500/50' }} flex-shrink-0"
+                                            onerror="this.onerror=null;">
 
-                        <div class="flex items-center justify-between">
+                                    @else
 
-                            <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full {{ $isWantToWatch ? 'bg-purple-500/20 text-purple-300 border-purple-500/40' : 'bg-amber-500/10 text-amber-400 border-amber-500/40' }} border flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                            {{ mb_substr($user?->nickname ?? $user?->name ?? '匿', 0, 1) }}
+                                        </div>
 
-                                @php
+                                    @endif
 
-                                    $user =
-                                        $review->user;
+                                    {{-- 名前・投稿日 --}}
+                                    <div class="min-w-0">
+                                        <div class="font-bold text-sm text-gray-200 truncate">
+                                            {{ $user?->nickname ?? $user?->name ?? '匿名ユーザー' }}
+                                        </div>
 
-                                    $avatarUrl =
-                                        $user?->profile_photo_path
-                                        ?? $user?->avatar
-                                        ?? null;
-
-                                @endphp
-
-
-                                @if(!empty($user?->profile_photo_path))
-
-                                    <img src="{{ asset('storage/' . $user->profile_photo_path) }}" alt="{{ $user->name ?? 'User' }}"
-                                        class="w-10 h-10 rounded-full object-cover border border-yellow-500/40">
-
-                                @elseif(!empty($avatarUrl))
-
-                                    <img src="{{ asset($avatarUrl) }}" alt="{{ $user?->name ?? 'User' }}"
-                                        class="w-10 h-10 rounded-full object-cover border border-yellow-500/40">
-
-                                @else
-
-                                                <div
-                                                    class="w-10 h-10 rounded-full bg-amber-600/30 text-amber-400 border border-amber-500/50 flex items-center justify-center font-bold text-sm">
-
-                                                    {{
-                                    mb_substr(
-                                        $user?->nickname
-                                        ?? $user?->name
-                                        ?? '匿',
-                                        0,
-                                        1
-                                    )
-                                                            }}
-
-                                                </div>
-
-                                @endif
-
-
-                                <div>
-
-                                    <div class="font-bold text-sm text-gray-200">
-
-                                        {{
-                $user?->nickname
-                ?? $user?->name
-                ?? '匿名ユーザー'
-                                            }}
-
-                                    </div>
-
-
-                                    <div class="text-xs text-gray-400">
-
-                                        {{
-                $review->created_at
-                ? $review->created_at->diffForHumans()
-                : ''
-                                            }}
-
+                                        <div class="text-xs text-gray-500 mt-0.5">
+                                            {{ $review->created_at?->diffForHumans() ?? '' }}
+                                        </div>
                                     </div>
 
                                 </div>
 
-                            </div>
+                                {{-- 評価 --}}
+                                @if($review->rating)
 
+                                    @if($isWantToWatch)
 
-                            {{-- =================================================
-                            ★ 評価 / ✨ 期待度
-                            鑑賞後 → 金色
-                            鑑賞前 → 紫
-                            ================================================== --}}
+                                        <div class="flex-shrink-0 px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs sm:text-sm font-extrabold">
+                                            <span>✨</span>
+                                            <span>
+                                                期待度 {{ number_format($review->rating, 1) }}
+                                            </span>
+                                        </div>
 
-                            @if($review->rating)
+                                    @else
 
-                                @if($isWantToWatch)
+                                        <div class="flex-shrink-0 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm font-extrabold">
+                                            ★ {{ number_format($review->rating, 1) }}
+                                        </div>
 
-                                    {{-- 鑑賞前 --}}
-                                    <div
-                                        class="px-3.5 py-1 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-extrabold text-sm sm:text-base flex items-center gap-1">
-
-                                        <span>✨</span>
-
-                                        <span>
-                                            期待度: {{ number_format($review->rating, 1) }}
-                                        </span>
-
-                                    </div>
-
-                                @else
-
-                                    {{-- 鑑賞後 --}}
-                                    <div
-                                        class="px-3.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/40 text-amber-400 font-extrabold text-sm sm:text-base flex items-center gap-1">
-
-                                        <span>★</span>
-
-                                        <span>
-                                            {{ number_format($review->rating, 1) }}
-                                        </span>
-
-                                    </div>
+                                    @endif
 
                                 @endif
 
-                            @endif
+                            </div>
 
-                        </div>
+                            {{-- 映画タイトル・タグ --}}
+                            <div class="space-y-3">
 
+                                {{-- 映画タイトル --}}
+                                <div>
+                                    @if($review->movie_id)
 
-                        {{-- =================================================
-                        2. 映画タイトル ＆ タグ
-                        ================================================== --}}
+                                        <a
+                                            href="{{ route('movies.show', $review->movie_id) }}#review-{{ $review->id }}"
+                                            class="inline-flex items-center gap-2 text-base sm:text-lg font-extrabold text-gray-100 hover:text-amber-400 transition break-words">
 
-                        <div class="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+                                            <span class="text-amber-500 flex-shrink-0">🎬</span>
 
-                            <a href="{{ route('movies.show', $review->movie_id) }}#review-{{ $review->id }}"
-                                class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 hover:text-yellow-300 border border-indigo-700/70 text-base sm:text-lg font-extrabold transition shadow-md group">
+                                            <span>
+                                                {{ $displayTitle ?: '作品詳細を見る (ID: ' . $review->movie_id . ')' }}
+                                            </span>
 
-                                <span>🎬</span>
+                                            <span class="text-xs text-gray-500">↗</span>
+                                        </a>
 
-                                <span class="group-hover:underline">
+                                    @else
 
-                                    {{
-                !empty($displayTitle)
-                ? $displayTitle
-                : '作品詳細を見る (ID: ' . $review->movie_id . ')'
-                                        }}
+                                        <div class="inline-flex items-center gap-2 text-base sm:text-lg font-extrabold text-gray-100 break-words">
+                                            <span class="text-amber-500 flex-shrink-0">🎬</span>
+                                            <span>{{ $displayTitle ?: '映画レビュー' }}</span>
+                                        </div>
 
-                                </span>
+                                    @endif
+                                </div>
 
-                            </a>
+                                {{-- 気分タグ --}}
+                                @if(!empty(array_filter($moodList, fn($m) => trim((string) $m) !== '')))
 
+                                    <div class="flex flex-wrap gap-1.5">
 
-                            {{-- 🏷️ タグ表示 --}}
+                                        @foreach($moodList as $m)
 
-                            @php
+                                            @if(trim((string) $m) !== '')
 
-                                $rawMood =
-                                    $review->moods
-                                    ?? $review->mood
-                                    ?? $review->tag
-                                    ?? '';
+                                                @php
+                                                    $cleanTag = trim(
+                                                        str_replace('#', '', $m)
+                                                    );
 
-                                $moodList =
-                                    is_array($rawMood)
-                                    ? $rawMood
-                                    : explode(',', $rawMood);
+                                                    $isPurpleTag =
+                                                        $isWantToWatch
+                                                        || str_contains($cleanTag, 'しそう');
+                                                @endphp
 
-                                $beforeTagList = [
-                                    '号泣しそう',
-                                    'スカッとしそう',
-                                    'ハラハラしそう',
-                                    'キュンとしそう'
-                                ];
-
-                            @endphp
-
-
-                            @if(!empty(array_filter($moodList)))
-
-                                <div class="flex flex-wrap gap-1.5">
-
-                                    @foreach($moodList as $m)
-
-                                        @php
-
-                                            $cleanTag =
-                                                trim(
-                                                    str_replace('#', '', $m)
-                                                );
-
-                                            $isBeforeTag =
-                                                in_array(
-                                                    $cleanTag,
-                                                    $beforeTagList,
-                                                    true
-                                                );
-
-                                            /*
-                                             * 鑑賞前レビューなら、
-                                             * タグが「しそう」系でなくても
-                                             * 紫色に統一する
-                                             */
-                                            $isPurpleTag =
-                                                $isWantToWatch
-                                                || $isBeforeTag;
-
-                                        @endphp
-
-
-                                        @if($cleanTag)
-
-                                            @if($isPurpleTag)
-
-                                                {{-- 鑑賞前：紫 --}}
-                                                <span
-                                                    class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-purple-950/80 text-purple-300 border border-purple-500/50 shadow-sm">
-                                                    #{{ $cleanTag }}
-                                                </span>
-
-                                            @else
-
-                                                {{-- 鑑賞後：金色 --}}
-                                                <span
-                                                    class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold border {{ $isPurpleTag ? 'bg-purple-500/10 text-purple-300 border-purple-500/30' : 'bg-amber-500/10 text-amber-300 border-amber-500/30' }}">
                                                     #{{ $cleanTag }}
                                                 </span>
 
                                             @endif
 
-                                        @endif
+                                        @endforeach
 
-                                    @endforeach
+                                    </div>
 
+                                @endif
+
+                            </div>
+
+                            {{-- レビュー本文 --}}
+                            <div class="bg-gray-900/70 border border-gray-800 rounded-xl p-4">
+
+                                <p class="text-[10px] text-amber-500 font-bold tracking-wider mb-2">
+                                    {{ $isWantToWatch ? 'MY EXPECTATION' : 'MY REVIEW' }}
+                                </p>
+
+                                <div class="text-sm text-gray-300 leading-7 whitespace-pre-line break-words">
+                                    {{ $review->comment ?? $review->content }}
                                 </div>
 
-                            @endif
+                            </div>
 
-                        </div>
+                            {{-- いいね・コメント操作 --}}
+                            <div class="flex items-center justify-between gap-3 pt-3 border-t border-gray-800">
 
+                                {{-- いいね --}}
+                                <form
+                                    action="{{ route('reviews.like', $review->id) }}"
+                                    method="POST"
+                                    class="inline-flex">
 
-                        {{-- =================================================
-                        3. 本文
-                        ================================================== --}}
+                                    @csrf
 
-                        <div
-                            class="bg-[#182232] border border-gray-800/80 rounded-xl p-4 text-gray-200 text-sm sm:text-base leading-relaxed whitespace-pre-line my-2">
+                                    <button
+                                        type="submit"
+                                        aria-label="いいね"
+                                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border text-xs font-bold transition {{ $isLikedByMe ? 'bg-rose-500/10 text-rose-400 border-rose-500/40' : 'bg-gray-900/70 text-gray-400 border-gray-700 hover:text-rose-400 hover:border-rose-500/40' }}">
 
-                            {{ $review->comment ?? $review->content }}
+                                        <span class="text-base">♥</span>
 
-                        </div>
+                                        <span>
+                                            {{ $review->likes ? $review->likes->count() : 0 }}
+                                        </span>
 
+                                    </button>
 
-                        {{-- =================================================
-                        4. アクションボタン
-                        ================================================== --}}
+                                </form>
 
-                        <div class="pt-2 border-t border-gray-800/60 flex items-center justify-between">
+                                {{-- コメント開閉 --}}
+                                <button
+                                    type="button"
+                                    @click="openComments = !openComments"
+                                    :aria-expanded="openComments.toString()"
+                                    class="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border text-xs font-bold transition {{ $hasCommentedByMe ? 'bg-amber-500/10 text-amber-400 border-amber-500/40' : 'bg-gray-900/70 text-gray-400 border-gray-700 hover:text-amber-400 hover:border-amber-500/40' }}">
 
-                            {{-- いいね --}}
-
-                            <form action="{{ route('reviews.like', $review->id) }}" method="POST" class="inline">
-
-                                @csrf
-
-                                <button type="submit" class="px-3 py-1 rounded-full text-xs transition border flex items-center space-x-1.5 {{
-                $isLikedByMe
-                ? 'bg-rose-500/20 text-rose-400 border-rose-500/50'
-                : 'bg-gray-800/80 text-gray-300 border-gray-700/50 hover:bg-gray-700 hover:text-red-400'
-                                        }}">
-
-                                    <span class="{{
-                $isLikedByMe
-                ? 'text-rose-500 font-bold'
-                : 'text-gray-400'
-                                        }}">
-                                        ♥
-                                    </span>
-
-                                    <span class="font-bold {{
-                $isLikedByMe
-                ? 'text-rose-400'
-                : 'text-gray-300'
-                                        }}">
-                                        {{ $review->likes ? $review->likes->count() : 0 }}
-                                    </span>
+                                    <span>💬</span>
+                                    <span>{{ $commentsCount }} 件</span>
+                                    <span class="text-[10px]" x-text="openComments ? '▲' : '▼'">▼</span>
 
                                 </button>
 
-                            </form>
+                            </div>
 
+                            {{-- コメント欄 --}}
+                            <div
+                                x-show="openComments"
+                                x-transition
+                                x-cloak
+                                class="pt-4 border-t border-gray-800 space-y-3">
 
-                            {{-- コメント --}}
+                                <h3 class="text-xs text-gray-300 font-bold">
+                                    コメント
+                                </h3>
 
-                            <button @click="openComments = !openComments" class="px-3 py-1 rounded-full text-xs transition border flex items-center space-x-1.5 {{
-                $hasCommentedByMe
-                ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50'
-                : 'bg-gray-800/80 text-gray-400 border-gray-700/50 hover:text-yellow-400'
-                                    }}">
+                                {{-- コメント一覧 --}}
+                                @if($review->comments && $review->comments->count() > 0)
 
-                                <span class="{{
-                $hasCommentedByMe
-                ? 'text-yellow-400'
-                : 'text-gray-400'
-                                    }}">
-                                    💬
-                                </span>
+                                    <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
 
-                                <span class="font-bold {{
-                $hasCommentedByMe
-                ? 'text-yellow-400'
-                : 'text-gray-300'
-                                    }}">
-                                    {{ $review->comments ? $review->comments->count() : 0 }}
-                                    件
-                                </span>
+                                        @foreach($review->comments as $comment)
 
-                                <span class="text-[10px]" x-text="openComments ? '▲' : '▼'">
-                                    ▼
-                                </span>
+                                            <div
+                                                x-data="{
+                                                    editing: false,
+                                                    originalContent: {{ Illuminate\Support\Js::from($comment->comment ?? '') }},
+                                                    content: {{ Illuminate\Support\Js::from($comment->comment ?? '') }}
+                                                }"
+                                                class="bg-black/30 border border-gray-800 p-3 rounded-xl text-xs">
 
-                            </button>
+                                                {{-- 通常表示 --}}
+                                                <div
+                                                    x-show="!editing"
+                                                    class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
 
-                        </div>
+                                                    <div class="min-w-0 flex-1 break-words">
 
+                                                        <span class="font-bold text-amber-400">
+                                                            {{ $comment->user?->nickname ?? $comment->user?->name ?? 'ユーザー' }}
+                                                        </span>
 
-                        {{-- =================================================
-                        5. コメント領域
-                        ================================================== --}}
+                                                        <p
+                                                            class="text-gray-300 whitespace-pre-wrap leading-relaxed mt-1"
+                                                            x-text="content"></p>
 
-                        <div x-show="openComments" x-transition class="mt-3 pt-3 border-t border-gray-800/50 space-y-3">
+                                                    </div>
 
-                            @if($review->comments && $review->comments->count() > 0)
+                                                    {{-- 自分のコメントだけ操作可能 --}}
+                                                    @if((int) auth()->id() === (int) $comment->user_id)
 
-                                <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                                        <div class="flex items-center gap-2 flex-shrink-0">
 
-                                    @foreach($review->comments as $comment)
+                                                            {{-- 編集 --}}
+                                                            <button
+                                                                type="button"
+                                                                @click="editing = true"
+                                                                class="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-400 transition hover:bg-amber-500/20">
 
-                                                <div x-data="{
-                                                                editing: false,
-                                                                content: {{ \Illuminate\Support\Js::from($comment->comment) }}
-                                                            }" class="bg-gray-800/40 border border-gray-700/40 p-2.5 rounded-lg text-xs">
+                                                                <i class="fa-solid fa-pen-to-square"></i>
+                                                                編集
 
-                                                    <div x-show="!editing" class="flex justify-between items-start">
+                                                            </button>
 
-                                                        <div>
+                                                            {{-- 削除 --}}
+                                                            <form
+                                                                action="{{ route('reviews.comments.destroy', $comment->id) }}"
+                                                                method="POST"
+                                                                onsubmit="return confirm('このコメントを削除してもよろしいですか？');">
 
-                                                            <span class="font-semibold text-yellow-400">
+                                                                @csrf
+                                                                @method('DELETE')
 
-                                                                {{
-                                        $comment->user?->nickname
-                                        ?? $comment->user?->name
-                                        ?? 'ユーザー'
-                                                                            }}:
+                                                                <button
+                                                                    type="submit"
+                                                                    class="inline-flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-400 transition hover:bg-red-500/20">
 
-                                                            </span>
+                                                                    <i class="fa-solid fa-trash"></i>
+                                                                    削除
 
-                                                            <span class="text-gray-200 ml-1" x-text="content">
-                                                            </span>
+                                                                </button>
+
+                                                            </form>
 
                                                         </div>
 
-
-                                                        @if(Auth::id() === $comment->user_id)
-
-                                                            <div class="flex items-center space-x-2 shrink-0 ml-2">
-
-                                                                <button type="button" @click="editing = true"
-                                                                    class="text-[10px] text-gray-400 hover:text-yellow-400">
-                                                                    編集
-                                                                </button>
-
-
-                                                                <form action="{{ route('reviews.comments.destroy', $comment->id) }}" method="POST"
-                                                                    onsubmit="return confirm('コメントを削除しますか？')">
-
-                                                                    @csrf
-
-                                                                    @method('DELETE')
-
-                                                                    <button type="submit" class="text-[10px] text-red-400 hover:underline">
-                                                                        削除
-                                                                    </button>
-
-                                                                </form>
-
-                                                            </div>
-
-                                                        @endif
-
-                                                    </div>
-
-
-                                                    <div x-show="editing" x-cloak class="mt-1">
-
-                                                        <form action="{{ route('reviews.comments.update', $comment->id) }}" method="POST"
-                                                            class="flex space-x-2">
-
-                                                            @csrf
-
-                                                            @method('PUT')
-
-                                                            <input type="text" name="comment" x-model="content" required
-                                                                class="flex-1 bg-gray-900 border border-yellow-500/50 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-yellow-400">
-
-
-                                                            <button type="button" @click="editing = false"
-                                                                class="px-2 py-1 bg-gray-700 text-gray-300 rounded text-[10px]">
-                                                                キャンセル
-                                                            </button>
-
-
-                                                            <button type="submit"
-                                                                class="px-2 py-1 bg-yellow-500 text-black font-bold rounded text-[10px]">
-                                                                保存
-                                                            </button>
-
-                                                        </form>
-
-                                                    </div>
+                                                    @endif
 
                                                 </div>
 
-                                    @endforeach
+                                                {{-- 編集フォーム --}}
+                                                <div x-show="editing" x-cloak class="mt-2">
 
-                                </div>
+                                                    <form
+                                                        action="{{ route('reviews.comments.update', $comment->id) }}"
+                                                        method="POST"
+                                                        class="flex flex-col sm:flex-row gap-2">
 
-                            @else
+                                                        @csrf
+                                                        @method('PUT')
 
-                                <div class="text-xs text-gray-500 text-center py-1">
-                                    まだコメントはありません。
-                                </div>
+                                                        <input
+                                                            type="text"
+                                                            name="comment"
+                                                            x-model="content"
+                                                            required
+                                                            maxlength="1000"
+                                                            class="flex-1 min-w-0 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
 
-                            @endif
+                                                        <div class="flex items-center gap-2">
 
+                                                            {{-- キャンセル --}}
+                                                            <button
+                                                                type="button"
+                                                                @click="editing = false; content = originalContent"
+                                                                class="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs font-bold text-gray-300 transition hover:bg-gray-700">
 
-                            {{-- コメント投稿フォーム --}}
+                                                                キャンセル
 
-                            <form action="{{ route('reviews.comments.store', $review->id) }}" method="POST"
-                                x-data="{ submitting: false }" @submit="submitting = true" class="flex space-x-2">
+                                                            </button>
 
-                                @csrf
+                                                            {{-- 保存 --}}
+                                                            <button
+                                                                type="submit"
+                                                                class="rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-black transition hover:bg-amber-400">
 
-                                <input type="text" name="comment" placeholder="コメントを入力..." required
-                                    class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500">
+                                                                保存
 
+                                                            </button>
 
-                                <button type="submit" :disabled="submitting"
-                                    class="bg-yellow-500 text-black font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-yellow-400 transition flex-shrink-0 disabled:opacity-50">
-                                    送信
-                                </button>
+                                                        </div>
 
-                            </form>
+                                                    </form>
+
+                                                </div>
+
+                                            </div>
+
+                                        @endforeach
+
+                                    </div>
+
+                                @else
+
+                                    <div class="bg-black/30 border border-gray-800 rounded-xl p-4 text-center">
+                                        <p class="text-xs text-gray-500">
+                                            まだコメントはありません。
+                                        </p>
+                                    </div>
+
+                                @endif
+
+                                {{-- コメント投稿 --}}
+                                <form
+                                    action="{{ route('reviews.comments.store', $review->id) }}"
+                                    method="POST"
+                                    class="flex gap-2">
+
+                                    @csrf
+
+                                    <input
+                                        type="text"
+                                        name="comment"
+                                        placeholder="コメントを入力..."
+                                        required
+                                        maxlength="1000"
+                                        class="flex-1 min-w-0 bg-black/30 border border-gray-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-500">
+
+                                    <button
+                                        type="submit"
+                                        class="flex-shrink-0 bg-amber-500 text-black font-bold px-4 py-2.5 rounded-xl text-xs hover:bg-amber-400 transition">
+
+                                        送信
+
+                                    </button>
+
+                                </form>
+
+                            </div>
+
+                        </article>
+
+                    @empty
+
+                        {{-- 投稿がない場合 --}}
+                        <div class="py-12 text-center space-y-3">
+
+                            <div class="text-3xl text-gray-600">
+                                🎬
+                            </div>
+
+                            <h3 class="text-sm font-bold text-gray-200">
+                                まだ投稿がありません
+                            </h3>
+
+                            <p class="text-xs text-gray-400">
+                                最初の映画レビューを投稿してみましょう。
+                            </p>
 
                         </div>
 
-                    </div>
+                    @endforelse
 
-            @empty
-
-                <div class="bg-[#111827] border border-gray-800 p-8 rounded-2xl text-center text-gray-400 text-sm">
-                    まだ投稿がありません。
                 </div>
 
-            @endforelse
+                {{-- ページネーション：マイページと統一 --}}
+                @if($reviews->hasPages())
 
+                    <div class="mt-6 mb-6 flex items-center justify-center gap-1.5 text-xs">
 
-            {{-- =================================================
-            ページネーション
-            ================================================== --}}
+                        {{-- 前のページ --}}
+                        @if($reviews->onFirstPage())
 
-            @if(method_exists($reviews, 'hasPages') && $reviews->hasPages())
-
-                <div class="mt-8 flex justify-center items-center space-x-2">
-
-                    {{-- 前のページ --}}
-
-                    @if ($reviews->onFirstPage())
-
-                        <span
-                            class="w-9 h-9 flex items-center justify-center bg-gray-900 text-gray-600 rounded-lg text-xs cursor-not-allowed border border-gray-800">
-                            ‹
-                        </span>
-
-                    @else
-
-                        <a href="{{ $reviews->previousPageUrl() }}"
-                            class="w-9 h-9 flex items-center justify-center bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg text-xs border border-gray-700 transition">
-                            ‹
-                        </a>
-
-                    @endif
-
-
-                    {{-- ページ番号 --}}
-
-                    @foreach (
-                            $reviews->getUrlRange(
-                                1,
-                                $reviews->lastPage()
-                            ) as $page => $url
-                        )
-
-                        @if ($page == $reviews->currentPage())
-
-                            <span
-                                class="w-9 h-9 flex items-center justify-center bg-amber-500 text-black font-bold rounded-lg text-sm shadow-md">
-                                {{ $page }}
+                            <span class="px-2 py-1 rounded bg-gray-800/60 text-gray-600 cursor-not-allowed">
+                                ‹
                             </span>
 
                         @else
 
-                            <a href="{{ $url }}"
-                                class="w-9 h-9 flex items-center justify-center bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg text-sm border border-gray-700 transition">
-                                {{ $page }}
+                            <a
+                                href="{{ $reviews->previousPageUrl() }}"
+                                class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition">
+                                ‹
                             </a>
 
                         @endif
 
-                    @endforeach
+                        {{-- ページ番号 --}}
+                        @foreach($reviews->getUrlRange(1, $reviews->lastPage()) as $page => $url)
 
+                            @if($page == $reviews->currentPage())
 
-                    {{-- 次のページ --}}
+                                <span
+                                    aria-current="page"
+                                    class="px-2.5 py-1 rounded bg-amber-500 text-gray-950 font-bold">
+                                    {{ $page }}
+                                </span>
 
-                    @if ($reviews->hasMorePages())
+                            @else
 
-                        <a href="{{ $reviews->nextPageUrl() }}"
-                            class="w-9 h-9 flex items-center justify-center bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg text-xs border border-gray-700 transition">
-                            ›
-                        </a>
+                                <a
+                                    href="{{ $url }}"
+                                    class="px-2.5 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition">
+                                    {{ $page }}
+                                </a>
 
-                    @else
+                            @endif
 
-                        <span
-                            class="w-9 h-9 flex items-center justify-center bg-gray-900 text-gray-600 rounded-lg text-xs cursor-not-allowed border border-gray-800">
-                            ›
-                        </span>
+                        @endforeach
 
-                    @endif
+                        {{-- 次のページ --}}
+                        @if($reviews->hasMorePages())
 
-                </div>
+                            <a
+                                href="{{ $reviews->nextPageUrl() }}"
+                                class="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition">
+                                ›
+                            </a>
 
-            @endif
+                        @else
+
+                            <span class="px-2 py-1 rounded bg-gray-800/60 text-gray-600 cursor-not-allowed">
+                                ›
+                            </span>
+
+                        @endif
+
+                    </div>
+
+                @endif
+
+            </div>
 
         </div>
 
+        {{-- ページトップボタン --}}
+        <div class="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50">
 
-        {{-- =========================================================
-        ⬆️ トップへ戻るボタン
-        ========================================================== --}}
+            <button
+                type="button"
+                id="back-to-top"
+                onclick="scrollToTop()"
+                title="一番上へスクロール"
+                aria-label="ページの一番上へ戻る"
+                class="w-11 h-11 bg-amber-500 hover:bg-amber-400 text-black font-bold text-lg rounded-full shadow-xl flex items-center justify-center transition hover:scale-105">
 
-        <button id="backToTop" type="button" onclick="window.scrollTo({ top: 0, behavior: 'smooth' })" title="一番上へ戻る"
-            aria-label="一番上へ戻る" class="fixed bottom-24 right-6 z-40 w-11 h-11
-                   bg-amber-500 hover:bg-amber-400
-                   text-black font-extrabold text-xl
-                   rounded-full shadow-xl
-                   flex items-center justify-center
-                   transition-all duration-300
-                   opacity-0 invisible
-                   translate-y-3
-                   hover:scale-110 active:scale-95
-                   border-2 border-black cursor-pointer">
-            ↑
-        </button>
+                ↑
+
+            </button>
+
+        </div>
 
     </div>
 
-
-    {{-- =========================================================
-    ✨ スクロール処理
-    ========================================================== --}}
-
+    {{-- レビューのハイライト・ページトップボタン --}}
     <script>
-
         document.addEventListener('DOMContentLoaded', () => {
 
             /*
-             * --------------------------------------------------
-             * ハッシュ付きでページを開いた場合
-             * --------------------------------------------------
+             * 1. レビューのハイライト
              */
+            const hash = window.location.hash;
 
-            const hash =
-                window.location.hash;
-
-
-            if (hash) {
-
-                const targetCard =
-                    document.querySelector(hash);
-
+            if (hash && /^#review-\d+$/.test(hash)) {
+                const targetCard = document.querySelector(hash);
 
                 if (targetCard) {
-
                     setTimeout(() => {
-
                         targetCard.scrollIntoView({
                             behavior: 'smooth',
                             block: 'center'
                         });
 
-
-                        targetCard.classList.add(
-                            'highlight-card'
-                        );
-
+                        targetCard.classList.add('highlight-card');
                     }, 200);
-
                 }
-
             }
-
 
             /*
-             * --------------------------------------------------
-             * 「↑」トップへ戻るボタン
-             * --------------------------------------------------
+             * 2. ページトップボタン
              */
+            const backToTopButton = document.getElementById('back-to-top');
 
-            const backToTop =
-                document.getElementById('backToTop');
-
-
-            if (backToTop) {
-
-                const toggleBackToTop = () => {
-
-                    /*
-                     * ページ最下部までの残り距離
-                     */
-
-                    const distanceFromBottom =
-                        document.documentElement.scrollHeight
-                        - (window.innerHeight + window.scrollY);
-
-
-                    /*
-                     * 最下部付近では非表示
-                     */
-
-                    if (distanceFromBottom <= 260) {
-
-                        backToTop.classList.remove(
-                            'opacity-100',
-                            'visible',
-                            'translate-y-0'
-                        );
-
-                        backToTop.classList.add(
-                            'opacity-0',
-                            'invisible',
-                            'translate-y-3'
-                        );
-
-                        return;
-                    }
-
-
-                    /*
-                     * 300px以上スクロールしたら表示
-                     */
-
-                    if (window.scrollY > 300) {
-
-                        backToTop.classList.remove(
-                            'opacity-0',
-                            'invisible',
-                            'translate-y-3'
-                        );
-
-                        backToTop.classList.add(
-                            'opacity-100',
-                            'visible',
-                            'translate-y-0'
-                        );
-
-                    } else {
-
-                        /*
-                         * ページ上部では非表示
-                         */
-
-                        backToTop.classList.remove(
-                            'opacity-100',
-                            'visible',
-                            'translate-y-0'
-                        );
-
-                        backToTop.classList.add(
-                            'opacity-0',
-                            'invisible',
-                            'translate-y-3'
-                        );
-
-                    }
-
-                };
-
-
-                /*
-                 * スクロール時
-                 */
-
-                window.addEventListener(
-                    'scroll',
-                    toggleBackToTop,
-                    { passive: true }
-                );
-
-
-                /*
-                 * ページを開いた直後
-                 */
-
-                toggleBackToTop();
-
+            if (!backToTopButton) {
+                return;
             }
 
-        });
+            let hideTimer = null;
 
+            const HIDE_DELAY = 2500;
+            const SHOW_SCROLL_POSITION = 200;
+
+            function updateButtonVisibility() {
+                if (window.scrollY > SHOW_SCROLL_POSITION) {
+                    backToTopButton.classList.add('is-visible');
+                } else {
+                    backToTopButton.classList.remove('is-visible');
+                    clearTimeout(hideTimer);
+                }
+            }
+
+            function scheduleHide() {
+                clearTimeout(hideTimer);
+
+                hideTimer = setTimeout(() => {
+                    if (window.scrollY > SHOW_SCROLL_POSITION) {
+                        backToTopButton.classList.remove('is-visible');
+                    }
+                }, HIDE_DELAY);
+            }
+
+            window.addEventListener('scroll', () => {
+                updateButtonVisibility();
+
+                if (window.scrollY > SHOW_SCROLL_POSITION) {
+                    scheduleHide();
+                }
+            }, { passive: true });
+
+            ['mousemove', 'mousedown', 'touchstart', 'keydown'].forEach(eventName => {
+                document.addEventListener(eventName, () => {
+                    if (window.scrollY > SHOW_SCROLL_POSITION) {
+                        backToTopButton.classList.add('is-visible');
+                        scheduleHide();
+                    }
+                }, { passive: true });
+            });
+
+            window.scrollToTop = function () {
+                clearTimeout(hideTimer);
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+
+                backToTopButton.classList.remove('is-visible');
+            };
+
+            updateButtonVisibility();
+
+            if (window.scrollY > SHOW_SCROLL_POSITION) {
+                scheduleHide();
+            }
+        });
     </script>
 
 </x-app-layout>

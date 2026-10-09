@@ -368,34 +368,34 @@
 
 
                     <!-- =================================================
-                             通知
-                        ================================================== -->
+                                 通知
+                            ================================================== -->
 
                     <div x-data="{ open: false, unreadCount: {{ Auth::user()->unreadNotifications->count() }} }"
                         class="relative">
 
 
                         <button @click="
-                                    open = !open;
+                                        open = !open;
 
-                                    if (open && unreadCount > 0) {
+                                        if (open && unreadCount > 0) {
 
-                                        fetch(
-                                            '{{ \Illuminate\Support\Facades\Route::has('notifications.readAll') ? route('notifications.readAll') : '#' }}',
-                                            {
-                                                method: 'POST',
+                                            fetch(
+                                                '{{ \Illuminate\Support\Facades\Route::has('notifications.readAll') ? route('notifications.readAll') : '#' }}',
+                                                {
+                                                    method: 'POST',
 
-                                                headers: {
-                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                                    'Content-Type': 'application/json'
+                                                    headers: {
+                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                        'Content-Type': 'application/json'
+                                                    }
+
                                                 }
+                                            )
+                                            .then(() => unreadCount = 0);
 
-                                            }
-                                        )
-                                        .then(() => unreadCount = 0);
-
-                                    }
-                                "
+                                        }
+                                    "
                             class="relative text-gray-300 hover:text-amber-400 p-2 focus:outline-none transition cursor-pointer flex items-center justify-center rounded-full hover:bg-gray-800/60"
                             title="お知らせ">
 
@@ -564,12 +564,12 @@
                                                     <!-- 通知1件 -->
 
                                                     <a href="{{ $targetUrl }}" class="group block relative rounded-xl transition duration-150 overflow-hidden border border-transparent
-                                                                {{
+                                                                                        {{
                                     $isUnread
                                     ? 'bg-[#1a2332]/90'
                                     : 'bg-transparent hover:bg-gray-800/60'
-                                                                }}
-                                                                p-3 no-underline">
+                                                                                        }}
+                                                                                        p-3 no-underline">
 
 
                                                         <div class="flex items-start gap-3">
@@ -578,11 +578,11 @@
                                                             <!-- アイコン -->
 
                                                             <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 border
-                                                                        {{
+                                                                                                {{
                                     $isComment
                                     ? 'bg-amber-500/20 border-amber-500/50 text-amber-400'
                                     : 'bg-red-500/20 border-red-500/50 text-red-500'
-                                                                        }}">
+                                                                                                }}">
 
                                                                 @if($isComment)
 
@@ -677,8 +677,8 @@
 
 
                     <!-- =================================================
-                             マイページ
-                        ================================================== -->
+                                 マイページ
+                            ================================================== -->
 
                     @if(\Illuminate\Support\Facades\Route::has('mypage'))
 
@@ -718,7 +718,7 @@
                                         0,
                                         1
                                     )
-                                                            }}
+                                                                                }}
 
                                             </span>
 
@@ -741,8 +741,8 @@
 
 
                     <!-- =================================================
-                             コミュニティ
-                        ================================================== -->
+                                 コミュニティ
+                            ================================================== -->
 
                     @if(\Illuminate\Support\Facades\Route::has('community.index'))
 
@@ -765,8 +765,8 @@
 
 
                     <!-- =================================================
-                             ログアウト
-                        ================================================== -->
+                                 ログアウト
+                            ================================================== -->
 
                     @if(\Illuminate\Support\Facades\Route::has('logout'))
 
@@ -844,25 +844,25 @@
 
 
                         <button @click="
-                                    open = !open;
+                                        open = !open;
 
-                                    if (open && unreadCount > 0) {
+                                        if (open && unreadCount > 0) {
 
-                                        fetch(
-                                            '{{ \Illuminate\Support\Facades\Route::has('notifications.readAll') ? route('notifications.readAll') : '#' }}',
-                                            {
-                                                method: 'POST',
+                                            fetch(
+                                                '{{ \Illuminate\Support\Facades\Route::has('notifications.readAll') ? route('notifications.readAll') : '#' }}',
+                                                {
+                                                    method: 'POST',
 
-                                                headers: {
-                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                                    'Content-Type': 'application/json'
+                                                    headers: {
+                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                        'Content-Type': 'application/json'
+                                                    }
                                                 }
-                                            }
-                                        )
-                                        .then(() => unreadCount = 0);
+                                            )
+                                            .then(() => unreadCount = 0);
 
-                                    }
-                                " class="relative text-gray-300 hover:text-amber-400 p-2 focus:outline-none">
+                                        }
+                                    " class="relative text-gray-300 hover:text-amber-400 p-2 focus:outline-none">
 
 
                             <i class="fa-solid fa-bell text-lg text-amber-500">
@@ -901,135 +901,99 @@
 
 
                                 @forelse(Auth::user()->notifications->take(5) as $notification)
+                                    @php
+                                        $data = $notification->data ?? [];
 
+                                        $userName = $data['user_nickname']
+                                            ?? $data['sender_nickname']
+                                            ?? $data['user_name']
+                                            ?? $data['sender_name']
+                                            ?? $data['user']['nickname']
+                                            ?? $data['user']['name']
+                                            ?? null;
 
-                                                    @php
+                                        $displayUserName = (
+                                            $userName
+                                            && $userName !== 'ユーザー'
+                                            && $userName !== '匿名ユーザー'
+                                        ) ? $userName : '他の映画ファン';
 
-                                                        $data =
-                                                            $notification->data
-                                                            ?? [];
+                                        $movieTitle = $data['movie_title']
+                                            ?? $data['title']
+                                            ?? $data['movie_name']
+                                            ?? null;
 
-                                                        $userName =
-                                                            $data['user_name']
-                                                            ?? $data['user_nickname']
-                                                            ?? $data['sender_name']
-                                                            ?? $data['sender_nickname']
-                                                            ?? null;
+                                        $movieId = $data['movie_id']
+                                            ?? $data['tmdb_id']
+                                            ?? null;
 
-                                                        $displayUserName =
-                                                            !empty($userName)
-                                                            && $userName !== 'ユーザー'
-                                                            && $userName !== '匿名ユーザー'
-                                                            ? $userName
-                                                            : '他の映画ファン';
+                                        $reviewId = $data['review_id'] ?? null;
 
-                                                        $movieTitle =
-                                                            $data['movie_title']
-                                                            ?? $data['title']
-                                                            ?? $data['movie_name']
-                                                            ?? null;
+                                        $notificationType = strtolower(
+                                            $data['type'] ?? $notification->type ?? ''
+                                        );
 
-                                                        $notificationType =
-                                                            strtolower(
-                                                                $data['type']
-                                                                ?? $notification->type
-                                                                ?? ''
-                                                            );
+                                        $rawMsg = $data['message'] ?? '';
 
-                                                        $rawMsg =
-                                                            $data['message']
-                                                            ?? '';
+                                        $isComment = str_contains($notificationType, 'comment')
+                                            || str_contains($rawMsg, 'コメント');
 
-                                                        $isComment =
-                                                            str_contains(
-                                                                $notificationType,
-                                                                'comment'
-                                                            )
-                                                            ||
-                                                            str_contains(
-                                                                $rawMsg,
-                                                                'コメント'
-                                                            );
+                                        // 通知タップ時の遷移先を決定
+                                        $targetUrl = '#';
 
-                                                    @endphp
+                                        if (!empty($data['url']) && $data['url'] !== '#') {
+                                            $targetUrl = $data['url'];
+                                        } elseif ($movieId) {
+                                            $targetUrl = \Illuminate\Support\Facades\Route::has('movies.show')
+                                                ? route('movies.show', $movieId)
+                                                : url('/movies/' . $movieId);
 
+                                            if ($reviewId) {
+                                                $targetUrl .= '#review-' . $reviewId;
+                                            }
+                                        }
+                                    @endphp
 
-                                                    <div class="text-[11px] text-gray-300 p-2 rounded bg-[#1a2332]/50">
+                                    <a href="{{ $targetUrl }}"
+                                        class="block text-[11px] text-gray-300 p-2 rounded-lg bg-[#1a2332]/60 hover:bg-gray-800 active:bg-gray-700 border border-transparent hover:border-gray-700 transition no-underline"
+                                        @click="open = false">
+                                        <div class="flex items-start gap-2">
+                                            <div
+                                                class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 border {{ $isComment ? 'bg-amber-500/20 border-amber-500/50' : 'bg-red-500/20 border-red-500/50' }}">
+                                                @if($isComment)
+                                                    <i class="fa-solid fa-comment text-amber-400 text-[10px]"></i>
+                                                @else
+                                                    <i class="fa-solid fa-heart text-red-500 text-[10px]"></i>
+                                                @endif
+                                            </div>
 
-                                                        <div class="flex items-start gap-2">
-
-
-                                                            <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 border
-                                                                        {{
-                                    $isComment
-                                    ? 'bg-amber-500/20 border-amber-500/50'
-                                    : 'bg-red-500/20 border-red-500/50'
-                                                                        }}">
-
-                                                                @if($isComment)
-
-                                                                    <i class="fa-solid fa-comment text-amber-400 text-[10px]">
-                                                                    </i>
-
-                                                                @else
-
-                                                                    <i class="fa-solid fa-heart text-red-500 text-[10px]">
-                                                                    </i>
-
-                                                                @endif
-
-                                                            </div>
-
-
-                                                            <div class="leading-relaxed">
-
-                                                                <span class="font-bold text-white">
-
-                                                                    {{ $displayUserName }}
-
-                                                                </span>
-
-                                                                さんが
-
-                                                                @if(
-                                                                        !empty($movieTitle)
-                                                                        && $movieTitle !== '映画'
-                                                                    )
-
-                                                                    <span class="font-bold text-amber-400">
-
-                                                                        『{{ $movieTitle }}』
-
-                                                                    </span>
-
-                                                                @endif
-
-
-                                                                @if($isComment)
-
-                                                                    にコメントしました。
-
-                                                                @else
-
-                                                                    に「いいね！」しました。
-
-                                                                @endif
-
-                                                            </div>
-
-                                                        </div>
-
-                                                    </div>
-
-
+                                            <div class="min-w-0 flex-1 leading-relaxed">
+                                                <div>
+                                                    <span class="font-bold text-white">{{ $displayUserName }}</span>
+                                                    さんが
+                                                    @if(!empty($movieTitle) && $movieTitle !== '映画')
+                                                        <span class="font-bold text-amber-400">『{{ $movieTitle }}』</span>
+                                                    @endif
+                                                    @if($isComment)
+                                                        にコメントしました。
+                                                    @else
+                                                        に「いいね！」しました。
+                                                    @endif
+                                                </div>
+                                                <div class="flex items-center justify-between text-[10px] text-gray-500 mt-1">
+                                                    <span>{{ $notification->created_at?->diffForHumans() }}</span>
+                                                    @if(is_null($notification->read_at))
+                                                        <span class="text-amber-400">● 未読</span>
+                                                    @endif
+                                                    <i class="fa-solid fa-chevron-right ml-1"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </a>
                                 @empty
-
                                     <div class="text-[11px] text-gray-500 p-2 text-center">
-
                                         お知らせはありません
-
                                     </div>
-
                                 @endforelse
 
                             </div>
@@ -1365,15 +1329,15 @@
 
 
             <!-- =================================================
-                     POPULAR MOVIES
-                ================================================== -->
+                         POPULAR MOVIES
+                    ================================================== -->
 
             <div class="popular-movies-area border-b border-gray-900 bg-black">
 
 
                 <!-- =================================================
-                         タイトル
-                    ================================================== -->
+                             タイトル
+                        ================================================== -->
 
                 <div class="w-full text-center mb-1.5 px-4">
 
@@ -1394,8 +1358,8 @@
 
 
                 <!-- =================================================
-                         ポスター横スクロール
-                    ================================================== -->
+                             ポスター横スクロール
+                        ================================================== -->
 
                 <div class="popular-movies-track-wrapper">
 
@@ -1426,8 +1390,8 @@
 
 
                                     <!-- =================================================
-                                                 ポスター
-                                            ================================================== -->
+                                                                 ポスター
+                                                            ================================================== -->
 
                                     <a href="{{ $movieShowUrl }}" class="popular-movie-card group no-underline">
 
@@ -1455,8 +1419,8 @@
 
 
                                         <!-- =================================================
-                                                     評価
-                                                ================================================== -->
+                                                                     評価
+                                                                ================================================== -->
 
                                         <div
                                             class="absolute top-1 right-1 bg-black/85 border border-amber-500/80 text-amber-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full backdrop-blur-sm">
@@ -1473,7 +1437,7 @@
                                 1
                             )
                             : '-'
-                                                    }}
+                                                                    }}
 
                                         </div>
 

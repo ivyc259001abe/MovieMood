@@ -410,11 +410,11 @@
                                 @if (Route::has('password.request'))
 
                                     <a href="{{ route('password.request') }}" style="
-                                                    font-size: 10px;
-                                                    color: #9ca3af;
-                                                    text-decoration: none;
-                                                    transition: color 0.2s;
-                                                " onmouseover="this.style.color='#f59e0b'"
+                                                        font-size: 10px;
+                                                        color: #9ca3af;
+                                                        text-decoration: none;
+                                                        transition: color 0.2s;
+                                                    " onmouseover="this.style.color='#f59e0b'"
                                         onmouseout="this.style.color='#9ca3af'">
                                         パスワードをお忘れですか？
                                     </a>
@@ -548,28 +548,28 @@
         @if(!empty($popularMovies) && count($popularMovies) > 0)
 
             <div class="popular-movies-section" style="
-                            width: 100%;
-                            flex: 0 0 auto;
-                            background-color: #000000;
-                            border-top: 1px solid #111827;
-                            box-sizing: border-box;
-                            overflow: hidden;
-                            clear: both;
-                        ">
+                                width: 100%;
+                                flex: 0 0 auto;
+                                background-color: #000000;
+                                border-top: 1px solid #111827;
+                                box-sizing: border-box;
+                                overflow: hidden;
+                                clear: both;
+                            ">
 
                 <!-- 見出し -->
                 <div style="
-                            padding-top: 9px;
-                            padding-bottom: 7px;
-                            text-align: center;
-                        ">
+                                padding-top: 9px;
+                                padding-bottom: 7px;
+                                text-align: center;
+                            ">
 
                     <span style="
-                                font-size: 10px;
-                                font-weight: 800;
-                                color: #9ca3af;
-                                letter-spacing: 0.12em;
-                            ">
+                                    font-size: 10px;
+                                    font-weight: 800;
+                                    color: #9ca3af;
+                                    letter-spacing: 0.12em;
+                                ">
                         POPULAR MOVIES
                     </span>
 
@@ -577,26 +577,26 @@
 
 
                 <!-- =================================================
-                             ポスター横スクロール
-                        ================================================== -->
+                                 ポスター横スクロール
+                            ================================================== -->
 
                 <div style="
-                            width: 100%;
-                            overflow: hidden;
-                            white-space: nowrap;
-                            display: block;
-                            pointer-events: none;
-                            user-select: none;
-                            box-sizing: border-box;
-                        ">
+                                width: 100%;
+                                overflow: hidden;
+                                white-space: nowrap;
+                                display: block;
+                                pointer-events: none;
+                                user-select: none;
+                                box-sizing: border-box;
+                            ">
 
                     <div class="infinite-scroll-track" style="
-                                    display: flex;
-                                    width: max-content;
-                                    gap: 8px;
-                                    animation: loop-scroll 120s linear infinite;
-                                    will-change: transform;
-                                ">
+                                        display: flex;
+                                        width: max-content;
+                                        gap: 8px;
+                                        animation: loop-scroll 120s linear infinite;
+                                        will-change: transform;
+                                    ">
 
                         @php
                             $loopMovies = array_merge(
@@ -609,26 +609,26 @@
                         @foreach($loopMovies as $movie)
 
                             <div style="
-                                                flex: 0 0 110px;
-                                                width: 110px;
-                                                height: 150px;
-                                                background-color: #111827;
-                                                border-radius: 6px;
-                                                overflow: hidden;
-                                                border: 1px solid #1f2937;
-                                                position: relative;
-                                                box-sizing: border-box;
-                                            ">
+                                                        flex: 0 0 110px;
+                                                        width: 110px;
+                                                        height: 150px;
+                                                        background-color: #111827;
+                                                        border-radius: 6px;
+                                                        overflow: hidden;
+                                                        border: 1px solid #1f2937;
+                                                        position: relative;
+                                                        box-sizing: border-box;
+                                                    ">
 
                                 @if(!empty($movie['poster_path']))
 
                                     <img src="https://image.tmdb.org/t/p/w300{{ $movie['poster_path'] }}"
                                         alt="{{ $movie['title'] ?? 'Movie' }}" style="
-                                                                    width: 110px;
-                                                                    height: 150px;
-                                                                    object-fit: cover;
-                                                                    display: block;
-                                                                ">
+                                                                                width: 110px;
+                                                                                height: 150px;
+                                                                                object-fit: cover;
+                                                                                display: block;
+                                                                            ">
 
                                 @endif
 
@@ -637,22 +637,22 @@
                                 @if(isset($movie['vote_average']) && $movie['vote_average'] > 0)
 
                                     <div style="
-                                                                position: absolute;
-                                                                top: 4px;
-                                                                right: 4px;
-                                                                z-index: 50;
-                                                                background-color: rgba(0,0,0,0.85);
-                                                                border: 1px solid rgba(245,158,11,0.8);
-                                                                color: #fbbf24;
-                                                                font-size: 9px;
-                                                                font-weight: 800;
-                                                                padding: 2px 5px;
-                                                                border-radius: 9999px;
-                                                                line-height: 1;
-                                                                display: flex;
-                                                                align-items: center;
-                                                                gap: 2px;
-                                                            ">
+                                                                            position: absolute;
+                                                                            top: 4px;
+                                                                            right: 4px;
+                                                                            z-index: 50;
+                                                                            background-color: rgba(0,0,0,0.85);
+                                                                            border: 1px solid rgba(245,158,11,0.8);
+                                                                            color: #fbbf24;
+                                                                            font-size: 9px;
+                                                                            font-weight: 800;
+                                                                            padding: 2px 5px;
+                                                                            border-radius: 9999px;
+                                                                            line-height: 1;
+                                                                            display: flex;
+                                                                            align-items: center;
+                                                                            gap: 2px;
+                                                                        ">
                                         ★ {{ number_format((float) $movie['vote_average'], 1) }}
                                     </div>
 
@@ -685,21 +685,21 @@
 
                 <!-- コピーライト -->
                 <footer style="
-                            width: 100%;
-                            text-align: center;
-                            padding: 8px 0;
-                            margin-top: 8px;
-                            background-color: #000000;
-                            border-top: 1px solid #111827;
-                            box-sizing: border-box;
-                        ">
+                                width: 100%;
+                                text-align: center;
+                                padding: 8px 0;
+                                margin-top: 8px;
+                                background-color: #000000;
+                                border-top: 1px solid #111827;
+                                box-sizing: border-box;
+                            ">
 
                     <p style="
-                                font-size: 10px;
-                                color: #6b7280;
-                                margin: 0;
-                                font-family: sans-serif;
-                            ">
+                                    font-size: 10px;
+                                    color: #6b7280;
+                                    margin: 0;
+                                    font-family: sans-serif;
+                                ">
                         &copy; {{ date('Y') }} MovieMood. All rights reserved.
                     </p>
 
@@ -711,20 +711,20 @@
 
             <!-- ポスターがない場合でもフッターを横幅100%にする -->
             <footer style="
-                        width: 100%;
-                        text-align: center;
-                        padding: 8px 0;
-                        background-color: #000000;
-                        border-top: 1px solid #111827;
-                        box-sizing: border-box;
-                    ">
+                            width: 100%;
+                            text-align: center;
+                            padding: 8px 0;
+                            background-color: #000000;
+                            border-top: 1px solid #111827;
+                            box-sizing: border-box;
+                        ">
 
                 <p style="
-                            font-size: 10px;
-                            color: #6b7280;
-                            margin: 0;
-                            font-family: sans-serif;
-                        ">
+                                font-size: 10px;
+                                color: #6b7280;
+                                margin: 0;
+                                font-family: sans-serif;
+                            ">
                     &copy; {{ date('Y') }} MovieMood. All rights reserved.
                 </p>
 
@@ -739,33 +739,26 @@
          レスポンシブ
     ========================================================== -->
 
+    ```html
     <style>
-        /*
-         * PC
-         * 左：MovieMood
-         * 右：ログイン
-         */
+        /* PC：左に紹介、右にログイン */
         @media (min-width: 901px) {
-
             .login-main {
                 flex-direction: row;
+                align-items: center;
             }
-
         }
 
-
-        /*
-         * タブレット・スマートフォン
-         */
+        /* タブレット・スマートフォン */
         @media (max-width: 900px) {
-
             .login-main {
                 flex-direction: column;
                 align-items: center;
-                padding-top: 35px;
-                padding-bottom: 25px;
+                justify-content: flex-start;
+                padding: 28px 20px 24px !important;
             }
 
+            /* スマホでは紹介文を隠し、ログインを優先 */
             .login-intro {
                 display: none !important;
             }
@@ -773,27 +766,49 @@
             .login-card-wrapper {
                 width: 100% !important;
                 max-width: 390px !important;
-                flex: 0 0 auto !important;
+                flex: 0 1 auto !important;
                 margin: 0 auto !important;
             }
-
         }
 
-
-        /*
-         * スマートフォン
-         */
+        /* スマートフォン */
         @media (max-width: 640px) {
-
             .login-main {
-                padding-left: 16px !important;
-                padding-right: 16px !important;
+                padding: 22px 14px 24px !important;
             }
 
             .login-card-wrapper {
+                width: 100% !important;
                 max-width: 360px !important;
             }
 
+            /* ログインカードの内側の余白を調整 */
+            .login-card-wrapper>div:nth-child(2) {
+                padding: 22px 18px !important;
+                border-radius: 14px !important;
+            }
+
+            /* スマホでの文字の折り返しを防ぎやすくする */
+            .login-card-wrapper label {
+                line-height: 1.6;
+            }
+
+            /* 入力欄・ボタンを押しやすくする */
+            .login-card-wrapper input[type="email"],
+            .login-card-wrapper input[type="password"] {
+                min-width: 0;
+                font-size: 16px !important;
+            }
+
+            .login-card-wrapper button[type="submit"] {
+                min-height: 46px;
+            }
+
+            /* ページ全体の横はみ出しを防ぐ */
+            .popular-movies-section {
+                max-width: 100%;
+                overflow: hidden;
+            }
         }
     </style>
 

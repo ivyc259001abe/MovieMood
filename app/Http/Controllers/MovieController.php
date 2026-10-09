@@ -233,7 +233,10 @@ class MovieController extends Controller
     }
 
     /**
-     * 検索＆Mood絞り込み処理（ランダム6作品抽出対応）
+     * 検索＆Mood絞り込み処理
+     *
+     * ・キーワード検索 → 最大6作品
+     * ・Mood検索 → 選択した感情に合う映画を6作品
      */
     public function search(Request $request)
     {
@@ -242,46 +245,128 @@ class MovieController extends Controller
 
         $movies = [];
 
-        // 1. キーワード検索
+        // =========================================================
+        // 🔍 1. キーワード検索
+        // =========================================================
+
         if ($query) {
-            $data = $this->fetchFromTmdb('/search/movie', ['query' => $query, 'page' => 1]);
-            $movies = array_slice($data['results'] ?? [], 0, 6);
+
+            $data = $this->fetchFromTmdb('/search/movie', [
+                'query' => $query,
+                'page' => 1,
+            ]);
+
+            // 検索結果から最大6作品
+            $movies = array_slice(
+                $data['results'] ?? [],
+                0,
+                6
+            );
         }
-        // 2. 感情（Mood）タグ検索（ランダム1～10ページから抽出して6件に限定）
+
+        // =========================================================
+        // 🎭 2. Mood検索
+        //
+        // HOMEの4つの感情
+        //
+        // 😭 号泣     → Drama
+        // 😆 スカッと → Action
+        // 😱 ハラハラ → Thriller
+        // 💖 キュン   → Romance
+        // =========================================================
         elseif ($mood) {
+
             $genreMap = [
-                '号泣' => 18,    // Drama
-                'スカッと' => 28,  // Action
-                'ハラハラ' => 53,  // Thriller
-                'キュン' => 10749, // Romance
+                '号泣' => 18,
+                'スカッと' => 28,
+                'ハラハラ' => 53,
+                'キュン' => 10749,
             ];
 
             $genreId = $genreMap[$mood] ?? null;
 
+            // =====================================================
+            // Moodが正しい場合
+            // =====================================================
+
             if ($genreId) {
+
+                /*
+                 * TMDBの1～10ページからランダムに1ページ取得。
+                 * 同じMoodでもアクセスするたびに
+                 * 少し違う作品が表示されるようにする。
+                 */
                 $randomPage = rand(1, 10);
+
                 $data = $this->fetchFromTmdb('/discover/movie', [
                     'with_genres' => $genreId,
                     'sort_by' => 'popularity.desc',
                     'page' => $randomPage,
+                    'include_adult' => false,
+                    'include_video' => false,
                 ]);
 
                 $allFetched = $data['results'] ?? [];
-                // シャッフルしてランダムに6件を取得
+
+                /*
+                 * 取得した作品をシャッフル。
+                 */
                 shuffle($allFetched);
-                $movies = array_slice($allFetched, 0, 6);
-            } else {
-                $movies = array_slice($this->getPopularMovies(), 0, 6);
+
+                /*
+                 * その中から最大6作品を表示。
+                 */
+                $movies = array_slice(
+                    $allFetched,
+                    0,
+                    6
+                );
             }
-        } else {
-            $movies = array_slice($this->getPopularMovies(), 0, 6);
+
+            // =====================================================
+            // 不正なMoodの場合
+            // =====================================================
+            else {
+
+                $movies = array_slice(
+                    $this->getPopularMovies(),
+                    0,
+                    6
+                );
+            }
         }
+
+        // =========================================================
+        // ⭐ 3. 検索条件がない場合
+        // =========================================================
+        else {
+
+            $movies = array_slice(
+                $this->getPopularMovies(),
+                0,
+                6
+            );
+        }
+
+        // =========================================================
+        // ⭐ 共通POPULAR MOVIES
+        //
+        // app.blade.phpの下部で使用
+        // =========================================================
 
         $popularMovies = $this->getPopularMovies();
 
-        return view('result', compact('movies', 'query', 'mood', 'popularMovies'));
-    }
+        // =========================================================
+        // 📺 検索結果画面へ
+        // =========================================================
 
+        return view('result', compact(
+            'movies',
+            'query',
+            'mood',
+            'popularMovies'
+        ));
+    }
     /**
      * 映画詳細画面を表示
      */
