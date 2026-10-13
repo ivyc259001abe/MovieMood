@@ -8,37 +8,46 @@
 
     <title>{{ config('app.name', 'MovieMood') }}</title>
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,800&display=swap" rel="stylesheet" />
-
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
         /* =========================================================
-           MovieMood ロゴ
-           ログイン前・ログイン後で共通
+           MovieMood ロゴスタイル（3枚目のスタイリッシュ極太ツートンに固定）
         ========================================================== */
-
         .moviemood-logo {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 24px;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+            font-size: 28px;
             font-weight: 900;
-            letter-spacing: -0.04em;
+            letter-spacing: -0.03em;
             line-height: 1;
-            color: #f59e0b;
             text-decoration: none;
             white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
         }
 
-        .moviemood-logo:hover {
+        .moviemood-logo .logo-movie {
+            color: #f59e0b;
+            transition: color 0.2s;
+        }
+
+        .moviemood-logo .logo-mood {
             color: #fbbf24;
+            transition: color 0.2s;
+        }
+
+        .moviemood-logo:hover .logo-movie {
+            color: #d97706;
+        }
+
+        .moviemood-logo:hover .logo-mood {
+            color: #f59e0b;
         }
 
         @media (max-width: 639px) {
             .moviemood-logo {
-                font-size: 21px;
+                font-size: 24px;
             }
         }
     </style>
@@ -49,21 +58,19 @@
         padding: 0;
         background-color: #000000;
         color: #ffffff;
-        font-family: sans-serif;
+        font-family: ui-sans-serif, system-ui, sans-serif;
         min-height: 100vh;
     ">
 
     <!-- =========================================================
-         ヘッダー
-         MovieMoodのロゴのみ表示
-         ※キャッチコピーはログイン画面本体側に任せる
+         ヘッダー（スタイリッシュ超極太ツートンロゴ）
     ========================================================== -->
 
     <header style="
             width: 100%;
             border-bottom: 1px solid #1f2937;
             background-color: #000000;
-            padding: 20px 32px;
+            padding: 18px 32px;
             box-sizing: border-box;
         ">
 
@@ -75,27 +82,8 @@
             ">
 
             <!-- MovieMood ロゴ -->
-
-            <a href="/" class="moviemood-logo" style="
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                " title="HOME画面へ戻る">
-
-                <svg style="
-                        width: 30px;
-                        height: 30px;
-                        fill: #f59e0b;
-                        flex-shrink: 0;
-                    " viewBox="0 0 24 24" aria-hidden="true">
-
-                    <path
-                        d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4h-2l2 4H9L7 4H5L3 8V4H1v16h22V4h-5zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-8v-2h8v2zm0-4h-8v-2h8v2zm0-4h-8V7h8v2z" />
-
-                </svg>
-
-                <span>MovieMood</span>
-
+            <a href="/" class="moviemood-logo" title="HOME画面へ戻る">
+                <span class="logo-movie">Movie</span><span class="logo-mood">Mood</span>
             </a>
 
         </div>

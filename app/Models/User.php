@@ -9,23 +9,23 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * 一括代入が可能な属性
      *
      * @var list<string>
      */
     protected $fillable = [
         'name',
+        'nickname',
         'email',
         'password',
         'avatar',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * シリアライズ時に隠す属性
      *
      * @var list<string>
      */
@@ -35,7 +35,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * 属性の型変換
      *
      * @return array<string, string>
      */

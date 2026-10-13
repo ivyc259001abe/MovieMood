@@ -1,10 +1,297 @@
 <x-app-layout>
+    <script>
+        (function () {
+            'use strict';
+
+            const watchedTags = [
+                { value: '号泣', label: '😭 #号泣' },
+                { value: 'スカッと', label: '✨ #スカッと' },
+                { value: 'ハラハラ', label: '😱 #ハラハラ' },
+                { value: 'キュン', label: '💗 #キュン' }
+            ];
+
+            const wantTags = [
+                { value: '号泣しそう', label: '😭 #号泣しそう' },
+                { value: 'スカッとしそう', label: '✨ #スカッとしそう' },
+                { value: 'ハラハラしそう', label: '😱 #ハラハラしそう' },
+                { value: 'キュンとしそう', label: '💗 #キュンとしそう' }
+            ];
+
+            const watchedMessages = [
+                { min: 9, text: '🌟 最高！何度でも観たい！' },
+                { min: 8, text: '✨ 超おすすめ！観て後悔なし' },
+                { min: 7, text: '😊 おすすめ！観てよかった' },
+                { min: 6, text: '👍 なかなか楽しめた！' },
+                { min: 5, text: '🙂 まずまず楽しめた' },
+                { min: 4, text: '🤔 好みが分かれそう' },
+                { min: 3, text: '💭 少し物足りなかった' },
+                { min: 2, text: '😔 あまり合わなかった' },
+                { min: 1, text: '💧 自分には合わなかった' }
+            ];
+
+            const wantMessages = [
+                { min: 9, text: '💖 絶対に観たい！期待大！' },
+                { min: 8, text: '✨ かなり期待している！' },
+                { min: 7, text: '🍿 観るのが楽しみ！' },
+                { min: 6, text: '😊 面白そうで気になる！' },
+                { min: 5, text: '👀 まずはチェックしたい' },
+                { min: 4, text: '🤔 時間があれば観たい' },
+                { min: 3, text: '💭 少し気になっている' },
+                { min: 2, text: '🌱 まだ迷っている' },
+                { min: 1, text: '📝 これから検討したい' }
+            ];
+
+            let currentStatus = 'watched';
+            let selectedMoods = [];
+
+            function getElement(id) {
+                return document.getElementById(id);
+            }
+
+            function getMessage(rating, messages) {
+                for (const item of messages) {
+                    if (rating >= item.min) {
+                        return item.text;
+                    }
+                }
+                return messages[messages.length - 1].text;
+            }
+
+            function updateRatingDisplay(slider) {
+                const ratingSlider = slider || getElement('ratingSlider');
+                if (!ratingSlider) return;
+
+                const rating = Number(ratingSlider.value);
+                const isWant = currentStatus === 'want_to_watch';
+                const color = isWant ? '#a855f7' : '#f59e0b';
+                const percentage = ((rating - 1) / 9) * 100;
+
+                const ratingValue = getElement('ratingValue');
+                const ratingLabel = getElement('ratingLabel');
+                const ratingValueWrapper = getElement('ratingValueWrapper');
+                const ratingIcon = getElement('ratingIcon');
+
+                if (ratingValue) {
+                    ratingValue.textContent = rating.toFixed(1);
+                }
+
+                if (ratingLabel) {
+                    ratingLabel.textContent = getMessage(
+                        rating,
+                        isWant ? wantMessages : watchedMessages
+                    );
+                    ratingLabel.style.color = color;
+                }
+
+                if (ratingValueWrapper) {
+                    ratingValueWrapper.style.color = color;
+                }
+
+                if (ratingIcon) {
+                    ratingIcon.className = isWant
+                        ? 'fa-solid fa-heart text-[10px]'
+                        : 'fa-solid fa-star text-[10px]';
+                    ratingIcon.style.color = color;
+                }
+
+                ratingSlider.style.background =
+                    `linear-gradient(to right, ${color} ${percentage}%, #374151 ${percentage}%)`;
+
+                ratingSlider.style.setProperty('--slider-thumb-color', color);
+            }
+
+            function renderMoodTags() {
+                const container = getElement('moodTagContainer');
+                const hiddenContainer = getElement('selectedMoodsInputContainer');
+                const countText = getElement('tagCountText');
+
+                if (!container || !hiddenContainer) return;
+
+                const tags = currentStatus === 'want_to_watch'
+                    ? wantTags
+                    : watchedTags;
+
+                container.replaceChildren();
+                hiddenContainer.replaceChildren();
+
+                tags.forEach(function (tag) {
+                    const isSelected = selectedMoods.includes(tag.value);
+
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.textContent = tag.label;
+
+                    button.className =
+                        'rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition cursor-pointer ' +
+                        (isSelected
+                            ? currentStatus === 'want_to_watch'
+                                ? 'bg-purple-500/20 border-purple-400 text-purple-300'
+                                : 'bg-amber-500/20 border-amber-400 text-amber-300'
+                            : 'bg-gray-800/70 border-gray-700 text-gray-400 hover:text-white');
+
+                    button.setAttribute('aria-pressed', String(isSelected));
+
+                    button.addEventListener('click', function () {
+                        const index = selectedMoods.indexOf(tag.value);
+
+                        if (index !== -1) {
+                            selectedMoods.splice(index, 1);
+                        } else {
+                            if (selectedMoods.length >= 4) {
+                                return;
+                            }
+                            selectedMoods.push(tag.value);
+                        }
+
+                        renderMoodTags();
+                    });
+
+                    container.appendChild(button);
+
+                    if (isSelected) {
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'moods[]';
+                        hiddenInput.value = tag.value;
+
+                        hiddenContainer.appendChild(hiddenInput);
+                    }
+                });
+
+                if (countText) {
+                    countText.textContent = selectedMoods.length + '/4';
+                    countText.style.color =
+                        currentStatus === 'want_to_watch' ? '#c084fc' : '#fbbf24';
+                }
+            }
+
+            function switchStatus(status) {
+                if (status !== 'watched' && status !== 'want_to_watch') {
+                    return;
+                }
+
+                currentStatus = status;
+
+                const isWant = status === 'want_to_watch';
+                const color = isWant ? '#a855f7' : '#f59e0b';
+
+                const statusInput = getElement('review_status');
+                const tabWatched = getElement('tabWatched');
+                const tabWant = getElement('tabWantToWatch');
+                const ratingTitle = getElement('ratingTitle');
+                const moodTagLabel = getElement('moodTagLabel');
+                const commentLabel = getElement('commentLabel');
+                const comment = getElement('comment');
+                const submitBtn = getElement('submitBtn');
+                const submitBtnText = getElement('submitBtnText');
+
+                if (statusInput) {
+                    statusInput.value = status;
+                }
+
+                if (tabWatched) {
+                    tabWatched.className =
+                        'py-1.5 text-center text-xs font-bold rounded-lg transition duration-200 flex items-center justify-center gap-1 cursor-pointer ' +
+                        (!isWant
+                            ? 'bg-amber-500 text-black shadow-md'
+                            : 'text-gray-400 hover:text-white');
+                    tabWatched.setAttribute('aria-pressed', String(!isWant));
+                }
+
+                if (tabWant) {
+                    tabWant.className =
+                        'py-1.5 text-center text-xs font-bold rounded-lg transition duration-200 flex items-center justify-center gap-1 cursor-pointer ' +
+                        (isWant
+                            ? 'bg-purple-500 text-white shadow-md'
+                            : 'text-gray-400 hover:text-white');
+                    tabWant.setAttribute('aria-pressed', String(isWant));
+                }
+
+                if (ratingTitle) {
+                    ratingTitle.textContent = isWant
+                        ? '期待度（1.0 〜 10.0）'
+                        : '評価（1.0 〜 10.0）';
+                }
+
+                if (moodTagLabel) {
+                    moodTagLabel.textContent = isWant
+                        ? '観る前の期待タグ（最大4つ選択可）'
+                        : '観たあとの気分タグ（最大4つ選択可）';
+                }
+
+                if (commentLabel) {
+                    commentLabel.textContent = isWant
+                        ? '期待・気になるポイント'
+                        : 'レビュー感想コメント';
+                }
+
+                if (comment) {
+                    comment.placeholder = isWant
+                        ? 'この映画で気になっていることや、期待しているポイントを書いてみましょう...'
+                        : 'この映画を観た感想や見どころを書いてみましょう...';
+                }
+
+                if (submitBtn) {
+                    submitBtn.className =
+                        'w-full font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition shadow-lg flex items-center justify-center gap-1.5 cursor-pointer ' +
+                        (isWant
+                            ? 'bg-purple-500 hover:bg-purple-400 text-white'
+                            : 'bg-amber-500 hover:bg-amber-400 text-black');
+                }
+
+                if (submitBtnText) {
+                    submitBtnText.textContent = isWant
+                        ? '期待メモを投稿する'
+                        : 'レビューを投稿する';
+                }
+
+                const ratingSlider = getElement('ratingSlider');
+
+                if (ratingSlider) {
+                    ratingSlider.style.setProperty(
+                        '--slider-thumb-color',
+                        color
+                    );
+                }
+
+                selectedMoods = [];
+                renderMoodTags();
+                updateRatingDisplay(ratingSlider);
+            }
+
+            window.switchStatus = switchStatus;
+            window.updateRatingDisplay = updateRatingDisplay;
+
+            function initialize() {
+                const statusInput = getElement('review_status');
+                const ratingSlider = getElement('ratingSlider');
+
+                if (!statusInput || !ratingSlider) {
+                    return;
+                }
+
+                if (ratingSlider.dataset.moodInitialized === 'true') {
+                    return;
+                }
+
+                ratingSlider.dataset.moodInitialized = 'true';
+
+                const initialStatus = statusInput.value === 'want_to_watch'
+                    ? 'want_to_watch'
+                    : 'watched';
+
+                switchStatus(initialStatus);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initialize);
+            } else {
+                initialize();
+            }
+        })();
+    </script>
 
     <style>
-        /* =========================================================
-           MovieMood 共通カラー
-        ========================================================= */
-
         :root {
             --mood-gold: #f59e0b;
             --mood-gold-light: #fbbf24;
@@ -12,10 +299,7 @@
             --mood-purple-light: #c084fc;
         }
 
-        /* =========================================================
-           スライダー
-        ========================================================= */
-
+        /* 評価スライダー */
         input[type="range"] {
             -webkit-appearance: none;
             appearance: none;
@@ -30,7 +314,7 @@
             width: 18px;
             height: 18px;
             border-radius: 50%;
-            background: #ffffff;
+            background: #fff;
             border: 2px solid #f59e0b;
             cursor: pointer;
             box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
@@ -45,15 +329,17 @@
             width: 18px;
             height: 18px;
             border-radius: 50%;
-            background: #ffffff;
+            background: #fff;
             border: 2px solid #f59e0b;
             cursor: pointer;
             box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
         }
 
-        /* =========================================================
-           カスタムスクロールバー
-        ========================================================= */
+        /* 共通スクロールバー */
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #374151 #0b0e14;
+        }
 
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
@@ -73,59 +359,44 @@
             background: #f59e0b;
         }
 
-        .custom-scrollbar {
-            scrollbar-width: thin;
-            scrollbar-color: #374151 #0b0e14;
+        /* 通知・ターゲットハイライト（発光アニメーション） */
+        [id^="review-"] {
+            scroll-margin-top: 110px;
         }
 
-        
-/* =========================================================
-   レビューのハイライト
-========================================================= */
+        @keyframes review-gold-glow {
+            0% {
+                background-color: rgba(245, 158, 11, 0.35);
+                border-color: #f59e0b;
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.9);
+                outline: 2px solid #f59e0b;
+                outline-offset: 3px;
+            }
 
-/* 移動先のレビューがヘッダーに隠れないようにする */
-[id^="review-"] {
-    scroll-margin-top: 110px;
-}
+            35% {
+                background-color: rgba(245, 158, 11, 0.2);
+                border-color: #fbbf24;
+                box-shadow: 0 0 30px 8px rgba(245, 158, 11, 0.55);
+                outline: 2px solid #fbbf24;
+                outline-offset: 3px;
+            }
 
-/* レビューカード全体を金色に光らせる */
-@keyframes review-gold-glow {
-    0% {
-        background-color: rgba(245, 158, 11, 0.35);
-        border-color: #f59e0b;
-        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.9);
-        outline: 2px solid #f59e0b;
-        outline-offset: 3px;
-    }
+            100% {
+                background-color: #121824;
+                border-color: #1f2937;
+                box-shadow: 0 0 0 0 transparent;
+                outline-color: transparent;
+                outline-offset: 0;
+            }
+        }
 
-    35% {
-        background-color: rgba(245, 158, 11, 0.2);
-        border-color: #fbbf24;
-        box-shadow: 0 0 30px 8px rgba(245, 158, 11, 0.55);
-        outline: 2px solid #fbbf24;
-        outline-offset: 3px;
-    }
+        [id^="review-"].review-target-highlight {
+            animation: review-gold-glow 3.5s ease-in-out;
+            position: relative;
+            z-index: 10;
+        }
 
-    100% {
-        background-color: #121824;
-        border-color: #1f2937;
-        box-shadow: 0 0 0 0 transparent;
-        outline-color: transparent;
-        outline-offset: 0;
-    }
-}
-
-/* 対象のレビューカードだけにアニメーションを適用 */
-[id^="review-"].review-target-highlight {
-    animation: review-gold-glow 3.5s ease-in-out;
-    position: relative;
-    z-index: 10;
-}
-
-        /* =========================================================
-           ユーザーアイコン
-        ========================================================= */
-
+        /* ユーザーアイコン（中央揃えのズレ解消） */
         .review-avatar {
             width: 32px;
             height: 32px;
@@ -136,8 +407,11 @@
             border-radius: 9999px;
             object-fit: cover;
             object-position: center;
-            display: block;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
             flex-shrink: 0;
+            line-height: 1 !important;
         }
 
         @media (max-width: 639px) {
@@ -151,466 +425,74 @@
             }
         }
 
-        
-/* =========================================================
-   PC表示：左右のカードの高さを揃える
-========================================================= */
-
-@media (min-width: 1024px) {
-
-    /* 左右のカードを同じ行の高さに合わせる */
-    .movie-review-grid {
-        align-items: stretch;
-    }
-
-    /* 左右のカード */
-    .movie-info-card,
-    .review-post-card {
-        align-self: stretch;
-        min-width: 0;
-        min-height: 0;
-        height: auto;
-        box-sizing: border-box;
-    }
-
-    /* 左側の映画情報カードを縦方向に伸ばす */
-    .movie-info-card {
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* ポスターと映画情報を横並びにする */
-    .movie-info-inner {
-        display: grid;
-        grid-template-columns: 180px minmax(0, 1fr);
-        align-items: stretch;
-        flex: 1 1 auto;
-        min-width: 0;
-        min-height: 0;
-        height: auto;
-    }
-
-    /* ポスター側 */
-    .poster-column {
-        display: flex;
-        flex-direction: column;
-        align-self: stretch;
-        min-width: 0;
-        min-height: 0;
-        height: 100%;
-    }
-
-    /* シェア・TMDBボタン */
-    .poster-share {
-        margin-top: 8px;
-    }
-
-    /* 映画情報側 */
-    .movie-info-inner > div:last-child {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        min-height: 0;
-    }
-
-    /* あらすじセクション */
-    .movie-story-section {
-        display: flex;
-        flex-direction: column;
-        flex: 1 1 auto;
-        min-width: 0;
-        min-height: 0;
-    }
-
-    /* 右側のレビュー投稿カード */
-    .review-post-card {
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* レビュー投稿フォームをカード内で伸ばす */
-    .review-post-card > form {
-        display: flex;
-        flex-direction: column;
-        flex: 1 1 auto;
-        min-height: 0;
-    }
-}
-
-/* =========================================================
-   あらすじ：画面幅に関係なく高さを固定してスクロール
-========================================================= */
-
-.movie-story-box {
-    height: 192px;
-    min-height: 192px;
-    max-height: 192px;
-    flex: 0 0 192px;
-    overflow-x: hidden;
-    overflow-y: auto;
-    box-sizing: border-box;
-    padding-right: 8px;
-    scrollbar-width: thin;
-    scrollbar-color: #475569 #1a2332;
-}
-
-/* Chrome・Edge用スクロールバー */
-.movie-story-box::-webkit-scrollbar {
-    width: 6px;
-}
-
-.movie-story-box::-webkit-scrollbar-track {
-    background: #1a2332;
-    border-radius: 8px;
-}
-
-.movie-story-box::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 8px;
-}
-
-.movie-story-box::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
-}```html
-<style>
-    /* =========================================================
-       MovieMood 共通カラー
-    ========================================================= */
-
-    :root {
-        --mood-gold: #f59e0b;
-        --mood-gold-light: #fbbf24;
-        --mood-purple: #a855f7;
-        --mood-purple-light: #c084fc;
-    }
-
-    /* =========================================================
-       評価スライダー
-    ========================================================= */
-
-    input[type="range"] {
-        -webkit-appearance: none;
-        appearance: none;
-        background: linear-gradient(to right, #f59e0b 77.7%, #374151 77.7%);
-        border-radius: 8px;
-        outline: none;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: #ffffff;
-        border: 2px solid #f59e0b;
-        cursor: pointer;
-        box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
-        transition: transform 0.1s ease;
-    }
-
-    input[type="range"]::-webkit-slider-thumb:hover {
-        transform: scale(1.2);
-    }
-
-    input[type="range"]::-moz-range-thumb {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: #ffffff;
-        border: 2px solid #f59e0b;
-        cursor: pointer;
-        box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
-    }
-
-    /* =========================================================
-       共通スクロールバー
-    ========================================================= */
-
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: #0b0e14;
-        border-radius: 9999px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #374151;
-        border-radius: 9999px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #f59e0b;
-    }
-
-    .custom-scrollbar {
-        scrollbar-width: thin;
-        scrollbar-color: #374151 #0b0e14;
-    }
-
-    /* =========================================================
-       レビューへの移動・ハイライト
-    ========================================================= */
-
-    [id^="review-"] {
-        scroll-margin-top: 110px;
-    }
-
-    @keyframes review-gold-glow {
-        0% {
-            background-color: rgba(245, 158, 11, 0.35);
-            border-color: #f59e0b;
-            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.9);
-            outline: 2px solid #f59e0b;
-            outline-offset: 3px;
-        }
-
-        35% {
-            background-color: rgba(245, 158, 11, 0.2);
-            border-color: #fbbf24;
-            box-shadow: 0 0 30px 8px rgba(245, 158, 11, 0.55);
-            outline: 2px solid #fbbf24;
-            outline-offset: 3px;
-        }
-
-        100% {
-            background-color: #121824;
-            border-color: #1f2937;
-            box-shadow: 0 0 0 0 transparent;
-            outline-color: transparent;
-            outline-offset: 0;
-        }
-    }
-
-    [id^="review-"].review-target-highlight {
-        animation: review-gold-glow 3.5s ease-in-out;
-        position: relative;
-        z-index: 10;
-    }
-
-    /* =========================================================
-       ユーザーアイコン
-    ========================================================= */
-
-    .review-avatar {
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
-        min-height: 32px;
-        max-width: 32px;
-        max-height: 32px;
-        border-radius: 9999px;
-        object-fit: cover;
-        object-position: center;
-        display: block;
-        flex-shrink: 0;
-    }
-
-    @media (max-width: 639px) {
-        .review-avatar {
-            width: 28px;
-            height: 28px;
-            min-width: 28px;
-            min-height: 28px;
-            max-width: 28px;
-            max-height: 28px;
-        }
-    }
-
-    /* =========================================================
-       あらすじ
-       画面幅に関係なく高さを192pxに固定し、
-       長い文章はボックス内でスクロールする
-    ========================================================= */
-
-    .movie-story-box {
-        height: 192px;
-        min-height: 192px;
-        max-height: 192px;
-        flex: 0 0 192px;
-        overflow-x: hidden;
-        overflow-y: auto;
-        box-sizing: border-box;
-        padding-right: 8px;
-        scrollbar-width: thin;
-        scrollbar-color: #475569 #1a2332;
-    }
-
-    .movie-story-box::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .movie-story-box::-webkit-scrollbar-track {
-        background: #1a2332;
-        border-radius: 8px;
-    }
-
-    .movie-story-box::-webkit-scrollbar-thumb {
-        background: #475569;
-        border-radius: 8px;
-    }
-
-    .movie-story-box::-webkit-scrollbar-thumb:hover {
-        background: #64748b;
-    }
-
-    /* =========================================================
-       PC表示：左右のカードの高さを揃える
-    ========================================================= */
-
-    @media (min-width: 1024px) {
-
-        /* 左右のカードを同じ行の高さに揃える */
-        .movie-review-grid {
-            align-items: stretch;
-        }
-
-        .movie-info-card,
-        .review-post-card {
-            align-self: stretch;
-            min-width: 0;
-            min-height: 0;
-            box-sizing: border-box;
-        }
-
-        /* 左側の映画情報カード */
-        .movie-info-card {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .movie-info-inner {
-            display: grid;
-            grid-template-columns: 180px minmax(0, 1fr);
-            align-items: stretch;
-            flex: 1 1 auto;
-            min-width: 0;
-            min-height: 0;
-        }
-
-        /* ポスター・シェア・TMDB */
         .poster-column {
-            display: flex;
-            flex-direction: column;
-            align-self: stretch;
-            min-width: 0;
-            min-height: 0;
+            display: flex !important;
+            flex-direction: column !important;
+            flex-shrink: 0;
         }
 
         .poster-share {
-            margin-top: 8px;
-        }
-
-        /* 右側の映画情報とあらすじ */
-        .movie-info-inner > div:last-child {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-            min-height: 0;
+            margin-top: 8px !important;
         }
 
         .movie-story-section {
-            display: flex;
-            flex-direction: column;
-            flex: 1 1 auto;
-            min-width: 0;
-            min-height: 0;
+            margin-top: 12px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 1 0px !important;
+            min-height: 0 !important;
         }
 
-        /* 右側のレビュー投稿カード */
-        .review-post-card {
-            display: flex;
-            flex-direction: column;
+        .movie-story-box {
+            flex: 1 1 0px !important;
+            min-height: 120px !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            box-sizing: border-box;
+            padding-right: 8px;
         }
 
-        .review-post-card > form {
-            display: flex;
-            flex: 1 1 auto;
-            flex-direction: column;
-            min-height: 0;
-        }
-    }
-</style>
-```
+        @media (min-width: 1024px) {
+            .movie-review-grid {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                align-items: stretch !important;
+            }
 
-/* =========================================================
-   PC表示：左右のカードの高さを揃える
-========================================================= */
+            .movie-review-grid>.movie-info-card,
+            .movie-review-grid>.review-post-card {
+                height: 100% !important;
+                display: flex !important;
+                flex-direction: column !important;
+                box-sizing: border-box !important;
+                min-height: 0 !important;
+            }
 
-@media (min-width: 1024px) {
-    .movie-review-grid {
-        align-items: stretch;
-    }
+            .movie-info-card>.movie-info-inner {
+                height: 100% !important;
+                display: grid !important;
+                grid-template-columns: 180px minmax(0, 1fr) !important;
+                gap: 16px !important;
+                align-items: start !important;
+                min-height: 0 !important;
+            }
 
-    .movie-info-card,
-    .review-post-card {
-        height: 100%;
-        min-height: 0;
-    }
+            .movie-info-inner>div:last-child {
+                display: flex !important;
+                flex-direction: column !important;
+                height: 100% !important;
+                min-height: 0 !important;
+            }
 
-    .movie-info-inner {
-        flex: 1 1 auto;
-        height: 100%;
-        min-height: 0;
-    }
+            .review-post-card>form {
+                display: flex !important;
+                flex-direction: column !important;
+                flex: 1 1 auto !important;
+            }
 
-    .poster-column {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .poster-share {
-        margin-top: 8px;
-    }
-
-    .movie-story-section {
-        flex: 1 1 auto;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .movie-info-inner > div:last-child {
-        min-height: 0;
-    }
-}
-
-            
-/* あらすじ：高さを制限し、長い文章はスクロール */
-.movie-story-box {
-    height: 192px;
-    max-height: 192px;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    flex: 0 0 192px;
-    padding-right: 8px;
-    box-sizing: border-box;
-    scrollbar-width: thin;
-    scrollbar-color: #475569 #121824;
-}
-
-/* Chrome・Edge用スクロールバー */
-.movie-story-box::-webkit-scrollbar {
-    width: 6px;
-}
-
-.movie-story-box::-webkit-scrollbar-track {
-    background: #121824;
-    border-radius: 8px;
-}
-
-.movie-story-box::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 8px;
-}
-
-.movie-story-box::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
-}
+            .review-post-card>form>div:last-child {
+                margin-top: auto !important;
+            }
         }
     </style>
 
@@ -620,253 +502,186 @@
 
             {{-- 前のページへ戻る --}}
             <div>
-                <button
-                    type="button"
-                    onclick="goBackOrHome()"
+                <button type="button"
+                    onclick="window.history.length > 1 ? window.history.back() : window.location.href='{{ route('home') }}'"
                     class="inline-flex items-center gap-1.5 bg-[#121824] hover:bg-gray-800 text-gray-300 border border-gray-800 font-bold px-3 py-1.5 rounded-full text-xs transition cursor-pointer shadow-lg">
-
                     <i class="fa-solid fa-arrow-left text-[10px]"></i>
                     前のページへ戻る
                 </button>
             </div>
 
-            {{-- =====================================================
-                 1. 上段：映画情報 ＋ レビュー投稿
-            ====================================================== --}}
-
+            {{-- 1. 上段：映画情報 ＋ レビュー投稿 --}}
             <div class="movie-review-grid grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch w-full">
 
-                {{-- =================================================
-                     左：映画情報
-                ================================================== --}}
-
-                <div class="movie-info-card bg-[#121824] border border-gray-800/90 rounded-2xl p-3.5 sm:p-5 shadow-xl w-full h-full flex flex-col">
-
+                {{-- 左：映画情報 --}}
+                <div
+                    class="movie-info-card bg-[#121824] border border-gray-800/90 rounded-2xl p-3.5 sm:p-5 shadow-xl w-full h-full flex flex-col">
                     <div class="movie-info-inner grid grid-cols-1 sm:grid-cols-[180px_minmax(0,1fr)] gap-4 h-full">
 
                         {{-- ポスター側 --}}
                         <div class="poster-column flex flex-col h-full">
+                            <div
+                                class="w-full h-[250px] sm:h-[270px] rounded-xl overflow-hidden shadow-2xl border border-gray-700/40 bg-gray-900">
+                                <img src="{{ !empty($movie['poster_path']) ? 'https://image.tmdb.org/t/p/w500' . $movie['poster_path'] : asset('images/no-poster.png') }}"
+                                    alt="{{ $movie['title'] }}" class="w-full h-full object-cover">
+                            </div>
 
-                            {{-- ポスター --}}
-                            <div class="w-full h-[250px] sm:h-[270px] rounded-xl overflow-hidden shadow-2xl border border-gray-700/40 bg-gray-900">
+                            {{-- 気になる！ボタン --}}
+                            <div class="mt-2.5">
+                                <form action="{{ route('watchlist.toggle') }}" method="POST" class="w-full">
+                                    @csrf
+                                    <input type="hidden" name="movie_id" value="{{ $movie['id'] }}">
+                                    <input type="hidden" name="title" value="{{ $movie['title'] }}">
+                                    <input type="hidden" name="poster_path" value="{{ $movie['poster_path'] ?? '' }}">
 
-                                <img
-                                    src="{{ !empty($movie['poster_path']) ? 'https://image.tmdb.org/t/p/w500' . $movie['poster_path'] : asset('images/no-poster.png') }}"
-                                    alt="{{ $movie['title'] }}"
-                                    class="w-full h-full object-cover">
+                                    @php
+                                        $inWatchlist = false;
+                                        if (auth()->check()) {
+                                            $user = auth()->user();
+                                            if (method_exists($user, 'watchlists')) {
+                                                $inWatchlist = $user->watchlists()->where('movie_id', $movie['id'])->exists();
+                                            } elseif (method_exists($user, 'watchlist')) {
+                                                $inWatchlist = $user->watchlist()->where('movie_id', $movie['id'])->exists();
+                                            }
+                                        }
+                                    @endphp
 
+                                    <button type="submit"
+                                        class="w-full py-1.5 px-2 rounded-lg text-[11px] font-extrabold transition duration-200 flex items-center justify-center gap-1.5 border shadow-md cursor-pointer {{ $inWatchlist ? 'bg-amber-500 text-black border-amber-400 hover:bg-amber-400' : 'bg-gray-800/90 text-amber-400 border-amber-500/50 hover:bg-amber-500 hover:text-black' }}">
+                                        <i
+                                            class="fa-{{ $inWatchlist ? 'solid' : 'regular' }} fa-bookmark text-[10px]"></i>
+                                        <span>{{ $inWatchlist ? '気になる！登録中' : '＋ 気になる！' }}</span>
+                                    </button>
+                                </form>
                             </div>
 
                             {{-- どこで見れる？ --}}
-                            <div class="mt-2.5">
-                                <div class="bg-[#1a2332] border border-gray-800/80 rounded-lg py-2 px-2.5 text-center">
-
-                                    <div class="text-[10px] text-amber-400 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1">
+                            <div class="mt-2">
+                                <div
+                                    class="bg-[#1a2332] border border-gray-800/80 rounded-lg py-1.5 px-2.5 text-center">
+                                    <div
+                                        class="text-[10px] text-amber-400 font-bold uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1">
                                         <i class="fa-solid fa-tv text-[9px]"></i>
                                         どこで見れる？
                                     </div>
-
                                     <div class="text-[10px] sm:text-[11px] font-semibold text-gray-300 leading-tight">
                                         🎬 劇場公開 / 配信準備中
                                     </div>
-
                                 </div>
                             </div>
 
                             {{-- シェア / TMDB --}}
                             <div class="poster-share grid grid-cols-2 gap-1.5">
-
-                                <a
-                                    href="https://twitter.com/intent/tweet?text={{ urlencode('『' . $movie['title'] . '』をチェック！ #MovieMood') }}&url={{ urlencode(request()->fullUrl()) }}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="bg-gray-800/90 hover:bg-gray-700 border border-gray-700/80 text-gray-300 hover:text-white rounded-lg py-2 px-1 text-[11px] font-bold transition flex items-center justify-center gap-1">
-
+                                <a href="https://twitter.com/intent/tweet?text={{ urlencode('『' . $movie['title'] . '』をチェック！ #MovieMood') }}&url={{ urlencode(request()->fullUrl()) }}"
+                                    target="_blank" rel="noopener noreferrer"
+                                    class="bg-gray-800/90 hover:bg-gray-700 border border-gray-700/80 text-gray-300 hover:text-white rounded-lg py-1.5 px-1 text-[11px] font-bold transition flex items-center justify-center gap-1">
                                     <i class="fa-solid fa-share-nodes text-[9px]"></i>
                                     シェア
                                 </a>
 
-                                <a
-                                    href="https://www.themoviedb.org/movie/{{ $movie['id'] }}"
-                                    target="_blank"
+                                <a href="https://www.themoviedb.org/movie/{{ $movie['id'] }}" target="_blank"
                                     rel="noopener noreferrer"
-                                    class="bg-gray-800/90 hover:bg-gray-700 border border-gray-700/80 text-gray-300 hover:text-white rounded-lg py-2 px-1 text-[11px] font-bold transition flex items-center justify-center gap-1">
-
+                                    class="bg-gray-800/90 hover:bg-gray-700 border border-gray-700/80 text-gray-300 hover:text-white rounded-lg py-1.5 px-1 text-[11px] font-bold transition flex items-center justify-center gap-1">
                                     <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
                                     TMDB
                                 </a>
-
                             </div>
-
                         </div>
 
                         {{-- 映画情報側 --}}
                         <div class="min-w-0 flex flex-col">
-
-                            {{-- 上部情報 --}}
                             <div class="space-y-2">
-
-                                {{-- タイトル ＋ 気になる --}}
-                                <div class="flex items-start justify-between gap-2">
-
-                                    <h1 class="text-base sm:text-lg font-bold text-white tracking-tight leading-snug min-w-0">
+                                <div class="w-full">
+                                    <h1
+                                        class="text-base sm:text-lg font-bold text-white tracking-tight leading-snug break-words">
                                         {{ $movie['title'] }}
                                     </h1>
-
-                                    {{-- 気になる --}}
-                                    <form action="{{ route('watchlist.toggle') }}" method="POST" class="flex-shrink-0">
-
-                                        @csrf
-
-                                        <input type="hidden" name="movie_id" value="{{ $movie['id'] }}">
-                                        <input type="hidden" name="title" value="{{ $movie['title'] }}">
-                                        <input type="hidden" name="poster_path" value="{{ $movie['poster_path'] ?? '' }}">
-
-                                        @php
-                                            $inWatchlist = false;
-
-                                            if (auth()->check()) {
-                                                $user = auth()->user();
-
-                                                if (method_exists($user, 'watchlists')) {
-                                                    $inWatchlist = $user
-                                                        ->watchlists()
-                                                        ->where('movie_id', $movie['id'])
-                                                        ->exists();
-                                                } elseif (method_exists($user, 'watchlist')) {
-                                                    $inWatchlist = $user
-                                                        ->watchlist()
-                                                        ->where('movie_id', $movie['id'])
-                                                        ->exists();
-                                                }
-                                            }
-                                        @endphp
-
-                                        <button
-                                            type="submit"
-                                            class="py-1 px-2.5 rounded-full text-[11px] font-bold transition duration-200 flex items-center gap-1 border shadow-sm bg-amber-500 text-black border-amber-400 hover:bg-amber-400">
-
-                                            <i class="fa-{{ $inWatchlist ? 'solid' : 'regular' }} fa-bookmark text-[10px]"></i>
-
-                                            <span>
-                                                {{ $inWatchlist ? '登録中' : '＋ 気になる！' }}
-                                            </span>
-                                        </button>
-
-                                    </form>
-
                                 </div>
 
-                                {{-- TMDB / 公開日 / runtime --}}
                                 <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
-
-                                    <span class="bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2 py-0.5 rounded-full text-[11px] font-extrabold flex items-center gap-1">
+                                    <span
+                                        class="bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2 py-0.5 rounded-full text-[11px] font-extrabold flex items-center gap-1">
                                         <i class="fa-solid fa-star text-amber-400 text-[9px]"></i>
                                         TMDB: {{ number_format($movie['vote_average'] ?? 0, 1) }}
                                     </span>
 
-                                    <span class="bg-gray-800 border border-gray-700/80 text-gray-300 text-[11px] px-2 py-0.5 rounded-full">
-                                        📅 {{ isset($movie['release_date']) ? substr($movie['release_date'], 0, 7) : '未定' }}
+                                    <span
+                                        class="bg-gray-800 border border-gray-700/80 text-gray-300 text-[11px] px-2 py-0.5 rounded-full">
+                                        📅
+                                        {{ isset($movie['release_date']) ? substr($movie['release_date'], 0, 7) : '未定' }}
                                     </span>
 
                                     @if(!empty($movie['runtime']))
-                                        <span class="bg-gray-800 border border-gray-700/80 text-gray-300 text-[11px] px-2 py-0.5 rounded-full">
+                                        <span
+                                            class="bg-gray-800 border border-gray-700/80 text-gray-300 text-[11px] px-2 py-0.5 rounded-full">
                                             ⏰ {{ $movie['runtime'] }}分
                                         </span>
                                     @endif
-
                                 </div>
 
-                                {{-- 監督 --}}
                                 @if(!empty($movie['director']))
                                     <div class="text-[11px] text-gray-400 truncate">
-                                        🎬 監督:
-                                        <span class="text-gray-200 font-semibold">
-                                            {{ $movie['director'] }}
-                                        </span>
+                                        🎬 監督: <span class="text-gray-200 font-semibold">{{ $movie['director'] }}</span>
                                     </div>
                                 @endif
 
-                                {{-- ジャンル --}}
                                 @if(!empty($movie['genres']) && is_array($movie['genres']))
                                     <div class="flex flex-wrap gap-1">
                                         @foreach($movie['genres'] as $genre)
-                                            <span class="text-[10px] bg-gray-800/90 text-gray-300 px-2 py-0.5 rounded border border-gray-700/60">
+                                            <span
+                                                class="text-[10px] bg-gray-800/90 text-gray-300 px-2 py-0.5 rounded border border-gray-700/60">
                                                 {{ is_array($genre) ? ($genre['name'] ?? '') : $genre }}
                                             </span>
                                         @endforeach
                                     </div>
                                 @endif
-
                             </div>
 
                             {{-- STORY / あらすじ --}}
                             <div class="movie-story-section mt-3 min-w-0">
-
-                                <h3 class="text-xs sm:text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1 mb-1.5">
+                                <h3
+                                    class="text-xs sm:text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1 mb-1.5">
                                     <i class="fa-solid fa-book-open"></i>
                                     STORY / あらすじ
                                 </h3>
 
-                                <div class="movie-story-box bg-[#1a2332] p-3 rounded-xl border border-gray-800/80 overflow-y-auto custom-scrollbar">
-
+                                <div
+                                    class="movie-story-box bg-[#1a2332] p-3 rounded-xl border border-gray-800/80 custom-scrollbar">
                                     <p class="text-sm text-gray-200 leading-relaxed font-normal">
                                         {{ (!empty($movie['overview']) && trim($movie['overview']) !== '') ? $movie['overview'] : '※日本語あらすじ情報は準備中です。' }}
                                     </p>
-
                                 </div>
-
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
 
-                {{-- =================================================
-                     右：レビュー投稿フォーム
-                ================================================== --}}
-
-                <div class="review-post-card bg-[#121824] border border-gray-800/90 rounded-2xl p-3.5 sm:p-5 shadow-xl flex flex-col w-full h-full">
+                {{-- 右：レビュー投稿フォーム --}}
+                <div
+                    class="review-post-card bg-[#121824] border border-gray-800/90 rounded-2xl p-3.5 sm:p-5 shadow-xl flex flex-col w-full h-full">
 
                     <div class="flex-shrink-0 space-y-2">
-
                         <h2 class="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
                             <i class="fa-solid fa-pen-to-square text-amber-500"></i>
                             この映画のレビュー・メモを投稿する
                         </h2>
 
-                        {{-- タブ --}}
                         <div class="grid grid-cols-2 gap-1 bg-[#1a2332] p-1 rounded-xl border border-gray-800">
-
-                            <button
-                                type="button"
-                                id="tabWatched"
-                                onclick="switchStatus('watched')"
+                            <button type="button" id="tabWatched" onclick="switchStatus('watched')"
                                 class="py-1.5 text-center text-xs font-bold rounded-lg transition duration-200 bg-amber-500 text-black shadow-md flex items-center justify-center gap-1 cursor-pointer">
                                 🍿 観た（鑑賞後）
                             </button>
 
-                            <button
-                                type="button"
-                                id="tabWantToWatch"
-                                onclick="switchStatus('want_to_watch')"
+                            <button type="button" id="tabWantToWatch" onclick="switchStatus('want_to_watch')"
                                 class="py-1.5 text-center text-xs font-bold rounded-lg transition duration-200 text-gray-400 hover:text-white flex items-center justify-center gap-1 cursor-pointer">
                                 ✨ 観たい（鑑賞前）
                             </button>
-
                         </div>
-
                     </div>
 
-                    <form
-                        action="{{ route('reviews.store', ['id' => $movie['id']]) }}"
-                        method="POST"
+                    <form action="{{ route('reviews.store', ['id' => $movie['id']]) }}" method="POST"
                         class="flex-1 flex flex-col min-h-0">
-
                         @csrf
-
                         <input type="hidden" name="movie_id" value="{{ $movie['id'] }}">
                         <input type="hidden" name="movie_title" value="{{ $movie['title'] }}">
                         <input type="hidden" name="poster_path" value="{{ $movie['poster_path'] ?? '' }}">
@@ -874,37 +689,23 @@
 
                         <div id="selectedMoodsInputContainer"></div>
 
-                        <div class="space-y-3 mt-3">
+                        <div class="space-y-3 mt-3 flex-1 flex flex-col justify-between">
 
                             {{-- 評価 --}}
                             <div id="ratingSection" class="space-y-1.5">
-
                                 <div class="flex items-center justify-between">
-
-                                    <label
-                                        for="ratingSlider"
-                                        id="ratingTitle"
+                                    <label for="ratingSlider" id="ratingTitle"
                                         class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                                         評価（1.0 〜 10.0）
                                     </label>
-
-                                    <div id="ratingValueWrapper" class="text-amber-400 font-extrabold text-xs sm:text-sm flex items-center gap-1">
+                                    <div id="ratingValueWrapper"
+                                        class="text-amber-400 font-extrabold text-xs sm:text-sm flex items-center gap-1">
                                         <i id="ratingIcon" class="fa-solid fa-star text-amber-400 text-[10px]"></i>
-
-                                        <span id="ratingValue">
-                                            {{ number_format(old('rating', 8.0), 1) }}
-                                        </span>
+                                        <span id="ratingValue">{{ number_format(old('rating', 8.0), 1) }}</span>
                                     </div>
-
                                 </div>
 
-                                <input
-                                    type="range"
-                                    name="rating"
-                                    id="ratingSlider"
-                                    min="1.0"
-                                    max="10.0"
-                                    step="0.1"
+                                <input type="range" name="rating" id="ratingSlider" min="1.0" max="10.0" step="0.1"
                                     value="{{ old('rating', '8.0') }}"
                                     class="w-full h-2 rounded-lg appearance-none cursor-pointer focus:outline-none"
                                     oninput="updateRatingDisplay(this)">
@@ -914,93 +715,57 @@
                                         ✨ 超おすすめ！観て後悔なし
                                     </span>
                                 </div>
-
                             </div>
 
                             {{-- 気分タグ --}}
                             <div id="moodTagSection" class="space-y-1">
-
                                 <div class="flex items-center justify-between">
-
-                                    <span id="moodTagLabel" class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                                    <span id="moodTagLabel"
+                                        class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                                         観たあとの気分タグ（最大4つ選択可）
                                     </span>
-
-                                    <span class="text-[10px] text-gray-500 font-bold" id="tagCountText">
-                                        0/4
-                                    </span>
-
+                                    <span class="text-[10px] text-gray-500 font-bold" id="tagCountText">0/4</span>
                                 </div>
-
                                 <div id="moodTagContainer" class="flex flex-wrap gap-1.5 pt-1"></div>
-
                             </div>
 
                             {{-- コメント --}}
                             <div class="space-y-1">
-
-                                <label
-                                    for="comment"
-                                    id="commentLabel"
+                                <label for="comment" id="commentLabel"
                                     class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                                     レビュー感想コメント
                                 </label>
-
-                                <textarea
-                                    id="comment"
-                                    name="comment"
-                                    required
-                                    placeholder="この映画を観た感想や見どころを書いてみましょう..."
+                                <textarea id="comment" name="comment" required placeholder="この映画を観た感想や見どころを書いてみましょう..."
                                     class="w-full h-24 bg-[#1a2332] border border-gray-700/80 rounded-xl p-2.5 text-xs text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none leading-relaxed resize-none custom-scrollbar">{{ old('comment') }}</textarea>
+                            </div>
 
+                            {{-- 投稿ボタン --}}
+                            <div class="mt-auto pt-3">
+                                <button type="submit" id="submitBtn"
+                                    class="w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition shadow-lg flex items-center justify-center gap-1.5 cursor-pointer">
+                                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                                    <span id="submitBtnText">レビューを投稿する</span>
+                                </button>
                             </div>
 
                         </div>
-
-                        {{-- 投稿ボタン --}}
-                        <div class="mt-auto pt-3">
-
-                            <button
-                                type="submit"
-                                id="submitBtn"
-                                class="w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition shadow-lg flex items-center justify-center gap-1.5 cursor-pointer">
-
-                                <i class="fa-solid fa-paper-plane text-xs"></i>
-
-                                <span id="submitBtnText">
-                                    レビューを投稿する
-                                </span>
-
-                            </button>
-
-                        </div>
-
                     </form>
-
                 </div>
-
             </div>
 
-            {{-- =====================================================
-                 2. レビュー一覧
-            ====================================================== --}}
-
+            {{-- 2. レビュー一覧（コミュニティ仕様完全統一） --}}
             <div id="reviews" class="space-y-4 w-full pt-3 border-t border-gray-800 scroll-mt-6">
 
                 <div class="flex items-center justify-between px-1">
-
                     <div class="flex items-center gap-2">
-
                         <i class="fa-solid fa-comments text-amber-500"></i>
-
                         <h2 class="text-sm sm:text-base font-extrabold text-white">
                             みんなのレビュー
                         </h2>
-
-                        <span class="bg-gray-800 border border-gray-700 text-gray-300 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                        <span
+                            class="bg-gray-800 border border-gray-700 text-gray-300 px-2 py-0.5 rounded-full text-[10px] font-bold">
                             {{ count($reviews) }}件
                         </span>
-
                     </div>
 
                     @if(count($reviews) > 0)
@@ -1008,10 +773,9 @@
                             この映画への感想・期待メモ
                         </span>
                     @endif
-
                 </div>
 
-                {{-- レビューカード --}}
+                {{-- レビューカード (2列グリッド) --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
 
                     @forelse($reviews as $review)
@@ -1019,8 +783,7 @@
                         @php
                             $user = $review->user;
 
-                            $avatarUrl =
-                                $user->avatar_url
+                            $avatarUrl = $user->avatar_url
                                 ?? $user->avatar
                                 ?? $user->profile_photo_url
                                 ?? null;
@@ -1034,564 +797,244 @@
                             }
 
                             $statusVal = strtolower(trim($review->status ?? ''));
+                            $moodVal = $review->mood ?? $review->moods ?? '';
+                            $moodStr = is_array($moodVal) ? implode(',', $moodVal) : (string) $moodVal;
 
-                            $moodVal = is_object($review)
-                                ? ($review->mood ?? $review->moods ?? '')
-                                : '';
-
-                            $moodStr = is_array($moodVal)
-                                ? implode(',', $moodVal)
-                                : (string) $moodVal;
-
-                            $isWantToWatch =
-                                in_array(
-                                    $statusVal,
-                                    ['want_to_watch', 'want', 'want-to-watch', '1', 'before']
-                                )
+                            $isWantToWatch = in_array($statusVal, ['want_to_watch', 'want', 'want-to-watch', '1', 'before'])
                                 || str_contains($moodStr, 'しそう');
+
+                            $moodList = is_array($moodVal) ? $moodVal : explode(',', $moodStr);
+
+                            $likes = $review->likes ?? collect();
+                            $comments = $review->comments ?? collect();
+
+                            $likesCount = $likes->count();
+                            $commentsCount = $comments->count();
+
+                            $isLikedByMe = auth()->check() && $likes->contains('user_id', auth()->id());
+                            $hasCommentedByMe = auth()->check() && $comments->contains('user_id', auth()->id());
                         @endphp
 
-                        <div
-                            id="review-{{ $review->id }}"
-                            class="bg-[#121824] border border-gray-800 rounded-2xl p-3.5 sm:p-5 shadow-xl space-y-3 w-full flex flex-col justify-between scroll-mt-6 transition-all duration-300">
+                        <div id="review-{{ $review->id }}"
+                            class="bg-[#121824] border border-gray-800/90 rounded-2xl p-4 sm:p-5 shadow-xl space-y-3 w-full flex flex-col scroll-mt-6 transition-all duration-300">
 
-                            <div class="space-y-2">
+                            {{-- ユーザー・評価・本文 --}}
+                            <div class="space-y-3">
 
-                                {{-- ユーザー ＋ 評価 --}}
-                                <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                                {{-- ユーザー ＋ 評価バッジ --}}
+                                <div class="flex items-center justify-between border-b border-gray-800/60 pb-2.5">
 
-                                    <div class="flex items-center gap-2 min-w-0">
+                                    <div class="flex items-center gap-2.5 min-w-0">
 
+                                        {{-- アイコン画像あり / なし（イニシャル中央揃え修正） --}}
                                         @if($avatarSrc)
-
-                                            <img
-                                                src="{{ $avatarSrc }}"
-                                                alt="{{ $user->nickname ?? $user->name ?? 'User' }}"
+                                            <img src="{{ $avatarSrc }}" alt="{{ $user->nickname ?? $user->name ?? 'User' }}"
                                                 class="review-avatar {{ $isWantToWatch ? 'border border-purple-500/40' : 'border border-amber-500/40' }}">
-
                                         @else
-
-                                            <div class="review-avatar {{ $isWantToWatch ? 'bg-purple-500/20 border border-purple-500/40 text-purple-300' : 'bg-amber-500/20 border border-amber-500/40 text-amber-400' }} flex items-center justify-center font-bold text-xs">
-                                                {{ mb_substr($user->nickname ?? $user->name ?? '匿', 0, 1) }}
+                                            <div
+                                                class="review-avatar {{ $isWantToWatch ? 'bg-purple-500/20 border border-purple-500/40 text-purple-300' : 'bg-amber-500/20 border border-amber-500/40 text-amber-400' }} flex items-center justify-center font-black text-xs leading-none select-none text-center">
+                                                <span>{{ mb_substr($user->nickname ?? $user->name ?? '匿', 0, 1) }}</span>
                                             </div>
-
                                         @endif
 
                                         <div class="min-w-0">
-
-                                            <span class="font-bold text-xs sm:text-sm text-gray-200 block truncate">
+                                            <span
+                                                class="font-bold text-xs sm:text-sm text-gray-200 block truncate leading-tight">
                                                 {{ $user->nickname ?? $user->name ?? '匿名ユーザー' }}
                                             </span>
-
-                                            <span class="text-[9px] sm:text-[10px] text-gray-500">
+                                            <span class="text-[10px] text-gray-500">
                                                 {{ $review->created_at ? $review->created_at->diffForHumans() : '' }}
                                             </span>
-
                                         </div>
 
                                     </div>
 
-                                    {{-- スコア --}}
+                                    {{-- スコア・期待度バッジ（2枚目と同じ配色デザイン） --}}
                                     <div class="flex items-center gap-1.5 flex-shrink-0">
-
                                         @if($isWantToWatch)
-
-                                            <span class="bg-purple-500/20 border border-purple-500/40 text-purple-300 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1">
-                                                ✨ 期待度:
-                                                {{ number_format($review->rating ?? 0, 1) }}
+                                            <span
+                                                class="bg-purple-500/15 border border-purple-500/40 text-purple-300 px-2.5 py-0.5 rounded-full text-[11px] font-black flex items-center gap-1 shadow-sm">
+                                                ✨ 期待度: {{ number_format((float) ($review->rating ?? 0), 1) }}
                                             </span>
-
                                         @else
-
-                                            <div class="bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2 py-0.5 rounded-full text-xs font-extrabold flex items-center gap-1">
-                                                <i class="fa-solid fa-star text-[9px]"></i>
-                                                <span>{{ number_format($review->rating ?? 0, 1) }}</span>
+                                            <div
+                                                class="bg-amber-500/15 border border-amber-500/40 text-amber-400 px-2.5 py-0.5 rounded-full text-xs font-black flex items-center gap-1 shadow-sm">
+                                                <i class="fa-solid fa-star text-[10px]"></i>
+                                                <span>{{ number_format((float) ($review->rating ?? 0), 1) }}</span>
                                             </div>
-
                                         @endif
-
                                     </div>
 
                                 </div>
 
                                 {{-- 気分タグ --}}
-                                @php
-                                    if (is_array($moodVal)) {
-                                        $moodList = $moodVal;
-                                    } else {
-                                        $moodList = explode(',', $moodVal);
-                                    }
-                                @endphp
-
                                 @if(!empty(array_filter($moodList)))
-
-                                    <div class="flex flex-wrap gap-1">
-
+                                    <div class="flex flex-wrap gap-1.5">
                                         @foreach($moodList as $m)
-
                                             @php
                                                 $cleanTag = trim(str_replace('#', '', $m));
-
-                                                $isPurpleTag =
-                                                    $isWantToWatch
-                                                    || str_contains($cleanTag, 'しそう');
+                                                $isPurpleTag = $isWantToWatch || str_contains($cleanTag, 'しそう');
                                             @endphp
-
                                             @if($cleanTag)
-                                                <span class="{{ $isPurpleTag ? 'bg-purple-500/20 text-purple-300 border-purple-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40' }} border text-[10px] sm:text-[11px] px-2 py-0.5 rounded-md font-semibold">
+                                                <span
+                                                    class="{{ $isPurpleTag ? 'bg-purple-500/15 text-purple-200 border-purple-500/40' : 'bg-amber-500/15 text-amber-300 border-amber-500/40' }} border text-[11px] px-2.5 py-0.5 rounded-md font-bold shadow-sm">
                                                     #{{ $cleanTag }}
                                                 </span>
                                             @endif
-
                                         @endforeach
-
                                     </div>
-
                                 @endif
 
                                 {{-- レビュー本文 --}}
-                                <p class="text-xs sm:text-sm text-gray-200 leading-relaxed bg-[#1a2332] p-2.5 sm:p-3 rounded-xl border border-gray-800/80 whitespace-pre-wrap">
-                                    {{ $review->comment }}
+                                <p
+                                    class="text-xs sm:text-sm text-gray-200 leading-relaxed font-normal whitespace-pre-wrap break-words py-1">
+                                    {{ $review->comment ?? $review->content ?? '' }}
                                 </p>
 
                             </div>
 
-                            {{-- 自分のレビューだけ編集・削除を表示 --}}
-                            @auth
-                                @if((int) auth()->id() === (int) $review->user_id)
+                            {{-- いいね・コメント操作（コミュニティデザイン完全同期） --}}
+                            <div x-data="{ openComments: window.location.hash === '#review-{{ $review->id }}-comments' }"
+                                class="pt-3 border-t border-gray-800/80 mt-auto">
 
-                                    <div class="flex items-center justify-end gap-2 pt-1">
+                                <div class="flex items-center justify-between w-full">
 
-                                        <button
-                                            type="button"
-                                            onclick="toggleReviewEdit({{ $review->id }})"
-                                            class="inline-flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-400 transition hover:bg-amber-500/20">
-
-                                            <i class="fa-solid fa-pen-to-square"></i>
-                                            編集
-                                        </button>
-
-                                        <form
-                                            action="{{ route('reviews.destroy', $review->id) }}"
-                                            method="POST"
-                                            onsubmit="return confirm('このレビューを削除してもよろしいですか？');">
-
-                                            @csrf
-                                            @method('DELETE')
-
-                                            <button
-                                                type="submit"
-                                                class="inline-flex items-center gap-1 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-400 transition hover:bg-red-500/20">
-
-                                                <i class="fa-solid fa-trash"></i>
-                                                削除
-                                            </button>
-
-                                        </form>
-
-                                    </div>
-
-                                    {{-- レビュー編集フォーム --}}
-                                    <div
-                                        id="review-edit-{{ $review->id }}"
-                                        class="hidden space-y-3 rounded-xl border border-gray-700 bg-[#0f141d] p-3">
-
-                                        <h3 class="text-sm font-bold text-amber-400">
-                                            <i class="fa-solid fa-pen-to-square mr-1"></i>
-                                            レビューを編集
-                                        </h3>
-
-                                        <form
-                                            action="{{ route('reviews.update', $review->id) }}"
-                                            method="POST"
-                                            class="space-y-3">
-
-                                            @csrf
-                                            @method('PUT')
-
-                                            {{-- 鑑賞状況 --}}
-                                            <div>
-
-                                                <label
-                                                    for="edit-status-{{ $review->id }}"
-                                                    class="mb-1 block text-xs font-bold text-gray-400">
-                                                    鑑賞状況
-                                                </label>
-
-                                                <select
-                                                    id="edit-status-{{ $review->id }}"
-                                                    name="status"
-                                                    class="w-full rounded-lg border border-gray-700 bg-[#1a2332] p-2 text-sm text-gray-100 focus:border-amber-500 focus:outline-none">
-
-                                                    <option value="watched" {{ !$isWantToWatch ? 'selected' : '' }}>
-                                                        🍿 観た（鑑賞後）
-                                                    </option>
-
-                                                    <option value="want_to_watch" {{ $isWantToWatch ? 'selected' : '' }}>
-                                                        ✨ 観たい（鑑賞前）
-                                                    </option>
-
-                                                </select>
-
+                                    {{-- 左側：いいね（自分の投稿には押せない ＆ 1件以上でピンク着色） --}}
+                                    @auth
+                                        @if(auth()->id() === (int) $review->user_id)
+                                            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold cursor-not-allowed opacity-80 {{ $likesCount > 0 ? 'bg-pink-500/20 border-pink-500/50 text-pink-400' : 'bg-gray-800/60 border-gray-700/60 text-gray-400' }}"
+                                                title="自分の投稿にはいいねできません">
+                                                <i
+                                                    class="{{ $likesCount > 0 ? 'fa-solid' : 'fa-regular' }} fa-heart text-xs text-pink-500"></i>
+                                                <span>{{ $likesCount }}</span>
                                             </div>
-
-                                            {{-- 評価 --}}
-                                            <div>
-
-                                                <label
-                                                    for="edit-rating-{{ $review->id }}"
-                                                    class="mb-1 block text-xs font-bold text-gray-400">
-                                                    評価・期待度（1.0〜10.0）
-                                                </label>
-
-                                                <input
-                                                    id="edit-rating-{{ $review->id }}"
-                                                    type="number"
-                                                    name="rating"
-                                                    min="1"
-                                                    max="10"
-                                                    step="0.1"
-                                                    required
-                                                    value="{{ number_format((float) $review->rating, 1, '.', '') }}"
-                                                    class="w-full rounded-lg border border-gray-700 bg-[#1a2332] p-2 text-sm text-gray-100 focus:border-amber-500 focus:outline-none">
-
-                                            </div>
-
-                                            {{-- 感情タグ --}}
-                                            <div>
-
-                                                <p class="mb-2 text-xs font-bold text-gray-400">
-                                                    感情タグ（最大4つ）
-                                                </p>
-
-                                                @php
-                                                    $editMoodList = array_map(
-                                                        fn ($tag) => trim($tag),
-                                                        explode(',', (string) ($review->mood ?? ''))
-                                                    );
-
-                                                    $editMoodList = array_map(
-                                                        fn ($tag) => ltrim($tag, '#'),
-                                                        $editMoodList
-                                                    );
-                                                @endphp
-
-                                                <div class="flex flex-wrap gap-2">
-
-                                                    @foreach([
-                                                        '号泣',
-                                                        'スカッと',
-                                                        'ハラハラ',
-                                                        'キュン',
-                                                        '号泣しそう',
-                                                        'スカッとしそう',
-                                                        'ハラハラしそう',
-                                                        'キュンとしそう'
-                                                    ] as $tag)
-
-                                                        <label class="cursor-pointer">
-
-                                                            <input
-                                                                type="checkbox"
-                                                                name="moods[]"
-                                                                value="#{{ $tag }}"
-                                                                {{ in_array($tag, $editMoodList, true) ? 'checked' : '' }}
-                                                                onchange="limitEditMoods(this, {{ $review->id }})"
-                                                                class="edit-mood-checkbox-{{ $review->id }} accent-amber-500">
-
-                                                            <span class="text-xs text-gray-300">
-                                                                #{{ $tag }}
-                                                            </span>
-
-                                                        </label>
-
-                                                    @endforeach
-
-                                                </div>
-
-                                                <p
-                                                    id="edit-mood-count-{{ $review->id }}"
-                                                    class="mt-1 text-[10px] text-gray-500">
-                                                    選択数：{{ count(array_filter($editMoodList)) }}/4
-                                                </p>
-
-                                            </div>
-
-                                            {{-- 本文 --}}
-                                            <div>
-
-                                                <label
-                                                    for="edit-comment-{{ $review->id }}"
-                                                    class="mb-1 block text-xs font-bold text-gray-400">
-                                                    感想・期待メモ
-                                                </label>
-
-                                                <textarea
-                                                    id="edit-comment-{{ $review->id }}"
-                                                    name="comment"
-                                                    required
-                                                    maxlength="5000"
-                                                    rows="4"
-                                                    class="w-full rounded-lg border border-gray-700 bg-[#1a2332] p-3 text-sm text-gray-100 focus:border-amber-500 focus:outline-none">{{ $review->comment }}</textarea>
-
-                                            </div>
-
-                                            {{-- 保存・キャンセル --}}
-                                            <div class="flex gap-2">
-
-                                                <button
-                                                    type="submit"
-                                                    class="flex-1 rounded-lg bg-amber-500 px-3 py-2 text-xs font-extrabold text-black transition hover:bg-amber-400">
-
-                                                    <i class="fa-solid fa-check mr-1"></i>
-                                                    変更を保存
+                                        @else
+                                            <form action="{{ route('reviews.like', $review->id) }}" method="POST">
+                                                @csrf
+                                                <button type="submit"
+                                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition cursor-pointer {{ ($isLikedByMe || $likesCount > 0) ? 'bg-pink-500/20 border-pink-500/50 text-pink-400 hover:bg-pink-500/30' : 'bg-gray-800/60 border-gray-700/60 text-gray-400 hover:text-pink-400 hover:border-pink-500/40' }}">
+                                                    <i
+                                                        class="{{ ($isLikedByMe || $likesCount > 0) ? 'fa-solid' : 'fa-regular' }} fa-heart text-xs text-pink-500"></i>
+                                                    <span>{{ $likesCount }}</span>
                                                 </button>
+                                            </form>
+                                        @endif
+                                    @else
+                                        <a href="{{ route('login') }}"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition {{ $likesCount > 0 ? 'bg-pink-500/20 border-pink-500/50 text-pink-400' : 'bg-gray-800/60 border-gray-700/60 text-gray-400 hover:text-pink-400' }}">
+                                            <i
+                                                class="{{ $likesCount > 0 ? 'fa-solid' : 'fa-regular' }} fa-heart text-xs text-pink-500"></i>
+                                            <span>{{ $likesCount }}</span>
+                                        </a>
+                                    @endauth
 
-                                                <button
-                                                    type="button"
-                                                    onclick="toggleReviewEdit({{ $review->id }})"
-                                                    class="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs font-bold text-gray-300 transition hover:bg-gray-700">
-
-                                                    キャンセル
-                                                </button>
-
-                                            </div>
-
-                                        </form>
-
-                                    </div>
-
-                                @endif
-                            @endauth
-
-                            {{-- いいね・コメント --}}
-                            <div class="flex items-center justify-between pt-2 border-t border-gray-800/60 text-xs">
-
-                                @php
-                                    $isLikedByMe = method_exists($review, 'isLikedBy')
-                                        ? $review->isLikedBy(Auth::user())
-                                        : false;
-
-                                    $likesCount = method_exists($review, 'likes')
-                                        ? $review->likes->count()
-                                        : 0;
-                                @endphp
-
-                                {{-- いいね --}}
-                                <form
-                                    action="{{ route('reviews.like', $review->id ?? $review->review_id) }}"
-                                    method="POST">
-
-                                    @csrf
-
-                                    <button
-                                        type="submit"
-                                        class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition duration-200 {{ $isLikedByMe ? 'bg-rose-500/10 border-rose-500/40 text-rose-500 hover:bg-rose-500/20' : 'bg-gray-800/80 border-gray-700 text-gray-300 hover:text-rose-400 hover:border-gray-600' }}">
-
-                                        <i class="{{ $isLikedByMe ? 'fa-solid text-rose-500' : 'fa-regular' }} fa-heart text-xs"></i>
-
-                                        <span class="font-bold text-[11px]">
-                                            {{ $likesCount }}
-                                        </span>
-
+                                    {{-- 右側：コメント（1件以上でゴールド着色） --}}
+                                    <button type="button" @click="openComments = !openComments"
+                                        :aria-expanded="openComments.toString()"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition cursor-pointer {{ $commentsCount > 0 ? 'bg-amber-500/20 border-amber-500/50 text-amber-400 hover:bg-amber-500/30' : 'bg-gray-800/60 border-gray-700/60 text-gray-300 hover:text-amber-400 hover:border-amber-500/50' }}">
+                                        <i
+                                            class="fa-regular fa-comment text-xs {{ $commentsCount > 0 ? 'text-amber-400' : 'text-gray-400' }}"></i>
+                                        <span>{{ $commentsCount }}件</span>
+                                        <i class="fa-solid fa-chevron-down text-[9px] transition-transform"
+                                            :class="{ 'rotate-180': openComments }">
+                                        </i>
                                     </button>
 
-                                </form>
+                                </div>
 
-                                @php
-                                    $commentsCount = $review->comments_count
-                                        ?? (
-                                            method_exists($review, 'comments')
-                                                ? $review->comments->count()
-                                                : 0
-                                        );
+                                {{-- コメント表示・投稿エリア --}}
+                                <div id="review-{{ $review->id }}-comments" x-show="openComments" x-cloak x-transition
+                                    class="mt-3 space-y-3">
 
-                                    $hasComments = $commentsCount > 0;
-                                @endphp
+                                    {{-- 既存コメント一覧 --}}
+                                    @forelse($comments as $comment)
+                                        <div class="bg-gray-800/40 border border-gray-700/40 p-2.5 rounded-lg text-xs"
+                                            x-data="{ editing: false, content: {{ Illuminate\Support\Js::from($comment->comment ?? '') }} }">
 
-                                {{-- コメント開閉 --}}
-                                <button
-                                    type="button"
-                                    onclick="toggleCommentBox({{ $review->id }})"
-                                    class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-800/80 border border-gray-700 hover:border-amber-500/40 transition duration-200 {{ $hasComments ? 'text-amber-400' : 'text-gray-400 hover:text-amber-400' }}">
-
-                                    <i class="fa-regular fa-comment text-xs {{ $hasComments ? 'text-amber-400' : '' }}"></i>
-
-                                    <span class="font-bold text-[11px]">
-                                        {{ $commentsCount }} 件
-                                    </span>
-
-                                    <i
-                                        class="fa-solid fa-chevron-down text-[9px] ml-0.5 transition-transform duration-200"
-                                        id="comment-arrow-{{ $review->id }}">
-                                    </i>
-
-                                </button>
-
-                            </div>
-
-                            {{-- =================================================
-                                 コメント欄
-                            ================================================== --}}
-
-                            <div
-                                id="comment-box-{{ $review->id }}"
-                                class="hidden pt-2.5 border-t border-gray-800/80 space-y-2.5">
-
-                                {{-- 既存コメント一覧 --}}
-                                @if(
-                                    method_exists($review, 'comments')
-                                    && $review->comments->count() > 0
-                                )
-
-                                    <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-
-                                        @foreach($review->comments as $comment)
-
-                                            <div
-                                                id="comment-{{ $comment->id }}"
-                                                class="bg-[#1a2332] p-2 rounded-lg border border-gray-800 text-xs space-y-1">
-
-                                                {{-- 投稿者名・投稿日時 --}}
-                                                <div class="flex items-center justify-between gap-2 text-gray-400 text-[9px]">
-
-                                                    <span class="font-bold text-amber-400">
-                                                        {{ $comment->user->nickname ?? $comment->user->name ?? 'ユーザー' }}
+                                            {{-- コメント表示 --}}
+                                            <div x-show="!editing" class="flex justify-between items-start gap-3">
+                                                <div class="min-w-0 flex-1 break-words">
+                                                    <span class="font-semibold text-amber-400">
+                                                        {{ $comment->user->nickname ?? $comment->user->name ?? 'ユーザー' }}:
                                                     </span>
-
-                                                    <span>
-                                                        {{ $comment->created_at?->diffForHumans() }}
-                                                    </span>
-
-                                                </div>
-
-                                                {{-- コメント本文 --}}
-                                                <p class="text-gray-200 leading-snug text-[11px] whitespace-pre-wrap">
-                                                    {{ $comment->comment ?? $comment->body }}
-                                                </p>
-
-                                                {{-- 投稿者本人だけに編集・削除を表示 --}}
-                                                @auth
-                                                    @if((int) auth()->id() === (int) $comment->user_id)
-
-                                                        <div class="flex items-center justify-end gap-2 pt-1">
-
-                                                            {{-- 編集ボタン --}}
-                                                            <button
-                                                                type="button"
-                                                                onclick="toggleCommentEdit({{ $comment->id }})"
-                                                                class="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] font-bold text-amber-400 hover:bg-amber-500/20">
-
-                                                                <i class="fa-solid fa-pen-to-square mr-1"></i>
-                                                                編集
-                                                            </button>
-
-                                                            {{-- 削除フォーム --}}
-                                                            <form
-                                                                action="{{ route('reviews.comments.destroy', $comment->id) }}"
-                                                                method="POST"
-                                                                onsubmit="return confirm('このコメントを削除してもよろしいですか？');">
-
-                                                                @csrf
-                                                                @method('DELETE')
-
-                                                                <button
-                                                                    type="submit"
-                                                                    class="rounded-md border border-red-500/40 bg-red-500/10 px-2 py-1 text-[10px] font-bold text-red-400 hover:bg-red-500/20">
-
-                                                                    <i class="fa-solid fa-trash mr-1"></i>
-                                                                    削除
-                                                                </button>
-
-                                                            </form>
-
-                                                        </div>
-
-                                                        {{-- コメント編集フォーム --}}
-                                                        <div
-                                                            id="comment-edit-{{ $comment->id }}"
-                                                            class="hidden mt-2 space-y-2">
-
-                                                            <form
-                                                                action="{{ route('reviews.comments.update', $comment->id) }}"
-                                                                method="POST"
-                                                                class="space-y-2">
-
-                                                                @csrf
-                                                                @method('PUT')
-
-                                                                <textarea
-                                                                    name="comment"
-                                                                    required
-                                                                    maxlength="1000"
-                                                                    rows="3"
-                                                                    class="w-full rounded-lg border border-gray-700 bg-[#0f141d] p-2 text-xs text-gray-100 focus:border-amber-500 focus:outline-none">{{ $comment->comment ?? $comment->body }}</textarea>
-
-                                                                <div class="flex gap-2">
-
-                                                                    <button
-                                                                        type="submit"
-                                                                        class="rounded-md bg-amber-500 px-3 py-1.5 text-[10px] font-bold text-black hover:bg-amber-400">
-
-                                                                        変更を保存
-                                                                    </button>
-
-                                                                    <button
-                                                                        type="button"
-                                                                        onclick="toggleCommentEdit({{ $comment->id }})"
-                                                                        class="rounded-md border border-gray-700 bg-gray-800 px-3 py-1.5 text-[10px] font-bold text-gray-300 hover:bg-gray-700">
-
-                                                                        キャンセル
-                                                                    </button>
-
-                                                                </div>
-
-                                                            </form>
-
-                                                        </div>
-
+                                                    <span class="text-gray-200 ml-1 whitespace-pre-wrap"
+                                                        x-text="content"></span>
+                                                    @if($comment->created_at)
+                                                        <span class="block text-[10px] text-gray-500 mt-1">
+                                                            {{ $comment->created_at->diffForHumans() }}
+                                                        </span>
                                                     @endif
-                                                @endauth
+                                                </div>
 
+                                                {{-- 自分のコメント編集・削除 --}}
+                                                @if(auth()->check() && (int) auth()->id() === (int) $comment->user_id)
+                                                    <div class="flex items-center gap-2 shrink-0">
+                                                        <button type="button" @click="editing = true"
+                                                            class="text-amber-400 hover:text-amber-300" aria-label="コメントを編集">
+                                                            <i class="fa-solid fa-pen-to-square"></i>
+                                                        </button>
+                                                        <form action="{{ route('reviews.comments.destroy', $comment->id) }}"
+                                                            method="POST" onsubmit="return confirm('このコメントを削除してもよろしいですか？');">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="text-red-400 hover:text-red-300"
+                                                                aria-label="コメントを削除">
+                                                                <i class="fa-solid fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                @endif
                                             </div>
 
-                                        @endforeach
+                                            {{-- コメント編集フォーム --}}
+                                            @if(auth()->check() && (int) auth()->id() === (int) $comment->user_id)
+                                                <div x-show="editing" x-cloak class="mt-2">
+                                                    <form action="{{ route('reviews.comments.update', $comment->id) }}"
+                                                        method="POST" class="space-y-2">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <textarea name="comment" x-model="content" required maxlength="1000"
+                                                            rows="2"
+                                                            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 resize-y"></textarea>
+                                                        <div class="flex justify-end gap-2">
+                                                            <button type="button"
+                                                                @click="editing = false; content = {{ Illuminate\Support\Js::from($comment->comment ?? '') }}"
+                                                                class="rounded-lg border border-gray-600 bg-gray-700 px-3 py-1.5 text-xs font-bold text-gray-200 hover:bg-gray-600">
+                                                                キャンセル
+                                                            </button>
+                                                            <button type="submit"
+                                                                class="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-black hover:bg-amber-400">
+                                                                <i class="fa-solid fa-check mr-1"></i>保存
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @empty
+                                        <p class="text-[11px] text-gray-500 py-1">まだコメントはありません。最初のコメントを投稿してみましょう！</p>
+                                    @endforelse
 
-                                    </div>
-
-                                @else
-
-                                    <p class="text-[10px] text-gray-500 text-center py-0.5">
-                                        まだコメントはありません。
-                                    </p>
-
-                                @endif
-
-                                {{-- 新しいコメントを投稿 --}}
-                                <form
-                                    action="{{ route('reviews.comments.store', $review->id) }}"
-                                    method="POST"
-                                    class="flex gap-1.5">
-
-                                    @csrf
-
-                                    <input
-                                        type="text"
-                                        name="comment"
-                                        required
-                                        maxlength="500"
-                                        placeholder="コメントを書く..."
-                                        autocomplete="off"
-                                        class="flex-1 bg-[#1a2332] border border-gray-700 rounded-lg px-2.5 py-1 text-xs text-gray-100 placeholder-gray-500 focus:outline-none focus:border-amber-500">
-
-                                    <button
-                                        type="submit"
-                                        class="bg-amber-500 hover:bg-amber-400 text-black font-bold px-2.5 py-1 rounded-lg text-xs transition flex-shrink-0">
-
-                                        送信
-                                    </button>
-
-                                </form>
+                                    {{-- 新規コメント入力フォーム --}}
+                                    @auth
+                                        <form action="{{ route('reviews.comments.store', $review->id) }}" method="POST"
+                                            class="space-y-2">
+                                            @csrf
+                                            <textarea name="comment" required maxlength="1000" rows="2"
+                                                placeholder="このレビューにコメントする..."
+                                                class="w-full bg-[#1a2332] border border-gray-700/80 rounded-xl p-2.5 text-xs text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none resize-y"></textarea>
+                                            <div class="flex justify-end">
+                                                <button type="submit"
+                                                    class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-black font-bold px-3 py-1.5 rounded-lg text-xs transition">
+                                                    <i class="fa-solid fa-paper-plane"></i>コメントを投稿
+                                                </button>
+                                            </div>
+                                        </form>
+                                    @else
+                                        <p class="text-[11px] text-gray-500">コメントを投稿するには<a href="{{ route('login') }}"
+                                                class="text-amber-400 hover:text-amber-300 underline">ログイン</a>してください。</p>
+                                    @endauth
+                                </div>
 
                             </div>
 
@@ -1599,14 +1042,10 @@
 
                     @empty
 
-                        <div class="col-span-full bg-[#121824] border border-gray-800 rounded-2xl p-8 text-center text-gray-400 text-xs w-full space-y-2">
-
-                            <i class="fa-solid fa-comment-slash text-2xl text-gray-600"></i>
-
-                            <p>
-                                まだレビューが投稿されていません。最初のレビューを投稿してみましょう！
-                            </p>
-
+                        <div
+                            class="col-span-full bg-[#121824] border border-gray-800 rounded-2xl p-8 text-center text-gray-400">
+                            <p class="text-xs sm:text-sm font-semibold">まだレビューが投稿されていません。</p>
+                            <p class="text-[11px] text-gray-500 mt-1">最初のレビューを投稿してみましょう！</p>
                         </div>
 
                     @endforelse
@@ -1614,441 +1053,22 @@
                 </div>
 
             </div>
-
         </div>
-
     </div>
 
-    {{-- =============================================================
-         JavaScript
-    ============================================================= --}}
-
-    <script>
-        const watchedMoodTags = [
-            '号泣',
-            'スカッと',
-            'ハラハラ',
-            'キュン'
-        ];
-
-        const wantMoodTags = [
-            '号泣しそう',
-            'スカッとしそう',
-            'ハラハラしそう',
-            'キュンとしそう'
-        ];
-
-        let selectedMoods = [];
-
-        let currentStatus = @json(old('status', 'watched'));
-
-        /* =========================================================
-           戻る
-        ========================================================= */
-
-        function goBackOrHome() {
-            if (
-                document.referrer &&
-                document.referrer.indexOf(window.location.host) !== -1
-            ) {
-                history.back();
-            } else {
-                window.location.href = '/';
-            }
-        }
-
-        /* =========================================================
-           鑑賞後 / 鑑賞前
-        ========================================================= */
-
-        function switchStatus(status) {
-            currentStatus = status;
-
-            const statusInput = document.getElementById('review_status');
-
-            if (statusInput) {
-                statusInput.value = status;
-            }
-
-            selectedMoods = [];
-
-            const tabWatched = document.getElementById('tabWatched');
-            const tabWantToWatch = document.getElementById('tabWantToWatch');
-            const ratingTitle = document.getElementById('ratingTitle');
-            const moodTagLabel = document.getElementById('moodTagLabel');
-            const commentLabel = document.getElementById('commentLabel');
-            const commentInput = document.getElementById('comment');
-            const submitBtn = document.getElementById('submitBtn');
-            const submitBtnText = document.getElementById('submitBtnText');
-
-            if (status === 'watched') {
-                if (tabWatched) {
-                    tabWatched.className =
-                        'py-1.5 text-center text-xs font-bold rounded-lg transition duration-200 bg-amber-500 text-black shadow-md flex items-center justify-center gap-1 cursor-pointer';
-                }
-
-                if (tabWantToWatch) {
-                    tabWantToWatch.className =
-                        'py-1.5 text-center text-xs font-bold rounded-lg transition duration-200 text-gray-400 hover:text-white flex items-center justify-center gap-1 cursor-pointer';
-                }
-
-                if (ratingTitle) {
-                    ratingTitle.innerText = '評価（1.0 〜 10.0）';
-                }
-
-                if (moodTagLabel) {
-                    moodTagLabel.innerText = '観たあとの気分タグ（最大4つ選択可）';
-                }
-
-                if (commentLabel) {
-                    commentLabel.innerText = 'レビュー感想コメント';
-                }
-
-                if (commentInput) {
-                    commentInput.placeholder =
-                        'この映画を観た感想や見どころを書いてみましょう...';
-
-                    commentInput.className =
-                        'w-full h-24 bg-[#1a2332] border border-gray-700/80 rounded-xl p-2.5 text-xs text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none leading-relaxed resize-none custom-scrollbar';
-                }
-
-                if (submitBtn) {
-                    submitBtn.className =
-                        'w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition shadow-lg flex items-center justify-center gap-1.5 cursor-pointer';
-                }
-
-                if (submitBtnText) {
-                    submitBtnText.innerText = 'レビューを投稿する';
-                }
-            } else {
-                if (tabWantToWatch) {
-                    tabWantToWatch.className =
-                        'py-1.5 text-center text-xs font-bold rounded-lg transition duration-200 bg-purple-600 text-white shadow-md flex items-center justify-center gap-1 cursor-pointer';
-                }
-
-                if (tabWatched) {
-                    tabWatched.className =
-                        'py-1.5 text-center text-xs font-bold rounded-lg transition duration-200 text-gray-400 hover:text-white flex items-center justify-center gap-1 cursor-pointer';
-                }
-
-                if (ratingTitle) {
-                    ratingTitle.innerText = '期待度（1.0 〜 10.0）';
-                }
-
-                if (moodTagLabel) {
-                    moodTagLabel.innerText = '期待するポイントタグ（最大4つ選択可）';
-                }
-
-                if (commentLabel) {
-                    commentLabel.innerText = '観たい理由・期待メモ';
-                }
-
-                if (commentInput) {
-                    commentInput.placeholder =
-                        'この映画に期待することや観たい理由を書いてみましょう...';
-
-                    commentInput.className =
-                        'w-full h-24 bg-[#1a2332] border border-gray-700/80 rounded-xl p-2.5 text-xs text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none leading-relaxed resize-none custom-scrollbar';
-                }
-
-                if (submitBtn) {
-                    submitBtn.className =
-                        'w-full bg-purple-600 hover:bg-purple-500 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition shadow-lg flex items-center justify-center gap-1.5 cursor-pointer';
-                }
-
-                if (submitBtnText) {
-                    submitBtnText.innerText = '観たいメモを保存する';
-                }
-            }
-
-            renderMoodTags();
-
-            const ratingSlider = document.getElementById('ratingSlider');
-
-            if (ratingSlider) {
-                updateRatingDisplay(ratingSlider);
-            }
-        }
-
-        /* =========================================================
-           タグ表示
-        ========================================================= */
-
-        function renderMoodTags() {
-            const container = document.getElementById('moodTagContainer');
-
-            if (!container) return;
-
-            const tags = currentStatus === 'watched'
-                ? watchedMoodTags
-                : wantMoodTags;
-
-            container.innerHTML = '';
-
-            tags.forEach(tag => {
-                const isSelected = selectedMoods.includes(tag);
-
-                const btn = document.createElement('button');
-
-                btn.type = 'button';
-                btn.onclick = () => toggleMoodTag(tag);
-
-                if (currentStatus === 'watched') {
-                    btn.className = isSelected
-                        ? 'text-[10px] sm:text-[11px] font-bold px-3 py-1 rounded-lg border transition duration-150 bg-amber-500 text-black border-amber-400 shadow-md cursor-pointer'
-                        : 'text-[10px] sm:text-[11px] font-medium px-3 py-1 rounded-lg border transition duration-150 bg-[#1a2332] text-gray-300 border-gray-700/80 hover:border-gray-500 cursor-pointer';
-                } else {
-                    btn.className = isSelected
-                        ? 'text-[10px] sm:text-[11px] font-bold px-3 py-1 rounded-lg border transition duration-150 bg-purple-600 text-white border-purple-400 shadow-md cursor-pointer'
-                        : 'text-[10px] sm:text-[11px] font-medium px-3 py-1 rounded-lg border transition duration-150 bg-[#1a2332] text-gray-300 border-gray-700/80 hover:border-gray-500 cursor-pointer';
-                }
-
-                btn.innerText = '#' + tag;
-                container.appendChild(btn);
-            });
-
-            const tagCountText = document.getElementById('tagCountText');
-
-            if (tagCountText) {
-                tagCountText.innerText = `${selectedMoods.length}/4`;
-            }
-
-            const hiddenContainer = document.getElementById('selectedMoodsInputContainer');
-
-            if (hiddenContainer) {
-                hiddenContainer.innerHTML = '';
-
-                selectedMoods.forEach(mood => {
-                    const input = document.createElement('input');
-
-                    input.type = 'hidden';
-                    input.name = 'moods[]';
-                    input.value = '#' + mood;
-
-                    hiddenContainer.appendChild(input);
-                });
-            }
-        }
-
-        /* =========================================================
-           タグ選択
-        ========================================================= */
-
-        function toggleMoodTag(tag) {
-            const idx = selectedMoods.indexOf(tag);
-
-            if (idx > -1) {
-                selectedMoods.splice(idx, 1);
-            } else {
-                if (selectedMoods.length >= 4) {
-                    alert('タグは最大4つまで選択できます。');
-                    return;
-                }
-
-                selectedMoods.push(tag);
-            }
-
-            renderMoodTags();
-        }
-
-        /* =========================================================
-           評価・期待度
-        ========================================================= */
-
-        function updateRatingDisplay(slider) {
-            if (!slider) return;
-
-            const val = parseFloat(slider.value).toFixed(1);
-            const ratingValue = document.getElementById('ratingValue');
-
-            if (ratingValue) {
-                ratingValue.innerText = val;
-            }
-
-            const percentage = ((val - 1.0) / 9.0) * 100;
-
-            const activeColor = currentStatus === 'watched'
-                ? '#f59e0b'
-                : '#a855f7';
-
-            slider.style.background =
-                `linear-gradient(to right, ${activeColor} ${percentage}%, #374151 ${percentage}%)`;
-
-            const ratingValueWrapper = document.getElementById('ratingValueWrapper');
-
-            if (ratingValueWrapper) {
-                ratingValueWrapper.className = currentStatus === 'watched'
-                    ? 'text-amber-400 font-extrabold text-xs sm:text-sm flex items-center gap-1'
-                    : 'text-purple-300 font-extrabold text-xs sm:text-sm flex items-center gap-1';
-            }
-
-            const ratingIcon = document.getElementById('ratingIcon');
-
-            if (ratingIcon) {
-                ratingIcon.className = currentStatus === 'watched'
-                    ? 'fa-solid fa-star text-amber-400 text-[10px]'
-                    : 'fa-solid fa-sparkles text-purple-300 text-[10px]';
-            }
-
-            const label = document.getElementById('ratingLabel');
-
-            if (!label) return;
-
-            label.className = currentStatus === 'watched'
-                ? 'text-[11px] font-bold text-amber-400 transition-colors duration-150'
-                : 'text-[11px] font-bold text-purple-300 transition-colors duration-150';
-
-            if (currentStatus === 'watched') {
-                if (val >= 9.0) {
-                    label.innerText = '✨ 超おすすめ！名作間違いなし';
-                } else if (val >= 7.5) {
-                    label.innerText = '👍 かなり面白かった！';
-                } else if (val >= 5.0) {
-                    label.innerText = '🙂 普通に楽しめた';
-                } else {
-                    label.innerText = '🤔 好みが分かれる作品';
-                }
-            } else {
-                if (val >= 9.0) {
-                    label.innerText = '🔥 絶対に観たい！期待大';
-                } else if (val >= 7.5) {
-                    label.innerText = '✨ かなり気になっている';
-                } else if (val >= 5.0) {
-                    label.innerText = '👀 機会があれば観たい';
-                } else {
-                    label.innerText = '💭 ちょっとチェックしておく';
-                }
-            }
-        }
-
-        /* =========================================================
-           コメント欄の開閉
-        ========================================================= */
-
-        function toggleCommentBox(id) {
-            const box = document.getElementById(`comment-box-${id}`);
-            const arrow = document.getElementById(`comment-arrow-${id}`);
-
-            if (!box) return;
-
-            if (box.classList.contains('hidden')) {
-                box.classList.remove('hidden');
-
-                if (arrow) {
-                    arrow.style.transform = 'rotate(180deg)';
-                }
-            } else {
-                box.classList.add('hidden');
-
-                if (arrow) {
-                    arrow.style.transform = 'rotate(0deg)';
-                }
-            }
-        }
-
-        /* =========================================================
-           コメント編集フォームの開閉
-        ========================================================= */
-
-        function toggleCommentEdit(id) {
-            const form = document.getElementById(`comment-edit-${id}`);
-
-            if (form) {
-                form.classList.toggle('hidden');
-            }
-        }
-
-        /* =========================================================
-           レビュー編集フォームの開閉
-        ========================================================= */
-
-        function toggleReviewEdit(id) {
-            const form = document.getElementById(`review-edit-${id}`);
-
-            if (!form) {
-                return;
-            }
-
-            form.classList.toggle('hidden');
-        }
-
-        /* =========================================================
-           編集時のタグ選択数を最大4つに制限
-        ========================================================= */
-
-        function limitEditMoods(checkbox, id) {
-            const checkboxes = document.querySelectorAll(
-                `.edit-mood-checkbox-${id}`
-            );
-
-            const countText = document.getElementById(
-                `edit-mood-count-${id}`
-            );
-
-            const checkedBoxes = Array.from(checkboxes).filter(
-                item => item.checked
-            );
-
-            if (checkedBoxes.length > 4) {
-                checkbox.checked = false;
-                alert('タグは最大4つまで選択できます。');
-            }
-
-            const selectedCount = Array.from(checkboxes).filter(
-                item => item.checked
-            ).length;
-
-            if (countText) {
-                countText.textContent = `選択数：${selectedCount}/4`;
-            }
-        }
-        /* =========================================================
-           初期化
-        ========================================================= */
-
-        document.addEventListener('DOMContentLoaded', () => {
-            switchStatus(currentStatus);
-        });
-    </script>
-
-    {{-- レビューへの移動・金色ハイライト --}}
+    {{-- JavaScript：通知遷移スクロール ＆ 黄金発光アニメーション --}}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            function focusReviewFromHash() {
-                const hash = window.location.hash;
-
-                if (!hash || !hash.startsWith('#review-')) {
-                    return;
+            const hash = window.location.hash;
+            if (hash) {
+                const targetElement = document.querySelector(hash);
+                if (targetElement) {
+                    setTimeout(function () {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        targetElement.classList.add('review-target-highlight');
+                    }, 300);
                 }
-
-                const reviewId = decodeURIComponent(hash.substring(1));
-                const review = document.getElementById(reviewId);
-
-                if (!review) {
-                    console.warn('対象のレビューが見つかりません:', reviewId);
-                    return;
-                }
-
-                // ハイライトをリセット
-                review.classList.remove('review-target-highlight');
-                void review.offsetWidth;
-
-                // 対象のレビュー全体まで移動
-                review.scrollIntoView({
-                    behavior: 'auto',
-                    block: 'start'
-                });
-
-                // 移動後に金色の光を適用
-                requestAnimationFrame(function () {
-                    review.classList.add('review-target-highlight');
-                });
             }
-
-            focusReviewFromHash();
-
-            // URLのハッシュが変更された場合にも対応
-            window.addEventListener('hashchange', focusReviewFromHash);
         });
     </script>
 </x-app-layout>

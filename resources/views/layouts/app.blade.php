@@ -313,7 +313,7 @@
     class="bg-black text-white min-h-screen flex flex-col font-sans antialiased w-full selection:bg-amber-500 selection:text-black overflow-x-hidden relative">
 
 
-    <!-- =========================================================
+  <!-- =========================================================
          ヘッダーナビゲーション
     ========================================================== -->
 
@@ -323,79 +323,53 @@
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between w-full">
 
+          <!-- ロゴ & キャッチコピー部分（スタイリッシュな極太ツートンに完全一致） -->
+<div class="flex flex-col justify-center min-w-0 py-1">
+    <a href="{{ route('home') }}"
+        class="inline-flex items-center text-3xl sm:text-4xl font-black shrink-0 no-underline hover:opacity-90 transition leading-none"
+        style="font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important; letter-spacing: -0.03em !important;">
+        <span class="text-[#f59e0b] font-black">Movie</span><span class="text-[#fbbf24] font-black">Mood</span>
+    </a>
 
-            <!-- =================================================
-                 左：MovieMoodロゴ
-            ================================================== -->
-
-            <div class="flex flex-col items-start justify-center min-w-0">
-
-
-                <a href="{{ \Illuminate\Support\Facades\Route::has('home') ? route('home') : url('/') }}"
-                    title="HOME画面へ戻る"
-                    class="group moviemood-logo shrink-0 no-underline inline-flex items-center gap-1.5">
-
-                    <span class="group-hover:scale-105 transition-transform duration-200">
-
-                        MovieMood
-
-                    </span>
-
-                </a>
-
-
-                <!-- キャッチコピー -->
-
-                <p
-                    class="hidden md:block text-[10px] sm:text-xs text-gray-300 font-bold m-0 mt-0.5 pl-0.5 pointer-events-none">
-
-                    〜 観る前の「気分」も、観た後の「感想」も、映画と一緒に。 〜
-
-                </p>
-
-            </div>
-
-
-
-            <!-- =================================================
+    <p class="hidden md:block text-xs sm:text-sm text-white font-extrabold m-0 mt-1.5 tracking-widest leading-relaxed pointer-events-none drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+        〜 観る前の「気分」も、観た後の「感想」も、映画と一緒に。 〜
+    </p>
+</div>
+               <!-- =================================================
                  PC表示
             ================================================== -->
-
             <div class="hidden md:flex items-center gap-4 text-xs font-bold">
-
-
                 @auth
 
-
                     <!-- =================================================
-                                 通知
-                            ================================================== -->
+                                     通知
+                                ================================================== -->
 
                     <div x-data="{ open: false, unreadCount: {{ Auth::user()->unreadNotifications->count() }} }"
                         class="relative">
 
 
                         <button @click="
-                                        open = !open;
+                                            open = !open;
 
-                                        if (open && unreadCount > 0) {
+                                            if (open && unreadCount > 0) {
 
-                                            fetch(
-                                                '{{ \Illuminate\Support\Facades\Route::has('notifications.readAll') ? route('notifications.readAll') : '#' }}',
-                                                {
-                                                    method: 'POST',
+                                                fetch(
+                                                    '{{ \Illuminate\Support\Facades\Route::has('notifications.readAll') ? route('notifications.readAll') : '#' }}',
+                                                    {
+                                                        method: 'POST',
 
-                                                    headers: {
-                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                                        'Content-Type': 'application/json'
+                                                        headers: {
+                                                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                            'Content-Type': 'application/json'
+                                                        }
+
                                                     }
+                                                )
+                                                .then(() => unreadCount = 0);
 
-                                                }
-                                            )
-                                            .then(() => unreadCount = 0);
-
-                                        }
-                                    "
+                                            }
+                                        "
                             class="relative text-gray-300 hover:text-amber-400 p-2 focus:outline-none transition cursor-pointer flex items-center justify-center rounded-full hover:bg-gray-800/60"
                             title="お知らせ">
 
@@ -564,12 +538,12 @@
                                                     <!-- 通知1件 -->
 
                                                     <a href="{{ $targetUrl }}" class="group block relative rounded-xl transition duration-150 overflow-hidden border border-transparent
-                                                                                        {{
+                                                                                                                {{
                                     $isUnread
                                     ? 'bg-[#1a2332]/90'
                                     : 'bg-transparent hover:bg-gray-800/60'
-                                                                                        }}
-                                                                                        p-3 no-underline">
+                                                                                                                }}
+                                                                                                                p-3 no-underline">
 
 
                                                         <div class="flex items-start gap-3">
@@ -578,11 +552,11 @@
                                                             <!-- アイコン -->
 
                                                             <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 border
-                                                                                                {{
+                                                                                                                        {{
                                     $isComment
                                     ? 'bg-amber-500/20 border-amber-500/50 text-amber-400'
                                     : 'bg-red-500/20 border-red-500/50 text-red-500'
-                                                                                                }}">
+                                                                                                                        }}">
 
                                                                 @if($isComment)
 
@@ -677,8 +651,8 @@
 
 
                     <!-- =================================================
-                                 マイページ
-                            ================================================== -->
+                                     マイページ
+                                ================================================== -->
 
                     @if(\Illuminate\Support\Facades\Route::has('mypage'))
 
@@ -718,7 +692,7 @@
                                         0,
                                         1
                                     )
-                                                                                }}
+                                                                                                    }}
 
                                             </span>
 
@@ -741,8 +715,8 @@
 
 
                     <!-- =================================================
-                                 コミュニティ
-                            ================================================== -->
+                                     コミュニティ
+                                ================================================== -->
 
                     @if(\Illuminate\Support\Facades\Route::has('community.index'))
 
@@ -765,8 +739,8 @@
 
 
                     <!-- =================================================
-                                 ログアウト
-                            ================================================== -->
+                                     ログアウト
+                                ================================================== -->
 
                     @if(\Illuminate\Support\Facades\Route::has('logout'))
 
@@ -844,25 +818,25 @@
 
 
                         <button @click="
-                                        open = !open;
+                                            open = !open;
 
-                                        if (open && unreadCount > 0) {
+                                            if (open && unreadCount > 0) {
 
-                                            fetch(
-                                                '{{ \Illuminate\Support\Facades\Route::has('notifications.readAll') ? route('notifications.readAll') : '#' }}',
-                                                {
-                                                    method: 'POST',
+                                                fetch(
+                                                    '{{ \Illuminate\Support\Facades\Route::has('notifications.readAll') ? route('notifications.readAll') : '#' }}',
+                                                    {
+                                                        method: 'POST',
 
-                                                    headers: {
-                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                                        'Content-Type': 'application/json'
+                                                        headers: {
+                                                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                            'Content-Type': 'application/json'
+                                                        }
                                                     }
-                                                }
-                                            )
-                                            .then(() => unreadCount = 0);
+                                                )
+                                                .then(() => unreadCount = 0);
 
-                                        }
-                                    " class="relative text-gray-300 hover:text-amber-400 p-2 focus:outline-none">
+                                            }
+                                        " class="relative text-gray-300 hover:text-amber-400 p-2 focus:outline-none">
 
 
                             <i class="fa-solid fa-bell text-lg text-amber-500">
@@ -1329,15 +1303,15 @@
 
 
             <!-- =================================================
-                         POPULAR MOVIES
-                    ================================================== -->
+                             POPULAR MOVIES
+                        ================================================== -->
 
             <div class="popular-movies-area border-b border-gray-900 bg-black">
 
 
                 <!-- =================================================
-                             タイトル
-                        ================================================== -->
+                                 タイトル
+                            ================================================== -->
 
                 <div class="w-full text-center mb-1.5 px-4">
 
@@ -1358,8 +1332,8 @@
 
 
                 <!-- =================================================
-                             ポスター横スクロール
-                        ================================================== -->
+                                 ポスター横スクロール
+                            ================================================== -->
 
                 <div class="popular-movies-track-wrapper">
 
@@ -1390,8 +1364,8 @@
 
 
                                     <!-- =================================================
-                                                                 ポスター
-                                                            ================================================== -->
+                                                                                 ポスター
+                                                                            ================================================== -->
 
                                     <a href="{{ $movieShowUrl }}" class="popular-movie-card group no-underline">
 
@@ -1419,8 +1393,8 @@
 
 
                                         <!-- =================================================
-                                                                     評価
-                                                                ================================================== -->
+                                                                                     評価
+                                                                                ================================================== -->
 
                                         <div
                                             class="absolute top-1 right-1 bg-black/85 border border-amber-500/80 text-amber-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full backdrop-blur-sm">
@@ -1437,7 +1411,7 @@
                                 1
                             )
                             : '-'
-                                                                    }}
+                                                                                    }}
 
                                         </div>
 

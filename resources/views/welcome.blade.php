@@ -5,7 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MovieMood - ホーム</title>
+
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -17,11 +22,12 @@
             flex-direction: column;
         }
 
-        /* ヘッダーエリア */
+        /* ヘッダー */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
             padding: 15px 30px;
             background-color: #050505;
             border-bottom: 1px solid #222;
@@ -32,6 +38,7 @@
             font-size: 1.5rem;
             font-weight: bold;
             text-decoration: none;
+            flex-shrink: 0;
         }
 
         .user-nav {
@@ -44,20 +51,41 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            min-width: 0;
         }
 
+        /* プロフィールアイコン */
         .user-avatar {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            object-fit: cover;
             border: 1.5px solid #d4af37;
+            background-color: #171717;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .user-avatar-image {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-avatar-initial {
+            color: #d4af37;
+            font-size: 1rem;
+            font-weight: bold;
         }
 
         .user-name {
             color: #ffffff;
             font-weight: bold;
             font-size: 0.9rem;
+            overflow-wrap: anywhere;
         }
 
         .header-btn {
@@ -68,6 +96,7 @@
             text-decoration: none;
             font-size: 0.8rem;
             transition: all 0.2s;
+            white-space: nowrap;
         }
 
         .header-btn:hover {
@@ -75,7 +104,7 @@
             color: #000;
         }
 
-        /* メインコンテンツ */
+        /* メイン */
         main {
             flex: 1;
             display: flex;
@@ -85,7 +114,6 @@
             max-width: 500px;
             margin: 0 auto;
             width: 100%;
-            box-sizing: border-box;
         }
 
         .welcome-title {
@@ -94,9 +122,10 @@
             font-weight: bold;
             margin-bottom: 25px;
             text-align: center;
+            overflow-wrap: anywhere;
         }
 
-        /* 検索バー */
+        /* 検索 */
         .search-container {
             width: 100%;
             margin-bottom: 30px;
@@ -105,6 +134,7 @@
         .search-form {
             display: flex;
             position: relative;
+            width: 100%;
         }
 
         .search-input {
@@ -115,7 +145,6 @@
             background-color: #ffffff;
             color: #000000;
             font-size: 0.95rem;
-            box-sizing: border-box;
         }
 
         .search-icon {
@@ -125,9 +154,10 @@
             transform: translateY(-50%);
             font-size: 1.1rem;
             color: #666;
+            pointer-events: none;
         }
 
-        /* 気分タグエリア */
+        /* 気分タグ */
         .section-title {
             color: #ffffff;
             font-size: 1.1rem;
@@ -161,14 +191,13 @@
             background-color: #f0f0f0;
         }
 
-        /* 本日のピックアップ */
+        /* ピックアップ */
         .pickup-card {
             background-color: #111111;
             border: 1px solid #333333;
             border-radius: 20px;
             padding: 20px;
             width: 100%;
-            box-sizing: border-box;
             text-align: center;
             margin-bottom: 30px;
         }
@@ -185,18 +214,16 @@
             font-weight: bold;
         }
 
-        /* 下部固定アクションボタン */
+        /* 下部ボタン */
         .bottom-actions {
             display: flex;
             gap: 15px;
             width: 100%;
         }
 
-        .action-btn-mypage {
+        .action-btn-mypage,
+        .action-btn-logout {
             flex: 1;
-            background-color: #222222;
-            color: #ffffff;
-            border: 1px solid #444444;
             padding: 12px;
             border-radius: 20px;
             text-decoration: none;
@@ -205,66 +232,266 @@
             font-size: 0.9rem;
         }
 
+        .action-btn-mypage {
+            background-color: #222222;
+            color: #ffffff;
+            border: 1px solid #444444;
+        }
+
         .action-btn-logout {
-            flex: 1;
             background-color: #ff4d4d;
             color: #ffffff;
-            padding: 12px;
-            border-radius: 20px;
-            text-decoration: none;
-            text-align: center;
-            font-weight: bold;
-            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 12px 14px;
+                gap: 8px;
+            }
+
+            .header-logo {
+                font-size: 1.15rem;
+            }
+
+            .user-nav {
+                gap: 8px;
+            }
+
+            .user-name {
+                font-size: 0.75rem;
+                max-width: 130px;
+            }
+
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+            }
+
+            .header-btn {
+                padding: 5px 9px;
+                font-size: 0.75rem;
+            }
+
+            main {
+                padding: 25px 16px;
+            }
+
+            .welcome-title {
+                font-size: 1.25rem;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .user-name {
+                display: none;
+            }
+
+            .bottom-actions {
+                gap: 8px;
+            }
+
+            .action-btn-mypage,
+            .action-btn-logout {
+                padding: 10px 6px;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
 
 <body>
 
+    @php
+        $user = Auth::user();
+
+        // ニックネームを優先し、なければ名前を使用
+        $nickname = trim((string) ($user?->nickname ?? ''));
+
+        if ($nickname === '') {
+            $nickname = trim((string) ($user?->name ?? ''));
+        }
+
+        if ($nickname === '') {
+            $nickname = trim((string) session('user_name', ''));
+        }
+
+        if ($nickname === '') {
+            $nickname = 'ゲスト';
+        }
+
+        // プロフィール画像
+        $avatar = $user?->avatar;
+
+        // 表示する先頭1文字
+        $initial = mb_substr($nickname, 0, 1);
+    @endphp
+
     <!-- ヘッダー -->
     <header>
         <a href="/" class="header-logo">MovieMood</a>
+
         <div class="user-nav">
+
             <div class="user-info">
-                <img src="https://via.placeholder.com/32?text=Icon" class="user-avatar" alt="アイコン">
-                <span class="user-name">Welcome {{ session('user_name', 'ゲスト') }}さん！</span>
+
+
+                <!-- プロフィールアイコン -->
+                <div class="user-avatar">
+
+                    @php
+                        $avatarUrl = null;
+
+                        if (is_string($avatar) && trim($avatar) !== '') {
+                            $avatarPath = trim($avatar);
+
+                            if (
+                                \Illuminate\Support\Str::startsWith(
+                                    $avatarPath,
+                                    ['http://', 'https://']
+                                )
+                            ) {
+                                // 外部URLの場合
+                                $avatarUrl = $avatarPath;
+                            } else {
+                                // 先頭の / を取り除く
+                                $avatarPath = ltrim($avatarPath, '/');
+
+                                if (\Illuminate\Support\Str::startsWith($avatarPath, 'uploads/')) {
+                                    // public/uploads/ に保存された画像
+                                    $avatarUrl = asset($avatarPath);
+                                } elseif (\Illuminate\Support\Str::startsWith($avatarPath, 'storage/')) {
+                                    // public/storage/ 経由の画像
+                                    $avatarUrl = asset($avatarPath);
+                                } else {
+                                    // storage/app/public/ 内の画像を想定
+                                    $avatarUrl = asset('storage/' . $avatarPath);
+                                }
+                            }
+                        }
+                    @endphp
+
+                    <!-- 画像がある場合 -->
+                    @if ($avatarUrl)
+                        <img src="{{ $avatarUrl }}" alt="プロフィール画像" class="user-avatar-image"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+
+                        <span class="user-avatar-initial" style="display: none;">
+                            {{ $initial }}
+                        </span>
+                    @else
+                        <!-- 画像がない場合はニックネームの先頭1文字 -->
+                        <span class="user-avatar-initial">
+                            {{ $initial }}
+                        </span>
+                    @endif
+
+                </div>
+
+
+                <!-- ユーザー名 -->
+                <span class="user-name">
+                    Welcome {{ $nickname }}さん！
+                </span>
+
             </div>
-            <a href="/profile" class="header-btn">⚙️ 設定</a>
+
+            @auth
+                <a href="{{ route('profile.edit') }}" class="header-btn">
+                    ⚙️ 設定
+                </a>
+            @else
+                <a href="{{ route('login') }}" class="header-btn">
+                    ログイン
+                </a>
+            @endauth
+
         </div>
     </header>
 
     <!-- メインコンテンツ -->
     <main>
-        <div class="welcome-title">Welcome {{ session('user_name', 'ゲスト') }}さん！</div>
+
+        <div class="welcome-title">
+            Welcome {{ $nickname }}さん！
+        </div>
 
         <!-- キーワード検索 -->
         <div class="search-container">
+
             <form action="/search" method="GET" class="search-form">
+
                 <span class="search-icon">🔍</span>
+
                 <input type="text" name="keyword" class="search-input" placeholder="キーワード検索">
+
             </form>
+
         </div>
 
-        <!-- 気分選択ボタン -->
-        <div class="section-title">▼ 今のあなたの「気分」は？</div>
+        <!-- 気分選択 -->
+        <div class="section-title">
+            ▼ 今のあなたの「気分」は？
+        </div>
+
         <div class="mood-grid">
-            <a href="/search?mood=号泣" class="mood-btn">😭 #号泣</a>
-            <a href="/search?mood=スカッと" class="mood-btn">😆 #スカッと</a>
-            <a href="/search?mood=ハラハラ" class="mood-btn">😱 #ハラハラ</a>
-            <a href="/search?mood=キュン" class="mood-btn">❤️ #キュン</a>
+
+            <a href="/search?mood=号泣" class="mood-btn">
+                😭 #号泣
+            </a>
+
+            <a href="/search?mood=スカッと" class="mood-btn">
+                😆 #スカッと
+            </a>
+
+            <a href="/search?mood=ハラハラ" class="mood-btn">
+                😱 #ハラハラ
+            </a>
+
+            <a href="/search?mood=キュン" class="mood-btn">
+                ❤️ #キュン
+            </a>
+
         </div>
 
         <!-- 本日のピックアップ -->
         <div class="pickup-card">
-            <div class="pickup-label">本日のピックアップムード</div>
-            <div class="pickup-text">「月曜から夜更かし…」 おすすめが出る</div>
+
+            <div class="pickup-label">
+                本日のピックアップムード
+            </div>
+
+            <div class="pickup-text">
+                「月曜から夜更かし…」 おすすめが出る
+            </div>
+
         </div>
 
         <!-- 下部アクション -->
         <div class="bottom-actions">
-            <a href="/mypage/watchlist" class="action-btn-mypage">⚙️ マイページへ</a>
-            <a href="/logout" class="action-btn-logout">ログアウト</a>
+
+            @auth
+                <a href="/mypage/watchlist" class="action-btn-mypage">
+                    ⚙️ マイページへ
+                </a>
+
+                <form action="{{ route('logout') }}" method="POST" style="flex: 1; display: flex;">
+                    @csrf
+                    <button type="submit" class="action-btn-logout" style="width: 100%; border: none; cursor: pointer;">
+                        ログアウト
+                    </button>
+                </form>
+            @else
+                <a href="{{ route('login') }}" class="action-btn-mypage">
+                    ログイン
+                </a>
+
+                <a href="{{ route('register') }}" class="action-btn-logout">
+                    新規登録
+                </a>
+            @endauth
+
         </div>
+
     </main>
 
 </body>

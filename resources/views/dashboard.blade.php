@@ -19,14 +19,26 @@
 
                 <div
                     class="flex items-center space-x-3 bg-gray-800 px-6 py-3 rounded-full border border-gray-700 w-11/12 justify-center">
+
                     <div
-                        class="w-12 h-12 rounded-full bg-white overflow-hidden border-2 border-yellow-500 flex items-center justify-center shadow-md">
-                        @if (Auth::user()->avatar)
-                            <img src="{{ asset('storage/' . Auth::user()->avatar) }}" class="w-full h-full object-cover">
+                        class="w-12 h-12 rounded-full bg-amber-500/20 overflow-hidden border-2 border-yellow-500 flex items-center justify-center shadow-md shrink-0">
+
+                        @php
+                            $user = Auth::user();
+                            $avatar = $user->avatar ?? $user->icon ?? $user->icon_path ?? null;
+                            $nickname = $user->nickname ?? $user->name ?? 'ユーザー';
+                        @endphp
+
+                        @if ($avatar)
+                            <img src="{{ \Illuminate\Support\Str::startsWith($avatar, ['http://', 'https://']) ? $avatar : asset('storage/' . ltrim($avatar, '/')) }}"
+                                alt="プロフィール画像" class="w-full h-full object-cover">
                         @else
-                            <span class="text-[10px] text-gray-400">画像なし</span>
+                            <span class="text-amber-400 font-bold text-lg">
+                                {{ mb_substr($nickname, 0, 1) }}
+                            </span>
                         @endif
                     </div>
+
                     <span class="text-white font-bold text-lg truncate max-w-[150px]">
                         {{ Auth::user()->nickname ?? Auth::user()->name }}
                     </span>

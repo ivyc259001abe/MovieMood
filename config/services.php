@@ -10,7 +10,7 @@ return [
     | This file is for storing the credentials for third party services such
     | as Mailgun, Postmark, AWS and more. This file provides the de facto
     | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
+    | a conventional file to locate various service credentials.
     |
     */
 
@@ -35,10 +35,15 @@ return [
         ],
     ],
 
-    // 🌟 ここを追加
+    // 🎬 TMDb
     'tmdb' => [
         'api_key' => env('TMDB_API_KEY'),
         'base_url' => env('TMDB_BASE_URL', 'https://api.themoviedb.org/3'),
+    ],
+
+    // 🌤️ OpenWeatherMap
+    'openweathermap' => [
+        'key' => env('OPENWEATHER_API_KEY'),
     ],
 
 ];
